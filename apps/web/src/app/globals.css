@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-purple: #6c63ff;
+    --color-dark: #0f0f0f;
+    --color-risk: #ef4444;
+    --color-approved: #22c55e;
+    --color-warning: #f59e0b;
+    --color-border: rgba(0, 0, 0, 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: #ffffff;
+    color: #0f0f0f;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Dark pill CTA */
+  .btn-dark {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-[#0f0f0f] text-white text-sm font-medium rounded-pill transition-opacity hover:opacity-80;
+  }
+
+  /* AI action button (purple) */
+  .btn-ai {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-[#6c63ff] text-white text-sm font-medium rounded-pill transition-opacity hover:opacity-90;
+  }
+
+  /* Ghost / outline button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 border border-[rgba(0,0,0,0.12)] text-[#0f0f0f] text-sm font-medium rounded-pill transition-colors hover:bg-gray-50;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white border border-[rgba(0,0,0,0.08)] rounded-xl p-5;
+  }
+
+  /* Risk badge */
+  .badge-risk {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-full border border-red-100;
+  }
+
+  /* Approved badge */
+  .badge-approved {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-full border border-green-100;
+  }
+
+  /* Low confidence badge */
+  .badge-warning {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 text-xs font-medium rounded-full border border-amber-100;
+  }
+
+  /* AI badge */
+  .badge-ai {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-[#6c63ff] text-xs font-medium rounded-full border border-purple-100;
+  }
+}
+
+/* Subtle section dividers */
+.divider {
+  border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Streaming text animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #6c63ff;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}

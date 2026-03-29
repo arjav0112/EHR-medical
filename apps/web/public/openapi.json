@@ -1,0 +1,684 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EHR Copilot API",
+    "version": "1.0.0",
+    "description": "AI-powered mental health clinical documentation API. Processes session transcripts through a LangGraph agent pipeline to produce structured SOAP notes, risk flags, DSM-5 diagnoses, and treatment plans for clinician review."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    },
+    {
+      "url": "https://your-deployment.vercel.app",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/session/process": {
+      "post": {
+        "summary": "Process a therapy session transcript",
+        "description": "Runs the full EHR Copilot agent pipeline (transcript quality → SOAP → risk analysis → DSM-5 → treatment plan) and returns a ReviewPackage for clinician review.",
+        "operationId": "processSession",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionInput"
+              },
+              "example": {
+                "session": {
+                  "transcript": "Clinician: How have things been since we last spoke?\nPatient: Rough. I've been sleeping a lot more...",
+                  "sessionNumber": 7,
+                  "sessionType": "follow_up",
+                  "durationMinutes": 50,
+                  "modality": "telehealth"
+                },
+                "patient": {
+                  "id": "anon_patient_abc",
+                  "age": 34,
+                  "gender": "not_specified",
+                  "knownDiagnoses": [
+                    "F32.1"
+                  ],
+                  "currentMedications": [
+                    "Sertraline 50mg"
+                  ]
+                },
+                "priorNotes": [],
+                "clinicianPreferences": {
+                  "noteVerbosity": "standard",
+                  "alwaysIncludeRiskSection": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully processed — returns ReviewPackage",
+            "headers": {
+              "X-Session-Id": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Unique session identifier"
+              },
+              "X-Processing-Time": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Processing time in ms"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPackage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Transcript quality too low to process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "low_quality_transcript"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "qualityScore": {
+                      "type": "number",
+                      "example": 0.34
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded (10 req/min per IP)"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/session/revise": {
+      "post": {
+        "summary": "Request AI revision of a SOAP section (streaming)",
+        "description": "Streams a revised version of a specific SOAP section using Server-Sent Events (SSE). Returns `text/event-stream` with JSON data lines. Each line is `data: {token: string}` until a final `data: {done: true, content: string, confidence: number, provenanceTag: string}` line.",
+        "operationId": "reviseSection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviseRequest"
+              },
+              "example": {
+                "section": "subjective",
+                "currentDraft": "Patient presents with depressive symptoms...",
+                "feedback": "Include more detail about the sleep patterns and medication lapse",
+                "approvedSections": {},
+                "transcript": "Clinician: How have things been..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream of revision tokens",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Stream of SSE events. Token events: `data: {\"token\":\"word\"}`. Final event: `data: {\"done\":true,\"content\":\"full revised text\",\"confidence\":0.88,\"provenanceTag\":\"ai_revised\"}`"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Stream failed"
+          }
+        }
+      }
+    },
+    "/api/session/finalize": {
+      "post": {
+        "summary": "Finalize and export session as FHIR R4 Bundle",
+        "description": "Validates that all SOAP sections are approved, then constructs and returns a FHIR R4 Bundle containing a DocumentReference, section Observations, Condition entries, and risk flag Observations.",
+        "operationId": "finalizeSession",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalizeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FHIR R4 Bundle",
+            "headers": {
+              "X-FHIR-Version": {
+                "schema": {
+                  "type": "string",
+                  "example": "4.0.1"
+                }
+              },
+              "X-Processing-Time": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FHIRBundle"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "422": {
+            "description": "Not all sections approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "missing": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Finalization failed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SessionInput": {
+        "type": "object",
+        "required": [
+          "session",
+          "patient"
+        ],
+        "properties": {
+          "session": {
+            "type": "object",
+            "required": [
+              "transcript",
+              "sessionNumber",
+              "sessionType"
+            ],
+            "properties": {
+              "transcript": {
+                "type": "string",
+                "description": "Full session transcript text"
+              },
+              "sessionNumber": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "sessionType": {
+                "type": "string",
+                "enum": [
+                  "intake",
+                  "follow_up",
+                  "crisis"
+                ]
+              },
+              "durationMinutes": {
+                "type": "integer",
+                "default": 50
+              },
+              "modality": {
+                "type": "string",
+                "enum": [
+                  "in_person",
+                  "telehealth"
+                ]
+              }
+            }
+          },
+          "patient": {
+            "type": "object",
+            "required": [
+              "id",
+              "age"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Anonymized patient identifier — never real PII"
+              },
+              "age": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 120
+              },
+              "gender": {
+                "type": "string"
+              },
+              "knownDiagnoses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "currentMedications": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "priorNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clinicianPreferences": {
+            "type": "object",
+            "properties": {
+              "noteVerbosity": {
+                "type": "string",
+                "enum": [
+                  "concise",
+                  "standard",
+                  "detailed"
+                ]
+              },
+              "alwaysIncludeRiskSection": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "ReviewPackage": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": [
+              "pending_clinician_review",
+              "complete"
+            ]
+          },
+          "overallRiskLevel": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "moderate",
+              "high",
+              "critical"
+            ]
+          },
+          "riskFlags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskFlag"
+            }
+          },
+          "soapNote": {
+            "$ref": "#/components/schemas/SOAPNote"
+          },
+          "diagnosisSuggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagnosisSuggestion"
+            }
+          },
+          "treatmentPlan": {
+            "$ref": "#/components/schemas/TreatmentPlan"
+          },
+          "auditLog": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            }
+          },
+          "agentMetadata": {
+            "type": "object",
+            "properties": {
+              "processingTimeMs": {
+                "type": "number"
+              },
+              "transcriptQualityScore": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "agentsInvoked": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SOAPNote": {
+        "type": "object",
+        "properties": {
+          "subjective": {
+            "$ref": "#/components/schemas/SOAPSection"
+          },
+          "objective": {
+            "$ref": "#/components/schemas/SOAPSection"
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/SOAPSection"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SOAPSection"
+          }
+        }
+      },
+      "SOAPSection": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "sourceCitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "approved",
+              "edited",
+              "revised",
+              "locked"
+            ]
+          },
+          "revisionRounds": {
+            "type": "integer"
+          },
+          "provenanceTag": {
+            "type": "string"
+          }
+        }
+      },
+      "RiskFlag": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "suicidal_ideation",
+              "self_harm",
+              "abuse_disclosure",
+              "medication_noncompliance",
+              "psychosis_indicator",
+              "other"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "critical"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "transcriptLocation": {
+            "type": "string"
+          },
+          "protocolTriggered": {
+            "type": "string"
+          },
+          "requiresImmediateAction": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "dismissed"
+            ]
+          }
+        }
+      },
+      "DiagnosisSuggestion": {
+        "type": "object",
+        "properties": {
+          "dsm5Code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "supportingCriteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conflictingSignals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priorDiagnosisMatch": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TreatmentPlan": {
+        "type": "object",
+        "properties": {
+          "currentGoalsProgress": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "newInterventions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextSessionFocus": {
+            "type": "string"
+          },
+          "referrals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AuditEntry": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "section": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviseRequest": {
+        "type": "object",
+        "required": [
+          "section",
+          "currentDraft",
+          "feedback",
+          "transcript"
+        ],
+        "properties": {
+          "section": {
+            "type": "string",
+            "enum": [
+              "subjective",
+              "objective",
+              "assessment",
+              "plan"
+            ]
+          },
+          "currentDraft": {
+            "type": "string"
+          },
+          "feedback": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "approvedSections": {
+            "type": "object"
+          },
+          "transcript": {
+            "type": "string"
+          }
+        }
+      },
+      "FinalizeRequest": {
+        "type": "object",
+        "required": [
+          "reviewPackage",
+          "approvedSections"
+        ],
+        "properties": {
+          "reviewPackage": {
+            "$ref": "#/components/schemas/ReviewPackage"
+          },
+          "approvedSections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "patientId": {
+            "type": "string",
+            "default": "anonymous"
+          },
+          "sessionId": {
+            "type": "string"
+          }
+        }
+      },
+      "FHIRBundle": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "example": "Bundle"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "example": "document"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entry": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
