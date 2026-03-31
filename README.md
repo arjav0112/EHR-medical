@@ -132,7 +132,3 @@ risk_flags (confirm all)
 - All AI outputs require explicit clinician action before they appear in exports.
 
 ---
-
-## License
-
-MIT
