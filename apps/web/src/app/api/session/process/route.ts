@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionInputSchema } from 'agents';
 import { ehrGraph } from 'agents';
-import { setSessionStatus } from '@/lib/redis';
+import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
@@ -79,19 +79,29 @@ export async function POST(req: NextRequest) {
       throw new Error(result.error);
     }
 
-    await setSessionStatus(sessionId, {
-      status: 'complete',
-      currentNode: 'reviewBundlerNode',
-      percentComplete: 100,
-    });
+    await Promise.all([
+      setSessionStatus(sessionId, {
+        status: 'complete',
+        currentNode: 'reviewBundlerNode',
+        percentComplete: 100,
+      }),
+      setReviewPackage(sessionId, result.reviewPackage),
+      setSessionInput(sessionId, input),
+    ]);
 
-    return NextResponse.json(result.reviewPackage, {
-      status: 200,
-      headers: {
-        'X-Processing-Time': `${Date.now() - startTime}ms`,
-        'X-Session-Id': sessionId,
+    return NextResponse.json(
+      {
+        ...result.reviewPackage,
+        sessionId, // Explicitly include in body for easier frontend capture
       },
-    });
+      {
+        status: 200,
+        headers: {
+          'X-Processing-Time': `${Date.now() - startTime}ms`,
+          'X-Session-Id': sessionId,
+        },
+      },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     await setSessionStatus(sessionId, { status: 'error', currentNode: '', percentComplete: 0, error: message });

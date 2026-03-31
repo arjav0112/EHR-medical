@@ -111,6 +111,13 @@ export function buildFHIRBundle(
     `PLAN:\n${soapNote.plan?.content ?? ''}`,
   ].join('\n\n');
 
+  const toBase64 = (text: string): string => {
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(text, 'utf-8').toString('base64');
+    }
+    return btoa(unescape(encodeURIComponent(text)));
+  };
+
   const docRef: FHIRDocumentReference = {
     resourceType: 'DocumentReference',
     id: `docref-${sessionId}`,
@@ -134,7 +141,7 @@ export function buildFHIRBundle(
       {
         attachment: {
           contentType: 'text/plain',
-          data: Buffer.from(soapText).toString('base64'),
+          data: toBase64(soapText),
           title: `SOAP Note — Session ${sessionId}`,
           creation: now,
         },

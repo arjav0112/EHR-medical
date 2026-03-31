@@ -69,6 +69,7 @@ export function SOAPSection({
   const invalidatedSections = useSessionStore((s) => s.invalidatedSections);
   const clearInvalidated = useSessionStore((s) => s.clearInvalidated);
   const invalidateDownstream = useSessionStore((s) => s.invalidateDownstreamSections);
+  const sessionInput = useSessionStore((s) => s.input);
 
   const isInvalidated = invalidatedSections.includes(section as Parameters<typeof clearInvalidated>[0]);
 
@@ -318,6 +319,13 @@ export function SOAPSection({
               feedback,
               approvedSections,
               transcript,
+              patientContext: {
+                age: sessionInput?.patient.age ?? 0,
+                gender: sessionInput?.patient.gender ?? '',
+                knownDiagnoses: sessionInput?.patient.knownDiagnoses ?? [],
+                sessionType: sessionInput?.session.sessionType ?? 'follow_up',
+              },
+              currentRevisionRounds: revisionRounds,
             }}
             onComplete={handleStreamComplete}
             onStop={() => setIsStreaming(false)}

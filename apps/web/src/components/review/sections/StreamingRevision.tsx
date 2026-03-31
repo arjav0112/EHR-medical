@@ -16,6 +16,13 @@ interface StreamingRevisionProps {
     feedback: string;
     approvedSections: Record<string, unknown>;
     transcript: string;
+    patientContext: {
+      age: number;
+      gender: string;
+      knownDiagnoses: string[];
+      sessionType: string;
+    };
+    currentRevisionRounds: number;
   };
   onComplete: (result: StreamedResult) => void;
   onStop: () => void;

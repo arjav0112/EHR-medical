@@ -229,8 +229,9 @@ export default function NewSessionPage() {
         throw new Error(body.message ?? `Server error ${res.status}`);
       }
 
-      const reviewPackage = await res.json();
-      const sessionId = res.headers.get('X-Session-Id') || tempSessionId;
+      const body = await res.json();
+      const reviewPackage = body;
+      const sessionId = body.sessionId || res.headers.get('X-Session-Id') || tempSessionId;
 
       setReviewPackage(reviewPackage);
       setSessionId(sessionId);

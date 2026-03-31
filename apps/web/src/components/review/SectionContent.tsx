@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useSessionStore, type SectionKey } from '@/lib/store/sessionStore';
 import { RiskFlagsSection } from './sections/RiskFlagsSection';
 import { SOAPSection } from './sections/SOAPSection';
@@ -21,7 +22,7 @@ function LockedSection({ section }: { section: string }) {
   );
 }
 
-export default function SectionContent({ sessionId: _sessionId }: { sessionId: string }) {
+export default function SectionContent({ sessionId }: { sessionId: string }) {
   const {
     activeSection,
     sectionStatuses,
@@ -33,12 +34,37 @@ export default function SectionContent({ sessionId: _sessionId }: { sessionId: s
     markRevised,
     updateSectionContent,
     invalidateDownstreamSections,
+    setReviewPackage,
+    setSessionId,
+    setInput,
   } = useSessionStore();
+
+  const [hydrating, setHydrating] = useState(false);
+  const [hydrationFailed, setHydrationFailed] = useState(false);
+
+  // ── Hydrate from Redis on page refresh ──────────────────────────────────────
+  useEffect(() => {
+    if (reviewPackage || hydrating || hydrationFailed) return;
+
+    setHydrating(true);
+    fetch(`/api/session/${sessionId}/review`)
+      .then((res) => {
+        if (!res.ok) throw new Error('not found');
+        return res.json();
+      })
+      .then(({ reviewPackage: pkg, sessionInput }) => {
+        setReviewPackage(pkg);
+        setSessionId(sessionId);
+        if (sessionInput) setInput(sessionInput);
+      })
+      .catch(() => setHydrationFailed(true))
+      .finally(() => setHydrating(false));
+  }, [reviewPackage, sessionId, hydrating, hydrationFailed, setReviewPackage, setSessionId]);
 
   const status = sectionStatuses[activeSection];
 
-  // Loading skeleton — reviewPackage not yet hydrated
-  if (!reviewPackage && processingStatus !== 'idle') {
+  // Loading skeleton during hydration or active processing
+  if (!reviewPackage && (processingStatus !== 'idle' || hydrating)) {
     return (
       <main className="flex-1 bg-[#F8F8F6] overflow-y-auto px-10 py-8">
         <SectionSkeleton />
@@ -46,16 +72,21 @@ export default function SectionContent({ sessionId: _sessionId }: { sessionId: s
     );
   }
 
-  // No data at all
+  // No data even after hydration attempt
   if (!reviewPackage) {
     return (
       <main className="flex-1 bg-[#F8F8F6] overflow-y-auto px-10 py-8">
         <div className="flex flex-col items-center justify-center h-full text-center py-24">
-          <p className="text-[16px] text-[#9CA3AF]">No session data loaded.</p>
+          <p className="text-[16px] text-[#9CA3AF]">
+            {hydrationFailed
+              ? 'Session expired or not found. Sessions are retained for 24 hours.'
+              : 'No session data loaded.'}
+          </p>
         </div>
       </main>
     );
   }
+
 
   // Locked gate
   if (status === 'locked') {
