@@ -9,10 +9,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+        },
+        input: 'hsl(var(--border))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         brand: {
-          DEFAULT: '#6c63ff',
-          light: '#ede9ff',
-          dark: '#4b44cc',
+          DEFAULT: '#BEF264', // Neon Green
+          light: '#D9F99D',
+          dark: '#03050C',
+        },
+        neon: {
+          DEFAULT: '#BEF264',
+          glow: 'rgba(190, 242, 100, 0.4)',
+        },
+        navy: {
+          DEFAULT: '#03050C',
+          light: '#0A0E1A',
+          deep: '#010205',
         },
         risk: {
           low: '#f59e0b',
@@ -21,14 +36,15 @@ const config: Config = {
           critical: '#991b1b',
         },
         status: {
-          approved: '#10b981',
-          pending: '#6b7280',
-          revised: '#6c63ff',
+          approved: '#BEF264',
+          pending: '#64748b',
+          revised: '#F8FAFC',
         },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['var(--font-inter)', 'Inter', 'sans-serif'],
+        serif: ['var(--font-cormorant)', 'Cormorant Garamond', 'serif'],
+        display: ['var(--font-cormorant)', 'Cormorant Garamond', 'serif'],
         body: ['var(--font-inter)', 'Inter', 'sans-serif'],
       },
       borderRadius: {

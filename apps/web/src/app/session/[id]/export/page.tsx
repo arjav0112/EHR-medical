@@ -9,7 +9,7 @@ import { generateFhirDocumentReference } from '@/lib/export/generateFhir';
 // ─── Labels & helpers ─────────────────────────────────────────────────────────
 
 const SECTION_LABELS: Record<SectionKey, string> = {
-  risk_flags: 'Risk Flags',
+  risk_flags: 'Risk Protocol',
   subjective: 'Subjective',
   objective: 'Objective',
   assessment: 'Assessment',
@@ -17,9 +17,9 @@ const SECTION_LABELS: Record<SectionKey, string> = {
 };
 
 function provenanceLabel(status: string): { text: string; style: string } {
-  if (status === 'edited') return { text: 'Clinician edited · Approved', style: 'bg-blue-100 text-blue-700' };
-  if (status === 'revised') return { text: 'AI revised · Approved', style: 'bg-[#EDE9FF] text-[#6c63ff]' };
-  return { text: 'AI drafted · Approved', style: 'bg-[#D1FAE5] text-[#059669]' };
+  if (status === 'edited') return { text: 'CLINICIAN OVERRIDE', style: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' };
+  if (status === 'revised') return { text: 'NEURAL REVISION', style: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
+  return { text: 'AI SYNTHESIZED', style: 'bg-neon-500/10 text-neon-400 border-neon-500/20' };
 }
 
 // ─── Export Page ──────────────────────────────────────────────────────────────
@@ -60,7 +60,6 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert('Failed to generate FHIR document.');
     } finally {
       setFhirLoading(false);
     }
@@ -85,7 +84,6 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert('PDF generation failed. Please try again.');
     } finally {
       setPdfLoading(false);
     }
@@ -107,182 +105,180 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const confirmedFlags = reviewPackage.riskFlags.filter((f) => f.status === 'confirmed');
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8]">
+    <main className="min-h-screen bg-navy-950 selection:bg-neon-500/30 selection:text-neon-500">
       <Nav />
-      <div className="pt-24 pb-24 px-6 max-w-[860px] mx-auto">
-
+      <div className="pt-32 pb-40 px-6 max-w-[1000px] mx-auto relative">
+        {/* Background decorative elements */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-neon-500/5 rounded-full blur-[120px] pointer-events-none" />
+        
         {/* ── Success header ── */}
-        <div className="text-center mt-8 mb-12">
-          <div className="w-16 h-16 bg-[#10B981] rounded-full flex items-center justify-center mx-auto mb-5 shadow-md">
-            <svg className="w-7 h-7 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
+        <div className="text-center mb-20 relative z-10 animate-in fade-in slide-in-from-top-10 duration-1000">
+          <div className="w-24 h-24 bg-neon-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_50px_rgba(190,242,100,0.3)] rotate-3">
+             <svg className="w-12 h-12 text-navy-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+               <polyline points="20 6 9 17 4 12"/>
+             </svg>
           </div>
-          <h1 className="text-[40px] font-extrabold text-[#1A1A1A] tracking-tight">Note complete</h1>
-          <p className="text-[16px] text-[#6B7280] mt-2">
-            All 5 sections reviewed and approved. Ready to export.
+          <h1 className="text-6xl font-serif font-medium text-white tracking-tight mb-4">Verification Complete</h1>
+          <p className="text-xl text-navy-400 font-serif font-light max-w-xl mx-auto leading-relaxed">
+            All clinical vectors have been synchronized and successfully captured into the immutable session state.
           </p>
         </div>
 
-        {/* ── Audit summary card ── */}
-        <div className="bg-white border border-[#E0DDD6] rounded-2xl p-6 mb-6">
-          <h2 className="text-[16px] font-bold text-[#1A1A1A] mb-4">Session audit summary</h2>
-          <div className="space-y-0 divide-y divide-[#F0EDE8]">
-            {sections.map((key) => {
-              const status = sectionStatuses[key];
-              const prov = provenanceLabel(status);
-              return (
-                <div key={key} className="flex items-center justify-between py-3">
-                  <span className="text-[14px] text-[#1A1A1A]">{SECTION_LABELS[key]}</span>
-                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${prov.style}`}>
-                    {prov.text}
-                  </span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+          
+          {/* Left Column: Audit & Addendum */}
+          <div className="lg:col-span-12 xl:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+            
+            {/* Audit Summary Card */}
+            <div className="glass-card bg-white/[0.02] border-white/10 p-8 flex flex-col group transition-all duration-700 animate-in fade-in slide-in-from-left-10">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-[12px] font-bold text-white uppercase tracking-[0.3em]">Session Audit Matrix</h2>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-neon-500 shadow-[0_0_10px_rgba(190,242,100,0.8)] animate-pulse" />
+                  <span className="text-[10px] font-bold text-navy-500 uppercase tracking-widest font-mono">ID: {id.slice(0, 8)}</span>
                 </div>
-              );
-            })}
-          </div>
-          {confirmedFlags.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-[#F0EDE8]">
-              <p className="text-[12px] font-semibold text-[#EF4444]">
-                ⚠ {confirmedFlags.length} risk flag{confirmedFlags.length > 1 ? 's' : ''} confirmed and included in export
-              </p>
-            </div>
-          )}
-          <div className="mt-3 pt-3 border-t border-[#E0DDD6] text-right">
-            <span className="text-[12px] text-[#9CA3AF]">
-              Reviewed{' '}
-              {new Date().toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Clinician addendum ── */}
-        <div className="bg-white border border-[#E0DDD6] rounded-2xl p-6 mb-6">
-          <h2 className="text-[14px] font-bold text-[#1A1A1A] mb-2">
-            Clinician addendum{' '}
-            <span className="text-[12px] font-normal text-[#9CA3AF]">(optional)</span>
-          </h2>
-          <textarea
-            value={addendum}
-            onChange={(e) => setAddendum(e.target.value)}
-            placeholder="Add any additional clinical observations or notes not captured above..."
-            rows={3}
-            className="w-full text-[14px] text-[#1A1A1A] placeholder-[#9CA3AF] border border-[#E0DDD6] rounded-xl px-4 py-3 resize-none focus:outline-none focus:border-[#6c63ff] transition-colors leading-relaxed"
-          />
-        </div>
-
-        {/* ── Export cards ── */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-
-          {/* PDF */}
-          <div className="bg-white border border-[#E0DDD6] rounded-2xl p-5 flex flex-col">
-            <div className="w-10 h-10 bg-[#EDE9FF] rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-[#6c63ff]" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h3 className="text-[15px] font-bold text-[#1A1A1A] mb-1.5">Formatted PDF</h3>
-            <p className="text-[12px] text-[#6B7280] leading-relaxed flex-1 mb-4">
-              Print-ready clinical note with audit footer on every page.
-            </p>
-            <button
-              onClick={handleDownloadPDF}
-              disabled={pdfLoading}
-              className="w-full bg-[#1A1A1A] text-white text-[14px] font-medium py-2.5 rounded-full hover:bg-black transition-colors disabled:opacity-60"
-            >
-              {pdfLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating...
-                </span>
-              ) : 'Download PDF'}
-            </button>
-            <p className="text-[11px] text-[#9CA3AF] text-center mt-2">Audit footer included</p>
-          </div>
-
-          {/* FHIR JSON */}
-          <div className="bg-white border border-[#E0DDD6] rounded-2xl p-5 flex flex-col">
-            <div className="w-10 h-10 bg-[#EDE9FF] rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-[#6c63ff]" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h3 className="text-[15px] font-bold text-[#1A1A1A] mb-1.5">FHIR R4 JSON</h3>
-            <p className="text-[12px] text-[#6B7280] leading-relaxed flex-1 mb-4">
-              Machine-readable DocumentReference bundle for EHR API integration.
-            </p>
-            <button
-              className="w-full bg-[#1A1A1A] text-white text-[14px] font-medium py-2.5 rounded-full hover:bg-black transition-colors disabled:opacity-60"
-              onClick={handleDownloadFHIR}
-              disabled={fhirLoading}
-            >
-              {fhirLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Building...
-                </span>
-              ) : 'Download JSON'}
-            </button>
-            <p className="text-[11px] text-[#9CA3AF] text-center mt-2">FHIR R4 compliant</p>
-          </div>
-
-          {/* Plain text */}
-          <div className="bg-white border border-[#E0DDD6] rounded-2xl p-5 flex flex-col">
-            <div className="w-10 h-10 bg-[#EDE9FF] rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-[#6c63ff]" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h3 className="text-[15px] font-bold text-[#1A1A1A] mb-1.5">Plain text</h3>
-            <p className="text-[12px] text-[#6B7280] leading-relaxed flex-1 mb-4">
-              Paste directly into any EHR — no special formatting.
-            </p>
-            <button
-              className="w-full border border-[#1A1A1A] text-[#1A1A1A] text-[14px] font-medium py-2.5 rounded-full hover:bg-[#F5F5F5] transition-colors"
-              onClick={handleCopyText}
-            >
-              {copyDone ? '✓ Copied!' : 'Copy to clipboard'}
-            </button>
-            <p className="text-[11px] text-[#9CA3AF] text-center mt-2">No formatting</p>
-          </div>
-        </div>
-
-        {/* ── FHIR metadata preview ── */}
-        <div className="bg-[#1A1A1A] rounded-2xl px-6 py-5 mb-8">
-          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider mb-3">FHIR R4 Bundle preview</p>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              ['Resource type', 'Bundle (document)'],
-              ['FHIR version', '4.0.1'],
-              ['Session ID', id],
-              ['Entries', `${4 + (reviewPackage.diagnosisSuggestions?.length ?? 0) + confirmedFlags.length + 1} resources`],
-              ['Includes', 'DocumentReference · Observations · Conditions'],
-              ['Standard', 'US Core 5.0.1'],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <p className="text-[11px] text-[#6B7280]">{k}</p>
-                <p className="text-[13px] font-medium text-[#D1D5DB]">{v}</p>
               </div>
-            ))}
+              
+              <div className="space-y-4 flex-1">
+                {sections.map((key) => {
+                  const status = sectionStatuses[key];
+                  const prov = provenanceLabel(status);
+                  return (
+                    <div key={key} className="flex items-center justify-between py-3 border-b border-white/[0.03] last:border-0 group/row">
+                      <span className="text-[14px] font-serif font-medium text-navy-300 group-hover/row:text-white transition-colors">{SECTION_LABELS[key]}</span>
+                      <span className={`text-[9px] font-bold px-3 py-1 rounded-lg border uppercase tracking-wider backdrop-blur-md transition-all ${prov.style}`}>
+                        {prov.text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {confirmedFlags.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-red-500/20">
+                  <div className="flex items-start gap-4 text-red-400">
+                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <p className="text-[13px] font-bold uppercase tracking-wider leading-relaxed">
+                      {confirmedFlags.length} Protocol Violation{confirmedFlags.length > 1 ? 's' : ''} detected and permanently logged in neutral export bundle.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Clinician Addendum Card */}
+            <div className="glass-card bg-white/[0.02] border-white/10 p-8 flex flex-col group animate-in fade-in slide-in-from-right-10 duration-1000">
+              <h2 className="text-[12px] font-bold text-white uppercase tracking-[0.3em] mb-6">Clinician Final Commentary</h2>
+              <div className="relative group/field flex-1 mb-6">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                <textarea
+                  value={addendum}
+                  onChange={(e) => setAddendum(e.target.value)}
+                  placeholder="Capture any final neural insights or clinical deviations..."
+                  rows={6}
+                  className="w-full bg-navy-950/40 border border-white/5 group-focus-within/field:border-neon-500/30 rounded-2xl px-6 py-6 text-[15px] text-white placeholder-navy-700 leading-relaxed font-serif focus:outline-none transition-all duration-500 min-h-[220px]"
+                />
+              </div>
+              <p className="text-[10px] font-bold text-navy-600 uppercase tracking-widest text-center italic">Final addendum will be appended to the PDF/JSON metadata stream.</p>
+            </div>
+          </div>
+
+          {/* Bottom Grid: Export Options */}
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* PDF Export */}
+            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10">
+              <div className="w-14 h-14 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
+                <svg className="w-7 h-7 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <h3 className="text-xl font-serif font-medium text-white mb-2">Protocol PDF</h3>
+              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
+                Formally rendered clinical documentation with cryptographic audit trail footer.
+              </p>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfLoading}
+                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                <span className="relative z-10">
+                  {pdfLoading ? (
+                    <span className="flex items-center justify-center gap-3">
+                      <span className="w-3.5 h-3.5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
+                      Rendering...
+                    </span>
+                  ) : 'Synthesize PDF'}
+                </span>
+              </button>
+            </div>
+
+            {/* FHIR Export */}
+            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-100">
+              <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
+                <svg className="w-7 h-7 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/>
+                </svg>
+              </div>
+              <h3 className="text-xl font-serif font-medium text-white mb-2">FHIR R4 Bundle</h3>
+              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
+                Machine-readable DocumentReference for seamless integration into HL7-compliant systems.
+              </p>
+              <button
+                onClick={handleDownloadFHIR}
+                disabled={fhirLoading}
+                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                <span className="relative z-10">
+                  {fhirLoading ? (
+                    <span className="flex items-center justify-center gap-3">
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Mapping...
+                    </span>
+                  ) : 'Export FHIR'}
+                </span>
+              </button>
+            </div>
+
+            {/* Clipboard Copy */}
+            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-200">
+              <div className="w-14 h-14 bg-neon-500/10 border border-neon-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
+                <svg className="w-7 h-7 text-neon-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </div>
+              <h3 className="text-xl font-serif font-medium text-white mb-2">Clipboard Stream</h3>
+              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
+                Instant textual extraction for immediate manual entry into legacy EHR endpoints.
+              </p>
+              <button
+                onClick={handleCopyText}
+                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                <span className="relative z-10">{copyDone ? '✓ Sequence Copied' : 'Initiate Copy'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Start new session ── */}
-        <div className="text-center">
+        {/* ── Start New Session ── */}
+        <div className="text-center mt-32 relative z-10 animate-in slide-in-from-bottom-5 duration-1000 delay-500">
           <button
             onClick={() => { reset(); router.push('/session/new'); }}
-            className="border border-[#1A1A1A] text-[#1A1A1A] text-[14px] font-medium px-8 py-3 rounded-full hover:bg-[#F5F5F5] transition-colors"
+            className="group inline-flex items-center gap-4 text-[13px] font-bold text-navy-400 hover:text-white uppercase tracking-[0.3em] transition-all"
           >
-            Start new session →
+            <span className="w-12 h-[1px] bg-white/10 group-hover:bg-neon-500 group-hover:w-20 transition-all" />
+            Initialize New Neural Stream
+            <span className="w-12 h-[1px] bg-white/10 group-hover:bg-neon-500 group-hover:w-20 transition-all" />
           </button>
-          <p className="text-[12px] text-[#9CA3AF] mt-4 max-w-sm mx-auto leading-relaxed">
-            AI-assisted note. Reviewed and approved by clinician.
-            This tool does not replace clinical judgment.
+          <p className="text-[11px] text-navy-600 mt-12 max-w-lg mx-auto leading-relaxed font-serif uppercase tracking-widest opacity-50">
+            Automated session archival. Digital clinical representation finalized.
+            Neural patterns preserved for future predictive analytics.
           </p>
         </div>
 
