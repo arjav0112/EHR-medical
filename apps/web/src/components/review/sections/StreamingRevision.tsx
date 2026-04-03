@@ -9,7 +9,6 @@ interface StreamedResult {
 }
 
 interface StreamingRevisionProps {
-  // POST body to send
   requestBody: {
     section: string;
     currentDraft: string;
@@ -117,7 +116,7 @@ export function StreamingRevision({
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Unknown error';
         if (msg === 'AbortError' || msg.includes('aborted')) return;
-        setError('Revision failed — try again');
+        setError('Revision failed — verify connection architecture');
       }
     })();
 
@@ -126,8 +125,7 @@ export function StreamingRevision({
       abort.abort();
       readerRef.current?.cancel().catch(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]);
+  }, [isActive, requestBody, onComplete]);
 
   const handleStop = () => {
     abortRef.current?.abort();
@@ -137,9 +135,9 @@ export function StreamingRevision({
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 text-[13px] text-[#EF4444] px-1">
-        <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+      <div className="flex items-center gap-3 glass-card bg-red-900/20 border-red-500/30 p-4 text-[13px] font-bold text-red-400 uppercase tracking-widest animate-in shake duration-500">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         {error}
       </div>
@@ -149,23 +147,25 @@ export function StreamingRevision({
   if (!isActive && !tokens) return null;
 
   return (
-    <div className="space-y-2">
-      {/* Streamed content */}
-      <div className="bg-[#FAFAFA] border border-[#E0DDD6] rounded-xl p-4 text-[14px] text-[#1A1A1A] leading-[1.7] min-h-[80px]">
-        <span>{tokens}</span>
-        {isActive && !done && (
-          <span className="inline-block w-[9px] h-[14px] bg-[#6c63ff] ml-0.5 animate-pulse align-text-bottom" />
-        )}
+    <div className="space-y-4 animate-in fade-in duration-700">
+      <div className="glass-card bg-navy-900/50 border-white/10 p-6 shadow-inner relative group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-neon-500/50 rounded-full" />
+        <p className="text-[15px] text-white leading-relaxed font-serif whitespace-pre-wrap">
+          {tokens}
+          {isActive && !done && (
+            <span className="inline-block w-2.5 h-[1.2em] bg-neon-500 ml-1 animate-pulse shadow-[0_0_10px_rgba(190,242,100,0.8)] align-middle" />
+          )}
+        </p>
       </div>
 
-      {/* Stop button while streaming */}
       {isActive && !done && (
-        <div className="flex justify-end">
+        <div className="flex justify-end pr-2">
           <button
             onClick={handleStop}
-            className="text-[13px] font-medium text-[#EF4444] border border-[#EF4444] px-4 py-1.5 rounded-full hover:bg-red-50 transition-colors"
+            className="group flex items-center gap-3 text-[10px] font-bold text-red-400 border border-red-500/30 px-5 py-2 rounded-xl hover:bg-red-500 hover:text-white transition-all uppercase tracking-[0.2em]"
           >
-            Stop
+            <div className="w-3 h-3 bg-red-400 group-hover:bg-white" />
+            Interrupt Protocol
           </button>
         </div>
       )}

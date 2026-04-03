@@ -71,11 +71,11 @@ export function SOAPSection({
   const invalidateDownstream = useSessionStore((s) => s.invalidateDownstreamSections);
   const sessionInput = useSessionStore((s) => s.input);
 
-  const isInvalidated = invalidatedSections.includes(section as Parameters<typeof clearInvalidated>[0]);
+  const isInvalidated = invalidatedSections.includes(section as any);
 
   // Upstream for dependency warning
   const upstreamForWarning = UPSTREAM[section].find(
-    (u) => invalidatedSections.includes(u as Parameters<typeof clearInvalidated>[0])
+    (u) => invalidatedSections.includes(u as any)
   );
 
   // Autogrow textarea in edit mode
@@ -84,7 +84,7 @@ export function SOAPSection({
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
-  }, [editBuffer]);
+  }, [editBuffer, uiState]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -99,15 +99,18 @@ export function SOAPSection({
   }, [onApprove]);
 
   const handleSaveEdit = useCallback(() => {
-    setCurrentContent(editBuffer);
+    const trimmed = editBuffer.trim();
+    if (!trimmed) return;
+    
+    setCurrentContent(trimmed);
     setCurrentSection((prev) => ({
       ...prev,
-      content: editBuffer,
+      content: trimmed,
       status: 'edited',
       provenanceTag: 'clinician_edited',
     }));
-    onEdit(editBuffer);
-    invalidateDownstream(section as Parameters<typeof invalidateDownstream>[0]);
+    onEdit(trimmed);
+    invalidateDownstream(section as any);
     setUiState('draft');
   }, [editBuffer, onEdit, invalidateDownstream, section]);
 
@@ -142,14 +145,17 @@ export function SOAPSection({
     setCurrentSection((prev) => ({
       ...prev,
       content: newContent,
-      status: 'approved',
-      provenanceTag: 'approved',
+      status: 'revised',
+      provenanceTag: 'ai_revised',
     }));
     onRevisionComplete?.(newContent);
-    onApprove();
-    setUiState('approved');
-    clearInvalidated(section as Parameters<typeof clearInvalidated>[0]);
-  }, [streamedContent, currentContent, onApprove, onRevisionComplete, clearInvalidated, section]);
+    // Drop back to draft so the user can refine again — do NOT lock to 'approved'
+    setFeedback('');
+    setStreamDone(false);
+    setStreamedContent('');
+    clearInvalidated(section as any);
+    setUiState('draft');
+  }, [streamedContent, currentContent, onRevisionComplete, clearInvalidated, section]);
 
   const handleReviseAgain = useCallback(() => {
     setStreamDone(false);
@@ -161,21 +167,34 @@ export function SOAPSection({
   const canApproveDirectly = !isLowConfidence || revisionRounds > 0;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // SHARED HEADER
+  // ─────────────────────────────────────────────────────────────────────────
+  const SectionHeader = ({ customStatus }: { customStatus?: React.ReactNode }) => (
+    <div className="flex items-end justify-between border-b border-white/5 pb-6 mb-8 mt-2">
+      <div className="flex-1">
+        <div className="flex items-center gap-4 mb-2">
+           <h2 className="text-3xl font-serif font-medium text-white tracking-tight">
+            {SECTION_LABELS[section]}
+          </h2>
+          <span className="w-1.5 h-1.5 rounded-full bg-navy-700 mx-1" />
+          <div className="flex-shrink-0">
+            {customStatus || <ProvenanceTag soapSection={currentSection} />}
+          </div>
+        </div>
+        <div className="max-w-xs">
+          <ConfidenceBar value={currentSection.confidence} />
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
   // STATE A — Draft
   // ─────────────────────────────────────────────────────────────────────────
   if (uiState === 'draft') {
     return (
-      <div className="space-y-4">
-        {/* Section header */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-[17px] font-bold text-[#1A1A1A]">
-              {SECTION_LABELS[section]}
-            </h2>
-            <ProvenanceTag soapSection={currentSection} />
-          </div>
-          <ConfidenceBar value={currentSection.confidence} />
-        </div>
+      <div className="space-y-8 animate-in fade-in duration-1000">
+        <SectionHeader />
 
         {/* Dependency warning */}
         {isInvalidated && upstreamForWarning && (
@@ -183,81 +202,94 @@ export function SOAPSection({
             sectionName={section}
             upstreamSection={upstreamForWarning}
             onRegenerate={handleStartRevision}
-            onKeep={() => clearInvalidated(section as Parameters<typeof clearInvalidated>[0])}
+            onKeep={() => clearInvalidated(section as any)}
           />
         )}
 
         {/* Content card */}
-        <div className="bg-white border border-[#E0DDD6] rounded-xl overflow-hidden">
+        <div className="glass-card bg-white/[0.02] border-white/10 overflow-hidden relative group">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+          
           {/* Low confidence banner */}
           {isLowConfidence && (
-            <div className="bg-[#FFFBEB] border-b border-[#FDE68A] px-4 py-2.5 flex items-center gap-2">
-              <svg className="w-4 h-4 text-[#F59E0B] flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center gap-3">
+              <svg className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
               </svg>
-              <span className="text-[12px] font-semibold text-[#92400E]">
-                Low confidence — mandatory review before approval
+              <span className="text-[11px] font-bold text-amber-500 uppercase tracking-widest">
+                Verification Required: Confidence Index Below Threshold
               </span>
             </div>
           )}
 
           {/* Content */}
-          <div className="px-5 py-4">
-            <p className="text-[15px] text-[#1A1A1A] leading-[1.7] whitespace-pre-wrap">
+          <div className="p-8">
+            <p className="text-[17px] text-navy-50 leading-relaxed font-serif whitespace-pre-wrap">
               {currentContent}
             </p>
           </div>
 
           {/* Source citations (collapsible) */}
           {currentSection.sourceCitations.length > 0 && (
-            <div className="border-t border-[#F0EDE8] px-5 py-2.5">
+            <div className="border-t border-white/5 px-8 py-5 group-hover:bg-white/[0.01] transition-colors">
               <button
                 onClick={() => setCitationsOpen((p) => !p)}
-                className="text-[12px] text-[#6B7280] hover:text-[#4A4A4A] transition-colors"
+                className="flex items-center gap-3 text-[10px] font-bold text-navy-500 hover:text-white uppercase tracking-widest transition-all"
               >
+                <div className="w-4 h-[1px] bg-navy-700 transition-all group-hover:w-6" />
                 {citationsOpen
-                  ? '▲ Hide citations'
-                  : `▼ Show citations (${currentSection.sourceCitations.length})`}
+                  ? 'Collapse Citations'
+                  : `Reveal Citations (${currentSection.sourceCitations.length})`}
               </button>
-              {citationsOpen && (
-                <ul className="mt-2 space-y-1">
+              
+              <div className={`overflow-hidden transition-all duration-500 ${citationsOpen ? 'max-h-96 opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
+                <ul className="space-y-3">
                   {currentSection.sourceCitations.map((c, i) => (
-                    <li key={i} className="text-[12px] text-[#9CA3AF] font-mono">
-                      {c}
+                    <li key={i} className="text-[12px] text-cyan-500/60 font-mono bg-navy-950/40 p-3 rounded-lg border border-white/5 flex gap-3">
+                       <span className="text-navy-700 text-[10px] mt-0.5">SOURCE_{i+1}</span>
+                       {c}
                     </li>
                   ))}
                 </ul>
-              )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Action row */}
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-5 pt-4">
           <button
             onClick={() => {
               setEditBuffer(currentContent);
               setUiState('editing');
             }}
-            className="text-[13px] font-medium text-[#6B7280] border border-[#E0DDD6] px-4 py-2 rounded-full hover:bg-[#F5F5F5] transition-colors"
+            className="text-[11px] font-bold text-navy-400 uppercase tracking-widest border border-white/10 px-8 py-3 rounded-xl hover:bg-white/5 hover:text-white transition-all"
           >
-            Edit directly
+            Manual Override
           </button>
+          
           <button
             onClick={() => setUiState('revising')}
-            className="text-[13px] font-semibold bg-[#6c63ff] text-white px-4 py-2 rounded-full hover:bg-[#5a52d5] transition-colors"
+            className="text-[11px] font-bold text-purple-400 uppercase tracking-widest border border-purple-500/30 px-8 py-3 rounded-xl hover:bg-purple-500/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all flex items-center gap-2"
           >
-            Revise with feedback
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Refine Block
           </button>
+          
           <button
             onClick={handleApprove}
             disabled={!canApproveDirectly}
-            className="text-[13px] font-semibold px-4 py-2 rounded-full transition-colors
-              disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF] disabled:cursor-not-allowed
-              enabled:bg-[#10B981] enabled:text-white enabled:hover:bg-[#059669]"
-            title={!canApproveDirectly ? 'Revise first — confidence is too low' : ''}
+            className={`group relative px-10 py-3 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-500 overflow-hidden shadow-2xl ${
+              canApproveDirectly
+                ? 'bg-neon-500 text-navy-950 shadow-[0_0_30px_rgba(190,242,100,0.2)]'
+                : 'bg-white/5 text-navy-600 border border-white/5 cursor-not-allowed'
+            }`}
           >
-            Approve
+            {canApproveDirectly && <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />}
+            <span className="relative z-10 flex items-center gap-2">
+              Commit Block
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
           </button>
         </div>
       </div>
@@ -269,22 +301,20 @@ export function SOAPSection({
   // ─────────────────────────────────────────────────────────────────────────
   if (uiState === 'revising') {
     return (
-      <div className="space-y-4">
-        {/* Header */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-[17px] font-bold text-[#1A1A1A]">
-              {SECTION_LABELS[section]}
-            </h2>
-            <ProvenanceTag soapSection={currentSection} />
-          </div>
-          <ConfidenceBar value={currentSection.confidence} />
-        </div>
+      <div className="space-y-8 animate-in fade-in duration-1000">
+        <SectionHeader 
+          customStatus={
+            <div className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 px-3 py-1 rounded-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Revision Protocol</span>
+            </div>
+          }
+        />
 
         {/* Original draft dimmed */}
-        <div className="opacity-50 pointer-events-none">
-          <div className="bg-white border border-[#E0DDD6] rounded-xl px-5 py-4">
-            <p className="text-[13px] text-[#4A4A4A] leading-[1.7] whitespace-pre-wrap line-clamp-4">
+        <div className="opacity-30 blur-[1px] pointer-events-none scale-[0.98] transition-all">
+          <div className="glass-card bg-white/[0.02] border-white/10 p-8">
+            <p className="text-[15px] text-white leading-relaxed font-serif whitespace-pre-wrap line-clamp-3">
               {currentContent}
             </p>
           </div>
@@ -296,7 +326,7 @@ export function SOAPSection({
             sectionName={section}
             upstreamSection={upstreamForWarning}
             onRegenerate={() => {}}
-            onKeep={() => clearInvalidated(section as Parameters<typeof clearInvalidated>[0])}
+            onKeep={() => clearInvalidated(section as any)}
           />
         )}
 
@@ -335,30 +365,32 @@ export function SOAPSection({
 
         {/* Post-stream actions */}
         {streamDone && !isStreaming && (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-5 pt-4">
             <button
               onClick={handleReviseAgain}
-              className="text-[13px] font-medium text-[#6B7280] border border-[#E0DDD6] px-4 py-2 rounded-full hover:bg-[#F5F5F5] transition-colors"
+               className="text-[11px] font-bold text-navy-400 uppercase tracking-widest border border-white/10 px-8 py-3 rounded-xl hover:bg-white/5 hover:text-white transition-all"
             >
-              Revise again
+              Discard & Re-input
             </button>
             <button
               onClick={handleApproveStreamedVersion}
-              className="text-[13px] font-semibold bg-[#10B981] text-white px-4 py-2 rounded-full hover:bg-[#059669] transition-colors"
+              className="group relative px-10 py-3 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-neon-500 text-navy-950 shadow-[0_0_30px_rgba(190,242,100,0.2)] overflow-hidden"
             >
-              Approve this version
+               <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+               <span className="relative z-10">Commit Synchronized Version</span>
             </button>
           </div>
         )}
 
         {/* Cancel back to draft */}
         {!isStreaming && !streamDone && (
-          <div>
+          <div className="pt-2">
             <button
               onClick={() => setUiState('draft')}
-              className="text-[12px] text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+              className="text-[10px] font-bold text-navy-600 hover:text-navy-400 uppercase tracking-[0.2em] transition-all flex items-center gap-2 group"
             >
-              ← Cancel
+              <span className="w-6 h-[1px] bg-navy-800 group-hover:w-10 group-hover:bg-navy-600 transition-all" />
+              Abandon Revision protocol
             </button>
           </div>
         )}
@@ -371,37 +403,47 @@ export function SOAPSection({
   // ─────────────────────────────────────────────────────────────────────────
   if (uiState === 'editing') {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-bold text-[#1A1A1A]">{SECTION_LABELS[section]}</h2>
-          <span className="text-[11px] font-medium text-[#3B82F6] bg-blue-50 px-2.5 py-0.5 rounded-full">
-            Editing
-          </span>
-        </div>
+      <div className="space-y-8 animate-in zoom-in-95 duration-500">
+        <SectionHeader 
+          customStatus={
+            <div className="flex items-center gap-2 bg-cyan-500/20 border border-cyan-500/30 px-3 py-1 rounded-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Manual Override Active</span>
+            </div>
+          }
+        />
 
-        <div className="border border-[#6c63ff] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#6c63ff]/20 transition-shadow">
+        <div className="glass-card bg-navy-900 border-neon-500/50 shadow-[0_0_50px_rgba(190,242,100,0.05)] overflow-hidden transition-all duration-700">
           <textarea
             ref={textareaRef}
             value={editBuffer}
             onChange={(e) => setEditBuffer(e.target.value)}
-            className="w-full resize-none px-5 py-4 text-[15px] text-[#1A1A1A] leading-[1.7] focus:outline-none bg-white min-h-[160px]"
+            className="w-full resize-none px-8 py-8 text-[17px] text-white leading-relaxed font-serif bg-transparent focus:outline-none min-h-[300px] scrollbar-hide"
             autoFocus
           />
+          <div className="bg-navy-950/80 px-8 py-3 border-t border-white/5 flex items-center justify-between">
+            <span className="text-[9px] font-bold text-navy-600 uppercase tracking-widest font-sans">Human verification required for commitment</span>
+            <span className="text-[10px] font-mono text-neon-500/50">{editBuffer.length} characters cached</span>
+          </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-5 pt-4">
           <button
             onClick={() => setUiState('draft')}
-            className="text-[13px] font-medium text-[#6B7280] border border-[#E0DDD6] px-4 py-2 rounded-full hover:bg-[#F5F5F5] transition-colors"
+            className="text-[11px] font-bold text-navy-400 uppercase tracking-widest border border-white/10 px-8 py-3 rounded-xl hover:bg-white/5 hover:text-white transition-all"
           >
-            Cancel
+            Cancel Changes
           </button>
           <button
             onClick={handleSaveEdit}
             disabled={!editBuffer.trim()}
-            className="text-[13px] font-semibold bg-[#10B981] text-white px-4 py-2 rounded-full hover:bg-[#059669] transition-colors disabled:opacity-40"
+            className="group relative px-10 py-3 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-neon-500 text-navy-950 shadow-[0_0_30px_rgba(190,242,100,0.2)] overflow-hidden disabled:opacity-20"
           >
-            Save edits
+            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <span className="relative z-10 flex items-center gap-2">
+              Capture & Commit
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
           </button>
         </div>
       </div>
@@ -412,57 +454,75 @@ export function SOAPSection({
   // STATE D — Approved
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold text-[#1A1A1A]">{SECTION_LABELS[section]}</h2>
-        <div className="flex items-center gap-2">
-          <ProvenanceTag soapSection={currentSection} />
-          <span className="text-[11px] font-bold text-[#059669] bg-[#D1FAE5] px-2.5 py-0.5 rounded-full">
-            ✓ Approved
-          </span>
-        </div>
-      </div>
+    <div className="space-y-8 animate-in slide-in-from-top-4 duration-1000">
+      <SectionHeader 
+        customStatus={
+          <div className="flex items-center gap-2 bg-neon-500/10 border border-neon-500/30 px-3 py-1 rounded-lg shadow-[0_0_15px_rgba(190,242,100,0.1)]">
+             <svg className="w-3.5 h-3.5 text-neon-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+             <span className="text-[10px] font-bold text-neon-400 uppercase tracking-widest">Protocol Finalized</span>
+          </div>
+        }
+      />
 
-      {/* Green-bordered card */}
-      <div className="bg-white border border-[#E0DDD6] border-l-4 border-l-[#10B981] rounded-r-xl overflow-hidden">
-        <div className="px-5 py-4">
-          <p className="text-[15px] text-[#1A1A1A] leading-[1.7] whitespace-pre-wrap">
+      {/* Final locked card */}
+      <div className="glass-card bg-neon-500/[0.02] border-neon-500/20 border-l-4 border-l-neon-500 overflow-hidden shadow-[0_0_40px_rgba(190,242,100,0.05)]">
+        <div className="p-8">
+          <p className="text-[17px] text-white/90 leading-relaxed font-serif whitespace-pre-wrap">
             {currentContent}
           </p>
         </div>
 
         {/* Citations */}
         {currentSection.sourceCitations.length > 0 && (
-          <div className="border-t border-[#F0EDE8] px-5 py-2">
+          <div className="border-t border-neon-500/10 px-8 py-5 group">
             <button
               onClick={() => setCitationsOpen((p) => !p)}
-              className="text-[12px] text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+              className="flex items-center gap-3 text-[10px] font-bold text-navy-500 hover:text-white uppercase tracking-widest transition-all"
             >
-              {citationsOpen ? '▲ Hide' : `▼ Show citations (${currentSection.sourceCitations.length})`}
+              <div className="w-4 h-[1px] bg-navy-800 transition-all group-hover:w-6" />
+              {citationsOpen ? 'Hide Internal Metadata' : `Show Section citations (${currentSection.sourceCitations.length})`}
             </button>
-            {citationsOpen && (
-              <ul className="mt-1.5 space-y-1">
+            <div className={`overflow-hidden transition-all duration-500 ${citationsOpen ? 'max-h-96 opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
+               <ul className="space-y-2">
                 {currentSection.sourceCitations.map((c, i) => (
-                  <li key={i} className="text-[12px] text-[#9CA3AF] font-mono">{c}</li>
+                  <li key={i} className="text-[12px] text-navy-400 font-mono flex items-center gap-4">
+                    <span className="w-1.5 h-1.5 rounded-full bg-navy-800 flex-shrink-0" />
+                    {c}
+                  </li>
                 ))}
               </ul>
-            )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Post-approval edit link */}
-      <div className="flex justify-end">
+      {/* Post-approval action row */}
+      <div className="flex items-center justify-end gap-5 pt-4">
+        {/* Manual override */}
         <button
           onClick={() => {
             setEditBuffer(currentContent);
             setUiState('editing');
-            // Editing after approval should warn downstream
-            invalidateDownstream(section as Parameters<typeof invalidateDownstream>[0]);
+            invalidateDownstream(section as any);
           }}
-          className="text-[12px] text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+          className="text-[11px] font-bold text-navy-400 uppercase tracking-widest border border-white/10 px-8 py-3 rounded-xl hover:bg-white/5 hover:text-white transition-all"
         >
-          Edit ↗
+          Manual Override
+        </button>
+
+        {/* Re-enter AI revision flow */}
+        <button
+          onClick={() => {
+            setFeedback('');
+            setStreamDone(false);
+            setStreamedContent('');
+            setIsStreaming(false);
+            setUiState('revising');
+          }}
+          className="text-[11px] font-bold text-purple-400 uppercase tracking-widest border border-purple-500/30 px-8 py-3 rounded-xl hover:bg-purple-500/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all flex items-center gap-2"
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Refine Block
         </button>
       </div>
     </div>

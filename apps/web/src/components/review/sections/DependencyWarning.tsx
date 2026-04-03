@@ -12,7 +12,7 @@ const SECTION_LABELS: Record<string, string> = {
   objective: 'Objective',
   assessment: 'Assessment',
   plan: 'Plan',
-  risk_flags: 'Risk Flags',
+  risk_flags: 'Risk Assessment',
 };
 
 export function DependencyWarning({
@@ -25,37 +25,34 @@ export function DependencyWarning({
   const uLabel = SECTION_LABELS[upstreamSection] ?? upstreamSection;
 
   return (
-    <div className="border-l-4 border-[#F59E0B] bg-[#FFFBEB] rounded-r-xl px-4 py-3 flex items-start gap-3">
-      {/* Icon */}
-      <svg
-        className="w-4 h-4 text-[#F59E0B] flex-shrink-0 mt-0.5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fillRule="evenodd"
-          d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-          clipRule="evenodd"
-        />
-      </svg>
-      {/* Content */}
+    <div className="glass-card border-l-4 border-amber-500 bg-amber-500/5 px-6 py-6 flex items-start gap-5 animate-in slide-in-from-left-4 duration-500">
+      <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-[#92400E] leading-snug">
-          <strong>{sLabel}</strong> was generated before{' '}
-          <strong>{uLabel}</strong> was updated. Regenerating is recommended.
+        <h4 className="text-amber-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Structural Dependency Alert</h4>
+        <p className="text-[14px] text-navy-200 leading-relaxed font-serif">
+          The <span className="text-white font-bold">{sLabel}</span> block was initialized prior to the update in <span className="text-white font-bold">{uLabel}</span>. Synchronizing neural context is highly recommended.
         </p>
-        <div className="flex gap-2 mt-2">
+        
+        <div className="flex gap-4 mt-6">
           <button
             onClick={onRegenerate}
-            className="text-[12px] font-semibold bg-[#F59E0B] text-white px-3 py-1 rounded-full hover:bg-[#D97706] transition-colors"
+            className="flex items-center gap-2 text-[11px] font-bold bg-amber-500 text-navy-950 px-5 py-2.5 rounded-xl hover:bg-amber-400 transition-all uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.2)]"
           >
-            Regenerate {sLabel}
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>
+            </svg>
+            Initialize Synchronization
           </button>
           <button
             onClick={onKeep}
-            className="text-[12px] font-semibold text-[#92400E] px-3 py-1 rounded-full border border-[#F59E0B] hover:bg-[#FEF3C7] transition-colors"
+            className="text-[11px] font-bold text-amber-500 border border-amber-500/30 px-5 py-2.5 rounded-xl hover:bg-amber-500/10 transition-all uppercase tracking-widest"
           >
-            Keep current
+            Retain Version
           </button>
         </div>
       </div>
