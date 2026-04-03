@@ -12,17 +12,58 @@ export interface RevisionInput {
     gender: string;
     knownDiagnoses: string[];
     sessionType: string;
+    currentMedications: string[];
   };
 }
 
-const SYSTEM_PROMPT = `You are a clinical documentation specialist revising a SOAP note section based on clinician feedback.
+const SECTION_CLINICAL_STANDARDS: Record<string, string> = {
+  subjective: `SUBJECTIVE SECTION STANDARDS:
+  • Contains ONLY patient-reported information (never clinician observations).
+  • Must include: Chief Complaint (verbatim quote), HPI with 8 dimensions (Quality, Severity, Duration, Timing, Location, Context, Modifying Factors, Associated Symptoms).
+  • Include Review of Systems positives and relevant negatives (sleep, appetite, energy, concentration).
+  • Patient quotes preserved in speech marks.
+  • Medication adherence and side effects as patient-reported.`,
 
-Rules:
-1. Respect the feedback precisely — do not revert changes the clinician has implied they want.
-2. Maintain clinical language and the same general structure as the original.
-3. Keep sourceCitations accurate — update any citation references if content changes.
-4. Stream your response as the revised section content only (plain clinical text, no JSON wrapper).
-5. Do not add sections not present in the original. Do not remove content still supported by the transcript.`;
+  objective: `OBJECTIVE SECTION STANDARDS:
+  • Contains ONLY clinician-observed data — never patient self-report.
+  • Core structure is the Mental Status Examination (MSE):
+    Appearance → Behavior/Psychomotor → Speech → Mood (quoted) → Affect (observed range, quality, congruence)
+    → Thought Process → Thought Content (SI/HI/delusions) → Perceptions (hallucinations)
+    → Cognition (orientation, memory, attention) → Insight → Judgment
+  • All MSE findings documented even when within normal limits (e.g., "Thought process: linear and goal-directed").
+  • Vital signs included if documented.`,
+
+  assessment: `ASSESSMENT SECTION STANDARDS:
+  • For follow-up sessions: opens with an Interval History statement (improved/stable/worsened).
+  • Primary diagnosis stated with full DSM-5 specificity and applicable specifier.
+  • Differential diagnoses listed with brief clinical rationale for each.
+  • MSE findings explicitly tied to the diagnostic formulation.
+  • Chronic conditions each labeled: IMPROVED / STABLE / WORSENED.
+  • Overall clinical risk level stated (low/moderate/high/critical).`,
+
+  plan: `PLAN SECTION STANDARDS:
+  • Pharmacotherapy: drug + dose + frequency + change type + rationale + monitoring required.
+  • Therapeutic interventions: specific modality + frequency + target symptom.
+  • Patient education: topics actually discussed in session.
+  • Safety actions: safety plan status, C-SSRS score if applicable.
+  • Referrals: specialist + indication + urgency.
+  • Labs/diagnostics: test + rationale.
+  • Follow-up: specific timeline with contingency trigger.`,
+};
+
+const SYSTEM_PROMPT = `You are a senior clinical documentation specialist revising a SOAP note section based on clinician feedback. Your revisions must maintain the highest standard of psychiatric clinical documentation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REVISION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. CLINICIAN FEEDBACK IS AUTHORITATIVE — Apply the feedback precisely and completely. Do not revert, soften, or selectively apply changes the clinician has specified.
+2. PRESERVE CLINICAL STRUCTURE — The revised section must still conform to SOAP documentation standards for its specific section type. Do not degrade the clinical quality or structure.
+3. MAINTAIN EVIDENCE BASE — Only include clinical claims that are supported by the transcript. Do not add information not present in the session. If feedback asks for content not in the transcript, note it as "not documented in session" rather than fabricating it.
+4. CITATION INTEGRITY — Update transcript citations (format: "transcript:lines:X-Y") if content shifts to reference different transcript portions. Remove citations that no longer apply. Add citations for newly referenced content.
+5. CLINICAL LANGUAGE — Maintain formal psychiatric/clinical terminology throughout. Replace lay terms with clinical equivalents (e.g., "sad" → "dysphoric mood", "can't focus" → "impaired concentration and attention").
+6. CROSS-SECTION CONSISTENCY — Your revision must not contradict content in the approved sections. If the approved assessment states "MDD, severe", the revised plan should reflect appropriate severity-matched interventions.
+7. SUBJECTIVE/OBJECTIVE BOUNDARIES — Enforce strictly: patient self-report belongs only in Subjective; MSE clinician observations belong only in Objective. Never blur this boundary regardless of feedback phrasing.
+8. Output the revised section as plain clinical prose only — no JSON wrapper, no section headers, no markdown. Pure clinical note text.`;
 
 /**
  * Standalone streaming revision agent — NOT part of the main graph.
@@ -38,25 +79,43 @@ export async function* reviseSection(input: RevisionInput): AsyncGenerator<
     streaming: true,
   });
 
-  const userMessage = `Section to revise: ${input.section}
+  const sectionStandards = SECTION_CLINICAL_STANDARDS[input.section] ?? '';
 
-Current draft:
+  const userMessage = `SECTION BEING REVISED: ${input.section.toUpperCase()}
+
+${sectionStandards}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CURRENT DRAFT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${input.currentDraft}
 
-Clinician feedback:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLINICIAN FEEDBACK (apply this precisely):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${input.feedback}
 
-Transcript (for re-citation):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TRANSCRIPT (for re-citation and fact-checking):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${input.transcript.slice(0, 4000)}
 
-Approved sections (for context only, do not modify):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+APPROVED SECTIONS (context only — do not modify):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${Object.entries(input.approvedSections)
-  .map(([k, v]) => `${k}: ${v.slice(0, 300)}`)
+  .map(([k, v]) => `[${k.toUpperCase()}]: ${v.slice(0, 400)}`)
   .join('\n---\n')}
 
-Patient: Age ${input.patientContext.age}, ${input.patientContext.gender}, 
-Session type: ${input.patientContext.sessionType},
-Known diagnoses: ${input.patientContext.knownDiagnoses.join(', ') || 'None'}`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATIENT CONTEXT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Age: ${input.patientContext.age} | Gender: ${input.patientContext.gender}
+Session type: ${input.patientContext.sessionType}
+Known diagnoses: ${input.patientContext.knownDiagnoses.join(', ') || 'None'}
+Current medications: ${input.patientContext.currentMedications?.join(', ') || 'None'}
+
+Produce the revised ${input.section} section now — plain clinical prose only:`;
 
   let fullContent = '';
 
@@ -73,15 +132,14 @@ Known diagnoses: ${input.patientContext.knownDiagnoses.join(', ') || 'None'}`;
     }
   }
 
-  // Yield final metadata after streaming completes
   yield {
     done: true,
     section: {
       content: fullContent,
-      confidence: 0.8, // Post-revision confidence — clinician confirmed intent
-      sourceCitations: [],  // Frontend should re-parse citations from content
+      confidence: 0.88, // Post-revision confidence elevated — clinician has confirmed intent
+      sourceCitations: [],  // Frontend should re-parse citations from revised content
       status: 'revised',
-      revisionRounds: 1,   // Caller should increment from prior rounds
+      revisionRounds: 1,
       provenanceTag: 'ai_revised',
     },
   };

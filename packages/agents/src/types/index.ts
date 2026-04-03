@@ -51,9 +51,11 @@ export interface RiskFlag {
   type:
     | 'suicidal_ideation'
     | 'self_harm'
+    | 'homicidal_ideation'
     | 'abuse_disclosure'
     | 'medication_noncompliance'
     | 'psychosis_indicator'
+    | 'substance_abuse'
     | 'other';
   severity: 'low' | 'moderate' | 'high' | 'critical';
   evidence: string;               // verbatim transcript excerpt
@@ -66,12 +68,14 @@ export interface RiskFlag {
 // ─── Diagnosis ────────────────────────────────────────────────────────────────
 
 export interface DiagnosisSuggestion {
-  dsm5Code: string;               // e.g. "F32.1"
+  dsm5Code: string;               // e.g. "F32.2"
   label: string;
   confidence: number;
-  supportingCriteria: string[];
-  conflictingSignals: string[];
+  supportingCriteria: string[];   // specific DSM-5 criteria observed
+  conflictingSignals: string[];   // evidence arguing against this diagnosis
   priorDiagnosisMatch: boolean;
+  intervalStatus: 'improved' | 'stable' | 'worsened' | 'new'; // clinical course since last encounter
+  specifier?: string;             // e.g. "severe, without psychotic features"
 }
 
 // ─── Treatment Plan ───────────────────────────────────────────────────────────

@@ -145,14 +145,17 @@ export function SOAPSection({
     setCurrentSection((prev) => ({
       ...prev,
       content: newContent,
-      status: 'approved',
-      provenanceTag: 'approved',
+      status: 'revised',
+      provenanceTag: 'ai_revised',
     }));
     onRevisionComplete?.(newContent);
-    onApprove();
-    setUiState('approved');
+    // Drop back to draft so the user can refine again — do NOT lock to 'approved'
+    setFeedback('');
+    setStreamDone(false);
+    setStreamedContent('');
     clearInvalidated(section as any);
-  }, [streamedContent, currentContent, onApprove, onRevisionComplete, clearInvalidated, section]);
+    setUiState('draft');
+  }, [streamedContent, currentContent, onRevisionComplete, clearInvalidated, section]);
 
   const handleReviseAgain = useCallback(() => {
     setStreamDone(false);
@@ -493,18 +496,33 @@ export function SOAPSection({
         )}
       </div>
 
-      {/* Post-approval override link */}
-      <div className="flex justify-end pt-4">
+      {/* Post-approval action row */}
+      <div className="flex items-center justify-end gap-5 pt-4">
+        {/* Manual override */}
         <button
           onClick={() => {
             setEditBuffer(currentContent);
             setUiState('editing');
             invalidateDownstream(section as any);
           }}
-          className="text-white/20 hover:text-neon-500 text-[10px] font-bold uppercase tracking-[0.2em] transition-all flex items-center gap-3 group"
+          className="text-[11px] font-bold text-navy-400 uppercase tracking-widest border border-white/10 px-8 py-3 rounded-xl hover:bg-white/5 hover:text-white transition-all"
         >
-          Initialize Post-Commit Override
-          <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          Manual Override
+        </button>
+
+        {/* Re-enter AI revision flow */}
+        <button
+          onClick={() => {
+            setFeedback('');
+            setStreamDone(false);
+            setStreamedContent('');
+            setIsStreaming(false);
+            setUiState('revising');
+          }}
+          className="text-[11px] font-bold text-purple-400 uppercase tracking-widest border border-purple-500/30 px-8 py-3 rounded-xl hover:bg-purple-500/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all flex items-center gap-2"
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Refine Block
         </button>
       </div>
     </div>

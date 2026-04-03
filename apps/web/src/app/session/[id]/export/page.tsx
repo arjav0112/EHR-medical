@@ -6,8 +6,6 @@ import Nav from '@/components/layout/Nav';
 import { useSessionStore, selectAllApproved, type SectionKey } from '@/lib/store/sessionStore';
 import { generateFhirDocumentReference } from '@/lib/export/generateFhir';
 
-// ─── Labels & helpers ─────────────────────────────────────────────────────────
-
 const SECTION_LABELS: Record<SectionKey, string> = {
   risk_flags: 'Risk Protocol',
   subjective: 'Subjective',
@@ -35,7 +33,6 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const [pdfLoading, setPdfLoading] = useState(false);
   const [addendum, setAddendum] = useState('');
 
-  // Redirect if not all approved
   useEffect(() => {
     if (!allApproved) {
       router.replace(`/session/${id}/review`);
@@ -43,8 +40,6 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   }, [allApproved, id, router]);
 
   if (!allApproved || !reviewPackage) return null;
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleDownloadFHIR = async () => {
     if (!reviewPackage) return;
@@ -110,13 +105,13 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
       <div className="pt-32 pb-40 px-6 max-w-[1000px] mx-auto relative">
         {/* Background decorative elements */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-neon-500/5 rounded-full blur-[120px] pointer-events-none" />
-        
+
         {/* ── Success header ── */}
         <div className="text-center mb-20 relative z-10 animate-in fade-in slide-in-from-top-10 duration-1000">
           <div className="w-24 h-24 bg-neon-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_50px_rgba(190,242,100,0.3)] rotate-3">
-             <svg className="w-12 h-12 text-navy-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-               <polyline points="20 6 9 17 4 12"/>
-             </svg>
+            <svg className="w-12 h-12 text-navy-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </div>
           <h1 className="text-6xl font-serif font-medium text-white tracking-tight mb-4">Verification Complete</h1>
           <p className="text-xl text-navy-400 font-serif font-light max-w-xl mx-auto leading-relaxed">
@@ -125,10 +120,10 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-          
+
           {/* Left Column: Audit & Addendum */}
           <div className="lg:col-span-12 xl:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
-            
+
             {/* Audit Summary Card */}
             <div className="glass-card bg-white/[0.02] border-white/10 p-8 flex flex-col group transition-all duration-700 animate-in fade-in slide-in-from-left-10">
               <div className="flex items-center justify-between mb-8">
@@ -138,7 +133,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                   <span className="text-[10px] font-bold text-navy-500 uppercase tracking-widest font-mono">ID: {id.slice(0, 8)}</span>
                 </div>
               </div>
-              
+
               <div className="space-y-4 flex-1">
                 {sections.map((key) => {
                   const status = sectionStatuses[key];
@@ -158,7 +153,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                 <div className="mt-8 pt-6 border-t border-red-500/20">
                   <div className="flex items-start gap-4 text-red-400">
                     <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg>
                     <p className="text-[13px] font-bold uppercase tracking-wider leading-relaxed">
                       {confirmedFlags.length} Protocol Violation{confirmedFlags.length > 1 ? 's' : ''} detected and permanently logged in neutral export bundle.
@@ -187,12 +182,12 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
 
           {/* Bottom Grid: Export Options */}
           <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            
+
             {/* PDF Export */}
             <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10">
               <div className="w-14 h-14 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
                 <svg className="w-7 h-7 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
                 </svg>
               </div>
               <h3 className="text-xl font-serif font-medium text-white mb-2">Protocol PDF</h3>
@@ -220,7 +215,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
             <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-100">
               <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
                 <svg className="w-7 h-7 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/>
+                  <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /><line x1="12" y1="2" x2="12" y2="22" />
                 </svg>
               </div>
               <h3 className="text-xl font-serif font-medium text-white mb-2">FHIR R4 Bundle</h3>
@@ -248,7 +243,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
             <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-200">
               <div className="w-14 h-14 bg-neon-500/10 border border-neon-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
                 <svg className="w-7 h-7 text-neon-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </div>
               <h3 className="text-xl font-serif font-medium text-white mb-2">Clipboard Stream</h3>
