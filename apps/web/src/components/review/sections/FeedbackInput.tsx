@@ -19,7 +19,6 @@ export function FeedbackInput({
 }: FeedbackInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Autogrow
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -35,56 +34,52 @@ export function FeedbackInput({
   };
 
   const remaining = MAX_CHARS - value.length;
+  const isMac = typeof window !== 'undefined' && window.navigator?.platform?.includes('Mac');
 
   return (
-    <div className="glass-card bg-navy-900/50 border-white/10 focus-within:border-neon-500/50 focus-within:shadow-[0_0_30px_rgba(190,242,100,0.05)] transition-all duration-500 group overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-      
+    <div className="bg-white border-2 border-purple-200 rounded-2xl overflow-hidden focus-within:border-purple-400 focus-within:shadow-[0_0_0_4px_rgba(168,85,247,0.08)] transition-all duration-300">
+      {/* Textarea */}
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, MAX_CHARS))}
         onKeyDown={handleKeyDown}
         disabled={isStreaming}
-        placeholder="Input revision parameters (e.g., 'more emphasis on fatigue', 'format as bullet points')..."
-        rows={2}
-        className="w-full resize-none px-6 pt-5 pb-3 text-[15px] font-serif text-white placeholder-navy-500 leading-relaxed focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-transparent overflow-hidden"
+        placeholder="Describe what to refine — e.g. 'add more detail on sleep symptoms', 'format plan as bullet points'..."
+        rows={3}
+        className="w-full resize-none px-6 pt-5 pb-3 text-[15px] text-gray-800 placeholder-gray-400 leading-relaxed focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-transparent"
       />
-      
-      <div className="flex items-center justify-between px-6 pb-4 pt-1">
-        {/* Shortcut hint */}
-        <div className="flex items-center gap-2 opacity-40 group-focus-within:opacity-100 transition-opacity">
-          <kbd className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[9px] font-bold text-navy-400 font-mono">
-             {typeof window !== 'undefined' && window.navigator?.platform?.includes('Mac') ? 'CMD' : 'CTRL'}
+
+      {/* Footer toolbar */}
+      <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-100">
+        <div className="flex items-center gap-1.5">
+          <kbd className="px-2 py-0.5 rounded-md border border-gray-200 bg-white text-[10px] font-bold text-gray-500 font-mono shadow-sm">
+            {isMac ? 'CMD' : 'CTRL'}
           </kbd>
-          <span className="text-[10px] text-navy-500 font-bold uppercase tracking-widest font-sans">
-            + ENTER TO INITIALIZE
-          </span>
+          <span className="text-[11px] text-gray-500 font-medium">+ Enter to run</span>
         </div>
 
-        <div className="flex items-center gap-6">
-          <span className={`text-[11px] font-mono font-bold tracking-widest ${remaining < 60 ? 'text-red-500' : 'text-navy-500'}`}>
-            {remaining} <span className="opacity-40">/ {MAX_CHARS}</span>
+        <div className="flex items-center gap-4">
+          <span className={`text-[12px] font-mono font-semibold ${remaining < 60 ? 'text-red-500' : 'text-gray-400'}`}>
+            {remaining}<span className="opacity-50 font-normal"> / {MAX_CHARS}</span>
           </span>
-          
+
           <button
             onClick={onSubmit}
             disabled={isStreaming || !value.trim()}
-            className="group/btn relative inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] bg-neon-500 text-navy-950 px-6 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(190,242,100,0.3)] transition-all disabled:opacity-20 disabled:cursor-not-allowed overflow-hidden font-sans"
+            className="inline-flex items-center gap-2 text-[12px] font-bold bg-purple-600 text-white px-5 py-2 rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-            
             {isStreaming ? (
               <>
-                <span className="w-3 h-3 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Processing...
               </>
             ) : (
               <>
-                <svg className="w-3.5 h-3.5 group-hover/btn:animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m13 2-2 2.5h3L12 7h3l-4 5h5l-4 7" />
                 </svg>
-                Initialize Revision
+                Run Refinement
               </>
             )}
           </button>

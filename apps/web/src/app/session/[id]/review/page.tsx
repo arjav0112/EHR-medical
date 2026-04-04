@@ -1,7 +1,42 @@
+import Link from 'next/link';
 import SectionNav from '@/components/review/SectionNav';
 import SectionContent from '@/components/review/SectionContent';
 
-// Server component — gets sessionId from URL, passes to client children
+function Navbar({ sessionId }: { sessionId: string }) {
+  return (
+    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+      <div className="w-full max-w-[900px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </span>
+          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
+        </Link>
+
+        {/* Center — breadcrumb */}
+        <div className="flex items-center gap-2 text-[12px]">
+          <span className="text-gray-400 font-medium">New Session</span>
+          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="font-semibold text-green-600">Clinical Review</span>
+        </div>
+
+        {/* Right — session ID */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session</span>
+          <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full truncate max-w-[160px]">
+            {sessionId}
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 export default async function ReviewPage({
   params,
 }: {
@@ -10,40 +45,14 @@ export default async function ReviewPage({
   const { id: sessionId } = await params;
 
   return (
-    <>
-      {/* Document header */}
-      <header className="bg-navy-950/50 backdrop-blur-2xl border-b border-white/5 px-12 py-8 relative z-20">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-bold text-neon-500 uppercase tracking-widest mb-2">
-              <span className="w-6 h-[1px] bg-neon-500/50" />
-              Clinical Intelligence / Session Review
-            </div>
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-serif font-medium text-white tracking-tight">
-                Synthesized <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-400 to-cyan-400">Clinical Data</span>
-              </h1>
-              <span className="bg-white/5 border border-white/10 text-navy-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-widest backdrop-blur-sm">
-                ID: {sessionId}
-              </span>
-            </div>
-          </div>
+    <div className="flex flex-col h-screen">
+      <Navbar sessionId={sessionId} />
 
-          <div className="flex items-center gap-6">
-            {/* Progress dots — rendered client-side in SectionNav header */}
-            <div id="review-progress-slot" />
-
-            {/* Export button — enabled when all approved */}
-            <div id="review-export-slot" />
-          </div>
-        </div>
-      </header>
-
-      {/* Two-panel layout */}
-      <div className="flex flex-1 overflow-hidden relative z-10">
+      {/* Two-panel layout — pushed down by navbar */}
+      <div className="flex flex-1 overflow-hidden pt-[78px] pr-4 pb-4">
         <SectionNav sessionId={sessionId} />
         <SectionContent sessionId={sessionId} />
       </div>
-    </>
+    </div>
   );
 }

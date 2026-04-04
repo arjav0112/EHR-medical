@@ -8,22 +8,20 @@ import { SectionSkeleton } from '@/components/ui/Skeleton';
 
 function LockedSection({ section }: { section: string }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-12 glass-card max-w-2xl mx-auto mt-12 border-dashed border-white/10 group">
-      <div className="w-20 h-20 bg-navy-900 border border-white/10 rounded-3xl flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:border-neon-500/50 transition-all duration-500 shadow-2xl relative">
-        <div className="absolute inset-0 bg-neon-500/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-12 bg-white border border-gray-100 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
+      <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-3xl flex items-center justify-center text-3xl mb-8">
         🔒
       </div>
-      <h3 className="text-2xl font-serif font-medium text-white mb-4 capitalize">
-        Access Denied: {section.replace('_', ' ')}
+      <h3 className="text-2xl font-bold text-gray-800 mb-4 capitalize">
+        {section.replace('_', ' ')} — Locked
       </h3>
-      <p className="text-[15px] text-navy-400 max-w-md leading-relaxed mx-auto">
-        This structural component is locked. Verification and approval of preceding clinical sections is required to initialize this node.
+      <p className="text-[15px] text-gray-500 max-w-md leading-relaxed">
+        Complete and approve the preceding sections to unlock this one.
       </p>
-      
-      <div className="mt-12 flex items-center gap-2 text-navy-600 text-[11px] font-bold uppercase tracking-widest">
-        <span className="w-12 h-[1px] bg-white/5" />
-        Prerequisite Protocol Active
-        <span className="w-12 h-[1px] bg-white/5" />
+      <div className="mt-10 flex items-center gap-2 text-gray-400 text-[11px] font-semibold uppercase tracking-widest">
+        <span className="w-8 h-[1px] bg-gray-200" />
+        Prerequisite Required
+        <span className="w-8 h-[1px] bg-gray-200" />
       </div>
     </div>
   );
@@ -73,7 +71,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // Loading skeleton during hydration or active processing
   if (!reviewPackage && (processingStatus !== 'idle' || hydrating)) {
     return (
-      <main className="flex-1 bg-navy-950/50 overflow-y-auto px-12 py-12 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
         <SectionSkeleton />
       </main>
     );
@@ -82,7 +80,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // No data even after hydration attempt
   if (!reviewPackage) {
     return (
-      <main className="flex-1 bg-navy-950/50 overflow-y-auto px-12 py-12 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 font-mono text-xl">!</div>
           <p className="text-[15px] font-medium text-navy-300 max-w-sm leading-relaxed">
@@ -99,7 +97,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // Locked gate
   if (status === 'locked') {
     return (
-      <main className="flex-1 bg-navy-950/50 overflow-y-auto px-12 py-12 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
         <LockedSection section={activeSection} />
       </main>
     );
@@ -109,7 +107,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="flex-1 bg-navy-950/50 overflow-y-auto px-12 py-12 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
         <RiskFlagsSection
           flags={flags}
           onFlagAction={(_flagId, _action) => {
@@ -129,7 +127,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
 
   if (!soapSection) {
     return (
-      <main className="flex-1 bg-navy-950/50 overflow-y-auto px-12 py-12 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
         <SectionSkeleton />
       </main>
     );
@@ -145,7 +143,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 bg-navy-950/40 overflow-y-auto px-12 py-12 relative z-10 scrollbar-hide">
+    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
       <SOAPSection
         key={soapKey}
         section={soapKey}
