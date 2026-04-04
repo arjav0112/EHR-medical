@@ -3,26 +3,17 @@
 import { useRouter } from 'next/navigation';
 import { useSessionStore, selectAllApproved, type SectionKey } from '@/lib/store/sessionStore';
 
-const SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: 'risk_flags', label: 'Risk Protocol' },
-  { key: 'subjective', label: 'Subjective' },
-  { key: 'objective', label: 'Objective' },
-  { key: 'assessment', label: 'Assessment' },
-  { key: 'plan', label: 'Plan' },
+const SECTIONS: { key: SectionKey; label: string; icon: string }[] = [
+  { key: 'risk_flags',  label: 'Risk Flags',   icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+  { key: 'subjective',  label: 'Subjective',   icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
+  { key: 'objective',   label: 'Objective',    icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  { key: 'assessment',  label: 'Assessment',   icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+  { key: 'plan',        label: 'Plan',         icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
 ];
 
-// What must be approved before each section unlocks
 const DEPENDENCIES: Partial<Record<SectionKey, string>> = {
-  assessment: 'Subjective + Objective Required',
-  plan: 'Assessment Required',
-};
-
-const STATUS_STYLE: Record<string, { border: string; dot: string; text: string; badge?: string; badgeText?: string }> = {
-  draft:    { border: 'border-l-navy-800', dot: 'bg-navy-700', text: 'text-navy-500' },
-  approved: { border: 'border-l-neon-500', dot: 'bg-neon-500 shadow-[0_0_10px_rgba(190,242,100,0.6)]', text: 'text-neon-400', badge: 'text-neon-400', badgeText: 'Finalized' },
-  edited:   { border: 'border-l-cyan-500', dot: 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]', text: 'text-cyan-400', badge: 'text-cyan-400', badgeText: 'Override' },
-  revised:  { border: 'border-l-purple-500', dot: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.6)]', text: 'text-purple-400', badge: 'text-purple-400', badgeText: 'Revised' },
-  locked:   { border: 'border-l-navy-900', dot: 'bg-navy-900', text: 'text-navy-700' },
+  assessment: 'Requires Subjective + Objective',
+  plan: 'Requires Assessment',
 };
 
 export default function SectionNav({ sessionId }: { sessionId: string }) {
@@ -31,137 +22,145 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
   const allApproved = useSessionStore(selectAllApproved);
 
   const riskCount = reviewPackage?.riskFlags?.length ?? 0;
+  const approvedCount = Object.values(sectionStatuses).filter((s) => s === 'approved').length;
+
+  const processingMs = reviewPackage?.agentMetadata?.processingTimeMs;
+  const qualityScore = reviewPackage?.agentMetadata?.transcriptQualityScore;
 
   return (
-    <aside className="w-[320px] bg-navy-950/40 border-r border-white/5 flex flex-col flex-shrink-0 overflow-y-auto backdrop-blur-3xl relative z-20 scrollbar-hide">
-      {/* Decorative top fade */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-navy-950/80 to-transparent pointer-events-none" />
-
-      {/* Section label */}
-      <div className="px-8 pt-10 pb-6 relative z-10">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-500 mb-1">Neural Matrix</p>
-        <h3 className="text-white text-lg font-serif font-medium leading-none">Command Center</h3>
+    <aside className="w-[284px] flex-shrink-0 p-4">
+      <div className="h-full bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.09)] border border-gray-100/80 flex flex-col overflow-y-auto">
+      {/* Sidebar header */}
+      <div className="px-6 pt-6 pb-5 border-b border-gray-100">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">Documentation Review</p>
+        <h3 className="text-[15px] font-bold text-gray-900 leading-tight">Clinical Sections</h3>
       </div>
 
       {/* Section items */}
-      <nav className="flex-1 px-4 space-y-2 relative z-10">
-        {SECTIONS.map(({ key, label }) => {
+      <nav className="flex-1 p-4 space-y-1">
+        {SECTIONS.map(({ key, label, icon }) => {
           const status = sectionStatuses[key];
           const isActive = activeSection === key;
           const isLocked = status === 'locked';
+          const isApproved = status === 'approved';
           const isDep = DEPENDENCIES[key];
-          const style = STATUS_STYLE[status] ?? STATUS_STYLE.draft;
 
           return (
             <button
               key={key}
-              onClick={() => {
-                if (!isLocked) setActiveSection(key);
-              }}
+              onClick={() => { if (!isLocked) setActiveSection(key); }}
               title={isLocked && isDep ? isDep : undefined}
-              className={`w-full text-left flex items-center justify-between group rounded-xl px-5 py-5 border-l-[3px] transition-all duration-500
-                ${isActive ? 'bg-white/[0.05] border-neon-500 shadow-[0_0_40px_rgba(190,242,100,0.05)]' : 'hover:bg-white/[0.02] border-transparent'}
-                ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}
-              `}
+              className={`w-full text-left flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-200 border group ${
+                isActive
+                  ? 'bg-green-50 border-green-200 shadow-sm'
+                  : isLocked
+                  ? 'border-transparent opacity-40 cursor-not-allowed'
+                  : 'border-transparent hover:bg-gray-50 hover:border-gray-200 cursor-pointer'
+              }`}
             >
-              <div className="flex items-center gap-4">
-                <div className="relative">
+              <div className="flex items-center gap-3">
+                {/* Icon */}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                  isActive ? 'bg-green-100' : isApproved ? 'bg-green-50' : 'bg-gray-100'
+                }`}>
                   {isLocked ? (
-                    <svg className="w-3.5 h-3.5 text-navy-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  ) : isApproved ? (
+                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
                   ) : (
-                    <>
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 block transition-all duration-500 ${style.dot} ${isActive ? 'scale-125' : ''}`} />
-                      {isActive && <span className="absolute inset-0 w-2 h-2 rounded-full bg-neon-500 animate-ping opacity-30" />}
-                    </>
+                    <svg className={`w-3.5 h-3.5 ${isActive ? 'text-green-600' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={icon} />
+                    </svg>
                   )}
                 </div>
-                <span className={`text-[13px] font-bold uppercase tracking-widest transition-colors duration-500 ${isActive ? 'text-white' : isLocked ? 'text-navy-800' : 'text-navy-400 group-hover:text-navy-200'}`}>
-                  {label}
-                </span>
-                
-                {/* Risk count badge */}
-                {key === 'risk_flags' && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${riskCount > 0 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-navy-900/50 text-navy-700 border-navy-800'}`}>
+
+                {/* Label */}
+                <div>
+                  <span className={`text-[13px] font-semibold block leading-tight ${
+                    isActive ? 'text-green-800' : isLocked ? 'text-gray-400' : 'text-gray-700'
+                  }`}>
+                    {label}
+                  </span>
+                  {isLocked && isDep && (
+                    <span className="text-[10px] text-gray-400 block mt-0.5">{isDep}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Right badges */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {key === 'risk_flags' && riskCount > 0 && (
+                  <span className="text-[10px] font-bold bg-red-50 text-red-500 border border-red-200 px-2 py-0.5 rounded-full">
                     {riskCount}
                   </span>
                 )}
-              </div>
-
-              {/* Status badge right side */}
-              <div className="text-right">
-                {isLocked && isDep ? (
-                  <span className="text-[8px] font-bold text-navy-700 uppercase tracking-widest block max-w-[80px] leading-tight">
-                    {isDep}
+                {isApproved && (
+                  <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                    Done
                   </span>
-                ) : style.badgeText ? (
-                  <div className="flex items-center gap-2">
-                    {status === 'approved' && (
-                       <svg className="w-3 h-3 text-neon-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    )}
-                    <span className={`text-[9px] font-bold uppercase tracking-widest ${style.badge}`}>
-                      {style.badgeText}
-                    </span>
-                  </div>
-                ) : null}
+                )}
+                {status === 'revised' && (
+                  <span className="text-[10px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                    Revised
+                  </span>
+                )}
+                {status === 'edited' && (
+                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                    Edited
+                  </span>
+                )}
               </div>
             </button>
           );
         })}
       </nav>
 
-      {/* Finalise CTA */}
-      <div className="p-8 relative z-10">
+      {/* Progress + export CTA */}
+      <div className="p-5 border-t border-gray-100 space-y-4">
         {allApproved ? (
-          <div className="space-y-4 animate-in zoom-in-95 duration-500">
-            <button
-              onClick={() => router.push(`/session/${sessionId}/export`)}
-              className="w-full relative group overflow-hidden bg-neon-500 text-navy-950 text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-700 shadow-[0_0_40px_rgba(190,242,100,0.2)] hover:shadow-[0_0_60px_rgba(190,242,100,0.4)]"
-            >
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <div className="flex items-center justify-center gap-2 relative z-10">
-                Synchronize Export
-                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-              </div>
-            </button>
-            <p className="text-[9px] font-bold text-neon-500/40 text-center uppercase tracking-widest">Neural Continuity Established</p>
-          </div>
+          <button
+            onClick={() => router.push(`/session/${sessionId}/export`)}
+            className="w-full relative group px-5 py-3 bg-gray-900 text-white text-[13px] font-bold rounded-2xl hover:bg-green-700 transition-colors duration-300 flex items-center justify-center gap-2 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            <span className="relative z-10">Export Documentation</span>
+            <svg className="w-4 h-4 relative z-10 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         ) : (
-          <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl relative overflow-hidden group transition-all hover:bg-white/[0.04]">
-             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-             <div className="flex justify-between text-[9px] font-bold text-navy-500 uppercase tracking-[0.2em] mb-4">
-               <span>Compliance Index</span>
-               <span className="text-navy-300 font-mono">{Object.values(sectionStatuses).filter(s => s === 'approved').length} / 5</span>
-             </div>
-             <div className="h-1.5 bg-navy-900 rounded-full overflow-hidden">
-               <div 
-                className="h-full bg-gradient-to-r from-navy-700 to-navy-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.05)]" 
-                style={{ width: `${(Object.values(sectionStatuses).filter(s => s === 'approved').length / 5) * 100}%` }}
-               />
-             </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[11px] font-semibold text-gray-400">Review Progress</span>
+              <span className="text-[12px] font-bold text-gray-700">{approvedCount} <span className="text-gray-400 font-normal">/ 5</span></span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full transition-all duration-700"
+                style={{ width: `${(approvedCount / 5) * 100}%` }}
+              />
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Metadata Telemetry */}
-      <div className="border-t border-white/5 bg-white/[0.01] transition-colors hover:bg-white/[0.02]">
-        <details className="group">
-          <summary className="px-8 py-6 flex items-center justify-between cursor-pointer select-none list-none text-[9px] font-bold uppercase tracking-[0.2em] text-navy-600 group-open:text-navy-400 transition-colors">
-            Node Telemetry
-            <svg className="w-3 h-3 group-open:rotate-180 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div className="px-8 pb-8 space-y-4 animate-in slide-in-from-top-2 duration-300">
-            {[
-              { label: 'Latency Index', value: `${reviewPackage?.agentMetadata?.processingTimeMs ? (reviewPackage.agentMetadata.processingTimeMs / 1000).toFixed(1) : '0.0'}s` },
-              { label: 'Neural Fidelity', value: reviewPackage?.agentMetadata?.transcriptQualityScore ? `${Math.round(reviewPackage.agentMetadata.transcriptQualityScore * 100)}%` : '98%' },
-              { label: 'Active Cluster', value: 'Gemini 2.5 Flash' },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-[11px] font-medium border-b border-white/[0.03] pb-2 last:border-0">
-                <span className="text-navy-600 uppercase tracking-widest text-[8px] font-bold">{label}</span>
-                <span className="text-navy-200 font-mono text-[10px]">{value}</span>
-              </div>
-            ))}
-          </div>
-        </details>
+        {/* Metadata */}
+        <div className="space-y-2 pt-1">
+          {[
+            { label: 'Processing Time', value: processingMs ? `${(processingMs / 1000).toFixed(1)}s` : '—' },
+            { label: 'Transcript Quality', value: qualityScore ? `${Math.round(qualityScore * 100)}%` : '—' },
+            { label: 'AI Model', value: 'Gemini 2.5' },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between items-center">
+              <span className="text-[11px] text-gray-400">{label}</span>
+              <span className="text-[11px] font-semibold text-gray-600 font-mono">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
       </div>
     </aside>
   );

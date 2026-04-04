@@ -80,6 +80,15 @@ export const demoReviewPackage: ReviewPackage = {
       requiresImmediateAction: false,
       status: 'pending',
     },
+    {
+      type: 'self_harm',
+      severity: 'high',
+      evidence: 'I\'ve been feeling more hopeless than usual. Sometimes I just don\'t see the point of continuing.',
+      transcriptLocation: 'lines:15-16',
+      protocolTriggered: 'High-risk ideation protocol — escalate to duty clinician',
+      requiresImmediateAction: true,
+      status: 'pending',
+    },
   ],
 
   soapNote: {
@@ -137,6 +146,7 @@ export const demoReviewPackage: ReviewPackage = {
       ],
       conflictingSignals: ['No manic episodes identified', 'Substance use not assessed this session'],
       priorDiagnosisMatch: true,
+      intervalStatus: 'worsening',
     },
   ],
 
