@@ -47,19 +47,22 @@ const INITIAL_FORM: FormState = {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 function Navbar() {
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-[1200px] mx-auto px-8 h-[64px] flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center">
-            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+      <div className="w-full max-w-[860px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </span>
-          <span className="text-[15px] font-bold text-gray-900">EHR Copilot</span>
+          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
         </Link>
-        <div className="flex items-center gap-2 text-[12px] text-gray-400">
-          <span>Clinical Dashboard</span>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-[12px]">
+          <span className="text-gray-400 font-medium">Clinical Dashboard</span>
+          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <span className="font-semibold text-green-600">New Session</span>
@@ -136,6 +139,46 @@ function TogglePills<T extends string>({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─── Step indicator ───────────────────────────────────────────────────────────
+function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
+  const steps = [
+    { n: 1, label: 'Transcript' },
+    { n: 2, label: 'AI Analysis' },
+    { n: 3, label: 'Review' },
+  ];
+  return (
+    <div className="flex items-center gap-0">
+      {steps.map(({ n, label }, idx) => {
+        const done = current > n;
+        const active = current === n;
+        return (
+          <div key={n} className="flex items-center">
+            <div className="flex items-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-300 ${
+                done ? 'bg-green-600 text-white'
+                : active ? 'bg-green-600 text-white shadow-[0_0_0_3px_rgba(22,163,74,0.2)]'
+                : 'bg-gray-100 text-gray-400 border border-gray-200'
+              }`}>
+                {done ? (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : n}
+              </div>
+              <span className={`text-[12px] font-semibold transition-colors ${active ? 'text-green-700' : done ? 'text-green-500' : 'text-gray-400'}`}>
+                {label}
+              </span>
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`w-12 h-px mx-3 transition-colors ${done ? 'bg-green-400' : 'bg-gray-200'}`} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -280,88 +323,77 @@ export default function NewSessionPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50/50 text-gray-900">
+    <main className="min-h-screen bg-gray-50/60 text-gray-900">
       <Navbar />
 
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-100 px-8 py-10">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 uppercase tracking-widest mb-3">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            New Session
-          </div>
-          <h1 className="text-[42px] font-bold text-gray-900 leading-tight tracking-[-0.025em] mb-2">
-            Generate <span className="text-green-600">Clinical Documentation</span>
-          </h1>
-          <p className="text-[16px] text-gray-500 max-w-xl leading-relaxed">
-            Transform your session transcript into structured SOAP notes, risk assessments, and treatment plans.
-          </p>
-        </div>
-      </div>
+      {/* ── Form Body — Bento Grid ───────────────────────────────────────────────────── */}
+      <div className="px-6 pt-20 pb-28 max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-5 gap-5 items-stretch">
 
-      {/* Form Body */}
-      <div className="px-8 py-10 pb-36 max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-5 gap-6">
+          {/* ══ LEFT: Transcript ─────────────────────────────────────────── */}
+          <div className="col-span-3">
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full flex flex-col">
 
-          {/* ── LEFT: Transcript ──────────────────────────────────────────── */}
-          <div className="col-span-3 space-y-5">
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-card p-7">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-[16px] font-bold text-gray-900 flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
+              {/* Dark header */}
+              <div className="bg-gray-900 px-6 py-4 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-[14px] font-bold text-white flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                   Session Transcript
                 </h2>
-                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                  {wordCount} Words
+                <div className="flex items-center gap-3">
+                  <div className="text-[11px] font-bold px-3 py-1 rounded-full"
+                    style={{ color: qualityColor, background: `${qualityColor}20`, border: `1px solid ${qualityColor}40` }}>
+                    {wordCount} Words
+                  </div>
+                  <div className="flex gap-1.5">
+                    {['bg-red-400', 'bg-yellow-400', 'bg-green-400'].map((c) => (
+                      <div key={c} className={`w-2.5 h-2.5 rounded-full ${c}`} />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Drag-drop zone */}
-              <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl h-44 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 relative overflow-hidden ${
-                  isDragging
-                    ? 'border-green-400 bg-green-50'
-                    : 'border-gray-200 bg-gray-50/50 hover:bg-green-50/40 hover:border-green-300'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 transition-colors ${isDragging ? 'bg-green-100 text-green-600' : 'bg-white border border-gray-200 text-gray-400'}`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
+              {/* Upload zone with green ambient glow */}
+              <div className="flex-shrink-0" style={{ background: 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 60%)' }}>
+                <div className="px-7 pt-6 pb-2">
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl h-36 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                      isDragging ? 'border-green-400 bg-green-50' : 'border-green-200/60 bg-white/60 hover:bg-green-50/60 hover:border-green-300'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2.5 transition-all ${isDragging ? 'bg-green-100 text-green-600' : 'bg-green-50 border border-green-100 text-green-500'}`}>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                    </div>
+                    <p className="text-[13px] font-semibold text-gray-700 mb-0.5">Upload Clinical Transcript</p>
+                    <p className="text-[11px] text-gray-400">Drag & drop or click to browse (.txt, .pdf)</p>
+                    <input ref={fileInputRef} type="file" accept=".txt,.pdf,.docx" className="hidden" onChange={handleFileSelect} />
+                  </div>
                 </div>
-                <p className="text-[14px] font-semibold text-gray-700 mb-1">Upload Clinical Transcript</p>
-                <p className="text-[12px] text-gray-400">Drag & drop or click to browse (.txt, .pdf)</p>
-                <input ref={fileInputRef} type="file" accept=".txt,.pdf,.docx" className="hidden" onChange={handleFileSelect} />
+
+                {/* Divider */}
+                <div className="relative my-4 px-7">
+                  <div className="absolute inset-x-7 top-1/2 border-t border-gray-100" />
+                  <div className="relative flex justify-center">
+                    <span className="px-4 bg-white text-[10px] font-bold text-gray-400 uppercase tracking-widest">Or paste manually</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-100" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-4 bg-white text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                    Or paste manually
-                  </span>
-                </div>
-              </div>
-
-              {/* Textarea */}
-              <div className="relative">
+              {/* Textarea + quality in white zone */}
+              <div className="flex-1 flex flex-col px-7 pb-6 min-h-0">
                 <textarea
                   id="transcript"
                   value={form.transcript}
                   onChange={(e) => set('transcript', e.target.value)}
                   placeholder="Insert session transcript text here for processing..."
-                  rows={11}
-                  className={`w-full bg-white border rounded-xl px-5 py-4 text-[14px] text-gray-700 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all duration-200 ${
-                    errors.transcript ? 'border-red-300 focus:border-red-400' : 'border-gray-200 focus:border-green-400'
+                  className={`flex-1 w-full bg-white border rounded-xl px-5 py-4 text-[14px] text-gray-700 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all duration-200 min-h-[160px] ${
+                    errors.transcript ? 'border-red-300' : 'border-gray-200 focus:border-green-400'
                   }`}
                 />
                 {errors.transcript && (
@@ -372,110 +404,103 @@ export default function NewSessionPage() {
                     {errors.transcript}
                   </p>
                 )}
-              </div>
 
-              {/* Low quality error */}
-              {lowQualityError && (
-                <div className="mt-5 bg-red-50 border border-red-200 rounded-2xl p-5">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-bold text-red-700 mb-1">
-                        Incomplete Transcript (Score: {Math.round(lowQualityError.score * 100)}%)
-                      </p>
-                      <p className="text-[12px] text-red-600/70 leading-relaxed">
-                        {lowQualityError.message}
-                      </p>
+                {/* Low quality error */}
+                {lowQualityError && (
+                  <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                    <p className="text-[13px] font-bold text-red-700 mb-1">Incomplete Transcript ({Math.round(lowQualityError.score * 100)}%)</p>
+                    <p className="text-[12px] text-red-600/70">{lowQualityError.message}</p>
+                    <div className="mt-2 h-1.5 bg-red-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.round(lowQualityError.score * 100)}%` }} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-1.5 bg-red-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-red-400 rounded-full transition-all duration-700"
-                        style={{ width: `${Math.round(lowQualityError.score * 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-[11px] font-bold text-red-500">{Math.round(lowQualityError.score * 100)}%</span>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Quality indicator */}
-              <div className="mt-5 p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                <div className="flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                  <span>Transcript Quality</span>
-                  <span className="text-gray-700">{wordCount} Words</span>
+                {/* Quality bar */}
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${qualityPct}%`, backgroundColor: qualityColor }} />
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                    {wordCount === 0 ? 'Start typing…' : wordCount >= 200 ? '✓ Quality OK' : `${wordCount} / 500 words`}
+                  </span>
                 </div>
-                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${qualityPct}%`, backgroundColor: qualityColor }}
-                  />
-                </div>
-                {wordCount === 0 && (
-                  <p className="text-[11px] text-gray-400 mt-2 italic">Begin typing to evaluate quality...</p>
-                )}
-                {wordCount > 0 && wordCount < 50 && (
-                  <p className="text-[11px] text-red-500 mt-2">Minimum 50 words recommended</p>
-                )}
-                {wordCount >= 200 && (
-                  <p className="text-[11px] text-green-600 mt-2 font-medium">✓ Sufficient transcript length</p>
-                )}
               </div>
             </div>
           </div>
 
-          {/* ── RIGHT: Session & Patient Context ──────────────────────────── */}
-          <div className="col-span-2 space-y-5">
+          {/* ══ RIGHT: Bento Stack ────────────────────────────────────────── */}
+          <div className="col-span-2 flex flex-col gap-5">
 
-            {/* Session details card */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-card p-6">
-              <h2 className="text-[15px] font-bold text-gray-900 mb-5 flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                Session Details
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="field-label">Session Number</label>
-                  <input
-                    type="number"
-                    value={form.sessionNumber}
-                    onChange={(e) => set('sessionNumber', e.target.value)}
-                    min={1}
-                    className={`field-input ${errors.sessionNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-500/10' : ''}`}
-                  />
-                  {errors.sessionNumber && <p className="text-red-500 text-[11px] mt-1">{errors.sessionNumber}</p>}
+            {/* ── BENTO CARD 1: Session Config ─────────────────────────── */}
+            <div className="flex-none bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+              {/* Green gradient header */}
+              <div className="px-6 py-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)' }}>
+                <div className="w-7 h-7 bg-white/60 rounded-lg flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
+                <h2 className="text-[14px] font-bold text-green-900">Session Config</h2>
+              </div>
 
+              <div className="p-5 space-y-4">
+                {/* Visual Session Type Tile Picker */}
                 <div>
                   <label className="field-label">Session Type</label>
-                  <select
-                    value={form.sessionType}
-                    onChange={(e) => set('sessionType', e.target.value as SessionType)}
-                    className="field-input appearance-none cursor-pointer"
-                  >
-                    <option value="intake">Patient Intake</option>
-                    <option value="follow_up">Routine Follow-up</option>
-                    <option value="crisis">Crisis Intervention</option>
-                  </select>
+                  <div className="grid grid-cols-3 gap-2 mt-1.5">
+                    {([
+                      { value: 'intake', label: 'Intake', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z', color: 'blue' },
+                      { value: 'follow_up', label: 'Follow-up', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'green' },
+                      { value: 'crisis', label: 'Crisis', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', color: 'red' },
+                    ] as { value: SessionType; label: string; icon: string; color: string }[]).map(({ value, label, icon, color }) => {
+                      const active = form.sessionType === value;
+                      const palette: Record<string, { border: string; bg: string; icon: string; text: string }> = {
+                        blue: { border: active ? 'border-blue-400' : 'border-gray-200', bg: active ? 'bg-blue-50' : 'bg-gray-50 hover:bg-blue-50/40', icon: active ? 'text-blue-600' : 'text-gray-400', text: active ? 'text-blue-700' : 'text-gray-500' },
+                        green: { border: active ? 'border-green-400' : 'border-gray-200', bg: active ? 'bg-green-50' : 'bg-gray-50 hover:bg-green-50/40', icon: active ? 'text-green-600' : 'text-gray-400', text: active ? 'text-green-700' : 'text-gray-500' },
+                        red: { border: active ? 'border-red-400' : 'border-gray-200', bg: active ? 'bg-red-50' : 'bg-gray-50 hover:bg-red-50/40', icon: active ? 'text-red-500' : 'text-gray-400', text: active ? 'text-red-600' : 'text-gray-500' },
+                      };
+                      const p = palette[color];
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => set('sessionType', value)}
+                          className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer ${p.border} ${p.bg}`}
+                        >
+                          <svg className={`w-5 h-5 ${p.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={icon} />
+                          </svg>
+                          <span className={`text-[11px] font-bold ${p.text}`}>{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="field-label">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={form.durationMinutes}
-                    onChange={(e) => set('durationMinutes', e.target.value)}
-                    min={5}
-                    max={180}
-                    className="field-input"
-                  />
+                {/* Session # and Duration inline */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="field-label">Session #</label>
+                    <input
+                      type="number" min={1}
+                      value={form.sessionNumber}
+                      onChange={(e) => set('sessionNumber', e.target.value)}
+                      className={`field-input ${errors.sessionNumber ? 'border-red-300' : ''}`}
+                    />
+                    {errors.sessionNumber && <p className="text-red-500 text-[10px] mt-1">{errors.sessionNumber}</p>}
+                  </div>
+                  <div>
+                    <label className="field-label">Duration (min)</label>
+                    <input type="number" min={5} max={180}
+                      value={form.durationMinutes}
+                      onChange={(e) => set('durationMinutes', e.target.value)}
+                      className="field-input"
+                    />
+                  </div>
                 </div>
 
+                {/* Modality toggle */}
                 <TogglePills
                   label="Modality"
                   value={form.modality}
@@ -488,82 +513,68 @@ export default function NewSessionPage() {
               </div>
             </div>
 
-            {/* Patient context card */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-card p-6">
-              <h2 className="text-[15px] font-bold text-gray-900 mb-5 flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
-                Clinical Context
-              </h2>
-
-              {/* PHI warning */}
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-5">
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1">Security Protocol</p>
-                    <p className="text-[12px] leading-relaxed text-amber-700/80">
-                      Do not enter Protected Health Information. Anonymize all patient identifiers.
-                    </p>
-                  </div>
+            {/* ── BENTO CARD 2: Clinical Context ───────────────────────── */}
+            <div className="flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm">
+              {/* Blue header */}
+              <div className="px-6 py-4 flex items-center gap-3 bg-blue-50 border-b border-blue-100">
+                <div className="w-7 h-7 bg-white/60 rounded-lg flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
+                <h2 className="text-[14px] font-bold text-blue-900">Clinical Context</h2>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="field-label">Anonymized Patient ID</label>
-                  <input
-                    type="text"
-                    value={form.patientId}
-                    onChange={(e) => set('patientId', e.target.value)}
-                    placeholder="P-XXXX-XXXX"
-                    className={`field-input ${errors.patientId ? 'border-red-300' : ''}`}
+              <div className="p-5">
+                <div className="space-y-4">
+                  {/* Patient ID + Age inline */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="field-label">Patient ID</label>
+                      <input type="text" value={form.patientId}
+                        onChange={(e) => set('patientId', e.target.value)}
+                        placeholder="P-XXXX"
+                        className={`field-input ${errors.patientId ? 'border-red-300' : ''}`}
+                      />
+                      {errors.patientId && <p className="text-red-500 text-[10px] mt-1">{errors.patientId}</p>}
+                    </div>
+                    <div>
+                      <label className="field-label">Age</label>
+                      <input type="number" min={1} max={120} value={form.age}
+                        onChange={(e) => set('age', e.target.value)}
+                        className={`field-input ${errors.age ? 'border-red-300' : ''}`}
+                      />
+                      {errors.age && <p className="text-red-500 text-[10px] mt-1">{errors.age}</p>}
+                    </div>
+                  </div>
+
+                  <TagInput
+                    label="Known Diagnoses"
+                    tags={form.knownDiagnoses}
+                    onAdd={(t) => set('knownDiagnoses', [...form.knownDiagnoses, t])}
+                    onRemove={(t) => set('knownDiagnoses', form.knownDiagnoses.filter((d) => d !== t))}
+                    placeholder="ICD-10 code — press Enter"
                   />
-                  {errors.patientId && <p className="text-red-500 text-[11px] mt-1">{errors.patientId}</p>}
-                </div>
 
-                <div>
-                  <label className="field-label">Estimated Age</label>
-                  <input
-                    type="number"
-                    value={form.age}
-                    onChange={(e) => set('age', e.target.value)}
-                    min={1}
-                    max={120}
-                    className={`field-input ${errors.age ? 'border-red-300' : ''}`}
+                  <TagInput
+                    label="Current Medications"
+                    tags={form.currentMedications}
+                    onAdd={(t) => set('currentMedications', [...form.currentMedications, t])}
+                    onRemove={(t) => set('currentMedications', form.currentMedications.filter((m) => m !== t))}
+                    placeholder="Medication — press Enter"
                   />
-                  {errors.age && <p className="text-red-500 text-[11px] mt-1">{errors.age}</p>}
+
+                  <TogglePills
+                    label="Note Verbosity"
+                    value={form.verbosity}
+                    onChange={(v) => set('verbosity', v)}
+                    options={[
+                      { value: 'concise', label: 'Concise' },
+                      { value: 'standard', label: 'Standard' },
+                      { value: 'detailed', label: 'Detailed' },
+                    ]}
+                  />
                 </div>
-
-                <TagInput
-                  label="Known Diagnoses"
-                  tags={form.knownDiagnoses}
-                  onAdd={(t) => set('knownDiagnoses', [...form.knownDiagnoses, t])}
-                  onRemove={(t) => set('knownDiagnoses', form.knownDiagnoses.filter((d) => d !== t))}
-                  placeholder="ICD-10 code — press Enter"
-                />
-
-                <TagInput
-                  label="Current Medications"
-                  tags={form.currentMedications}
-                  onAdd={(t) => set('currentMedications', [...form.currentMedications, t])}
-                  onRemove={(t) => set('currentMedications', form.currentMedications.filter((m) => m !== t))}
-                  placeholder="Medication — press Enter"
-                />
-
-                <TogglePills
-                  label="Note Verbosity"
-                  value={form.verbosity}
-                  onChange={(v) => set('verbosity', v)}
-                  options={[
-                    { value: 'concise', label: 'Concise' },
-                    { value: 'standard', label: 'Standard' },
-                    { value: 'detailed', label: 'Detailed' },
-                  ]}
-                />
               </div>
             </div>
 
@@ -571,9 +582,17 @@ export default function NewSessionPage() {
         </div>
       </div>
 
-      {/* ── Sticky bottom bar ──────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 border-t border-gray-100 h-24 flex items-center px-8 z-50 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="max-w-[1200px] mx-auto w-full flex items-center justify-between">
+      {/* ── Floating Action Bar ────────────────────────────────────────────── */}
+      <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4">
+        <div
+          className="w-full max-w-[860px] rounded-full border border-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.12)] px-6 h-[60px] flex items-center justify-between"
+          style={{
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+        >
+          {/* Left — discard */}
           <button
             type="button"
             onClick={() => router.back()}
@@ -585,56 +604,58 @@ export default function NewSessionPage() {
             Discard & Go Back
           </button>
 
-          {/* Right side — session summary + submit */}
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-4 text-[12px] text-gray-400">
-              <span className="flex items-center gap-1.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${wordCount >= 50 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                {wordCount >= 50 ? 'Transcript ready' : `${wordCount}/50 words`}
-              </span>
-              {form.patientId && (
-                <span className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                  Patient ID set
-                </span>
-              )}
+          {/* Center — readiness chips */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all duration-300 ${
+              wordCount >= 50
+                ? 'bg-green-50 border-green-200 text-green-700'
+                : 'bg-gray-50 border-gray-200 text-gray-400'
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${wordCount >= 50 ? 'bg-green-500' : 'bg-gray-300'}`} />
+              {wordCount >= 50 ? 'Transcript Ready' : `${wordCount}/50 words`}
             </div>
-
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className={`relative group px-10 py-3.5 rounded-2xl font-bold text-[13px] transition-all duration-300 cursor-pointer overflow-hidden flex items-center gap-3 ${
-                isSubmitting
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  : 'bg-gray-900 text-white hover:bg-green-700 hover:shadow-green active:scale-[0.98]'
-              }`}
-            >
-              {/* Shimmer */}
-              {!isSubmitting && (
-                <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-              )}
-
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <span className="relative z-10">Generate Documentation</span>
-                  <svg className="w-4 h-4 relative z-10 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                  </svg>
-                </>
-              )}
-            </button>
+            {form.patientId && (
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full border bg-green-50 border-green-200 text-green-700">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                Patient ID Set
+              </div>
+            )}
           </div>
+
+          {/* Right — CTA */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`relative group px-7 py-2.5 rounded-full font-bold text-[13px] transition-all duration-300 cursor-pointer overflow-hidden flex items-center gap-2.5 ${
+              isSubmitting
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-900 text-white hover:bg-green-700 hover:shadow-[0_4px_16px_rgba(22,163,74,0.40)] active:scale-[0.97]'
+            }`}
+          >
+            {!isSubmitting && (
+              <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
+            )}
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Processing...
+              </>
+            ) : (
+              <>
+                <span className="relative z-10">Generate Documentation</span>
+                <svg className="w-4 h-4 relative z-10 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </>
+            )}
+          </button>
         </div>
       </div>
+
     </main>
   );
 }
