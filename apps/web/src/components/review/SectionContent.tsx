@@ -5,6 +5,80 @@ import { useSessionStore, type SectionKey } from '@/lib/store/sessionStore';
 import { RiskFlagsSection } from './sections/RiskFlagsSection';
 import { SOAPSection } from './sections/SOAPSection';
 import { SectionSkeleton } from '@/components/ui/Skeleton';
+import type { SessionInput, ReviewPackage } from 'agents';
+
+function PatientContextBar({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
+  if (!input && !reviewPackage) return null;
+  const dx = reviewPackage?.diagnosisSuggestions?.[0];
+  const meds = input?.patient?.currentMedications ?? [];
+  const sessionType = input?.session?.sessionType?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) ?? '';
+
+  return (
+    <div className="flex-shrink-0 mx-0 mt-3">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-4 flex items-center gap-6 flex-wrap">
+        {/* Patient */}
+        {input && (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient</p>
+              <p className="text-[13px] font-semibold text-gray-800">{input.patient.age}y · {input.patient.gender} · {sessionType}</p>
+            </div>
+          </div>
+        )}
+
+        {meds.length > 0 && (
+          <>
+            <div className="w-px h-8 bg-gray-100 flex-shrink-0" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.153-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Medications</p>
+                <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[200px]">{meds.join(', ')}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {dx && (
+          <>
+            <div className="w-px h-8 bg-gray-100 flex-shrink-0" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="font-mono text-purple-500">{dx.dsm5Code}</span> · {Math.round(dx.confidence * 100)}% confidence
+                </p>
+                <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[240px]">{dx.label.split(',')[0]}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Session modality */}
+        {input && (
+          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session #{input.session.sessionNumber}</span>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span className="text-[10px] font-semibold text-gray-500 capitalize">{input.session.modality.replace('_', ' ')}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function LockedSection({ section }: { section: string }) {
   return (
@@ -107,7 +181,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
+      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 flex flex-col">
         <RiskFlagsSection
           flags={flags}
           onFlagAction={(_flagId, _action) => {
@@ -117,6 +191,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
             approveSection('risk_flags');
           }}
         />
+        <PatientContextBar input={input} reviewPackage={reviewPackage} />
       </main>
     );
   }
@@ -143,7 +218,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
+    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 flex flex-col">
       <SOAPSection
         key={soapKey}
         section={soapKey}
@@ -161,6 +236,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
           markRevised(soapKey);
         }}
       />
+      <PatientContextBar input={input} reviewPackage={reviewPackage} />
     </main>
   );
 }

@@ -18,7 +18,7 @@ const DEPENDENCIES: Partial<Record<SectionKey, string>> = {
 
 export default function SectionNav({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const { activeSection, setActiveSection, sectionStatuses, reviewPackage } = useSessionStore();
+  const { activeSection, setActiveSection, sectionStatuses, reviewPackage, input } = useSessionStore();
   const allApproved = useSessionStore(selectAllApproved);
 
   const riskCount = reviewPackage?.riskFlags?.length ?? 0;
