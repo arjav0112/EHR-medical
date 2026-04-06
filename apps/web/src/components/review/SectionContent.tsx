@@ -181,15 +181,11 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 flex flex-col">
+      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 grid grid-rows-[1fr_auto] gap-3">
         <RiskFlagsSection
           flags={flags}
-          onFlagAction={(_flagId, _action) => {
-            // Flag local state is managed inside RiskFlagsSection
-          }}
-          onAllConfirmed={() => {
-            approveSection('risk_flags');
-          }}
+          onFlagAction={(_flagId, _action) => {}}
+          onAllConfirmed={() => { approveSection('risk_flags'); }}
         />
         <PatientContextBar input={input} reviewPackage={reviewPackage} />
       </main>
@@ -218,7 +214,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 flex flex-col">
+    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 grid grid-rows-[1fr_auto] gap-3">
       <SOAPSection
         key={soapKey}
         section={soapKey}
