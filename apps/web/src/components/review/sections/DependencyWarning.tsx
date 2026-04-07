@@ -34,8 +34,8 @@ export function DependencyWarning({
       
       <div className="flex-1 min-w-0">
         <h4 className="text-amber-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Structural Dependency Alert</h4>
-        <p className="text-[14px] text-navy-200 leading-relaxed font-serif">
-          The <span className="text-white font-bold">{sLabel}</span> block was initialized prior to the update in <span className="text-white font-bold">{uLabel}</span>. Synchronizing neural context is highly recommended.
+        <p className="text-[14px] text-amber-800 leading-relaxed">
+          The <span className="text-amber-900 font-bold">{sLabel}</span> block was initialized prior to the update in <span className="text-amber-900 font-bold">{uLabel}</span>. Synchronizing neural context is highly recommended.
         </p>
         
         <div className="flex gap-4 mt-6">

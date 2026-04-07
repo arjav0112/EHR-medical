@@ -7,6 +7,21 @@ import { SOAPSection } from './sections/SOAPSection';
 import { SectionSkeleton } from '@/components/ui/Skeleton';
 import type { SessionInput, ReviewPackage } from 'agents';
 
+// function StickyPatientHeader({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
+//   // if (!input \&\& !reviewPackage) return null;
+//   const dx = reviewPackage?.diagnosisSuggestions?.[0];
+//   const meds = input?.patient?.currentMedications ?? [];
+//   return (
+//     <div className=" flex-shrink-0 bg-white/95 border-b border-gray-100 px-10 py-2.5 flex items-center gap-4 flex-wrap shadow-sm" />
+//  {input && (
+//  <span className=\text-[11px] text-gray-500 />
+//  <span className=\font-bold text-gray-800\\u003ePatient:</span> {input.patient.age}y · {input.patient.gender}
+//  </span>
+//  )}
+//  </div>
+//  );
+// }
+
 function PatientContextBar({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
   if (!input && !reviewPackage) return null;
   const dx = reviewPackage?.diagnosisSuggestions?.[0];
@@ -26,7 +41,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
             </div>
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient</p>
-              <p className="text-[13px] font-semibold text-gray-800">{input.patient.age}y · {input.patient.gender} · {sessionType}</p>
+              <p className="text-[13px] font-semibold text-gray-800">{input.patient.age}y{' · '}{input.patient.gender}{' · '}{sessionType}</p>
             </div>
           </div>
         )}
@@ -59,7 +74,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  <span className="font-mono text-purple-500">{dx.dsm5Code}</span> · {Math.round(dx.confidence * 100)}% confidence
+                  <span className="font-mono text-purple-500">{dx.dsm5Code}</span>{' · '}{Math.round(dx.confidence * 100)}% confidence
                 </p>
                 <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[240px]">{dx.label.split(',')[0]}</p>
               </div>
@@ -84,10 +99,10 @@ function LockedSection({ section }: { section: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-12 bg-white border border-gray-100 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
       <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-3xl flex items-center justify-center text-3xl mb-8">
-        🔒
+        ðŸ”’
       </div>
       <h3 className="text-2xl font-bold text-gray-800 mb-4 capitalize">
-        {section.replace('_', ' ')} — Locked
+        {section.replace('_', ' ')} â€” Locked
       </h3>
       <p className="text-[15px] text-gray-500 max-w-md leading-relaxed">
         Complete and approve the preceding sections to unlock this one.
@@ -121,7 +136,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   const [hydrating, setHydrating] = useState(false);
   const [hydrationFailed, setHydrationFailed] = useState(false);
 
-  // ── Hydrate from Redis on page refresh ──────────────────────────────────────
+  // â”€â”€ Hydrate from Redis on page refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (reviewPackage || hydrating || hydrationFailed) return;
 
@@ -181,12 +196,14 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 grid grid-rows-[1fr_auto] gap-3">
-        <RiskFlagsSection
-          flags={flags}
-          onFlagAction={(_flagId, _action) => {}}
-          onAllConfirmed={() => { approveSection('risk_flags'); }}
-        />
+      <main className="flex-1 overflow-hidden px-10 py-8 pb-4 grid grid-rows-[1fr_auto] gap-3">
+        <div className="overflow-y-auto">
+          <RiskFlagsSection
+            flags={flags}
+            onFlagAction={(_flagId, _action) => { }}
+            onAllConfirmed={() => { approveSection('risk_flags'); }}
+          />
+        </div>
         <PatientContextBar input={input} reviewPackage={reviewPackage} />
       </main>
     );
@@ -214,25 +231,28 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 pb-4 relative z-10 grid grid-rows-[1fr_auto] gap-3">
-      <SOAPSection
-        key={soapKey}
-        section={soapKey}
-        soapSection={soapSection}
-        transcript={input?.session?.transcript ?? ''}
-        approvedSections={approvedSections}
-        onApprove={() => approveSection(soapKey)}
-        onEdit={(content) => {
-          updateSectionContent(soapKey, content);
-          editSection(soapKey);
-          invalidateDownstreamSections(soapKey);
-        }}
-        onRevisionComplete={(content) => {
-          updateSectionContent(soapKey, content);
-          markRevised(soapKey);
-        }}
-      />
+    <main className="flex-1 overflow-hidden px-10 py-8 pb-4 grid grid-rows-[1fr_auto] gap-3">
+      <div className="overflow-y-auto">
+        <SOAPSection
+          key={soapKey}
+          section={soapKey}
+          soapSection={soapSection}
+          transcript={input?.session?.transcript ?? ''}
+          approvedSections={approvedSections}
+          onApprove={() => approveSection(soapKey)}
+          onEdit={(content) => {
+            updateSectionContent(soapKey, content);
+            editSection(soapKey);
+            invalidateDownstreamSections(soapKey);
+          }}
+          onRevisionComplete={(content) => {
+            updateSectionContent(soapKey, content);
+            markRevised(soapKey);
+          }}
+        />
+      </div>
       <PatientContextBar input={input} reviewPackage={reviewPackage} />
     </main>
   );
 }
+

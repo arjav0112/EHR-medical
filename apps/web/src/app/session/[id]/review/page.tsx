@@ -45,13 +45,27 @@ export default async function ReviewPage({
   const { id: sessionId } = await params;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen relative">
       <Navbar sessionId={sessionId} />
 
       {/* Two-panel layout — pushed down by navbar */}
-      <div className="flex flex-1 overflow-hidden pt-[78px] pr-4 pb-4">
+      <div className="flex flex-1 overflow-hidden pt-[78px] pb-4 pr-4 relative z-10">
         <SectionNav sessionId={sessionId} />
         <SectionContent sessionId={sessionId} />
+      </div>
+
+      {/* Mountain background — fixed to viewport bottom, covers white space */}
+      <div className="fixed bottom-0 left-0 right-0 h-[320px] z-0 pointer-events-none">
+        <div
+          className="absolute inset-x-0 top-0 h-[120px] z-10"
+          style={{ background: 'linear-gradient(to bottom, rgb(249 250 251), transparent)' }}
+        />
+        <img
+          src="/mountain.png"
+          alt=""
+          className="w-full h-full object-cover object-bottom"
+          style={{ opacity: 0.8 }}
+        />
       </div>
     </div>
   );
