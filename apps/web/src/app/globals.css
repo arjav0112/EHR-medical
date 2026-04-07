@@ -170,6 +170,15 @@
   animation: float 5s ease-in-out infinite;
 }
 
+@keyframes flow {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-flow {
+  animation: flow 1.2s linear infinite;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
