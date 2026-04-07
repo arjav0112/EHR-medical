@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useSessionStore, type SectionKey } from '@/lib/store/sessionStore';
@@ -41,7 +41,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
             </div>
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient</p>
-              <p className="text-[13px] font-semibold text-gray-800">{input.patient.age}y Â· {input.patient.gender} Â· {sessionType}</p>
+              <p className="text-[13px] font-semibold text-gray-800">{input.patient.age}y{' · '}{input.patient.gender}{' · '}{sessionType}</p>
             </div>
           </div>
         )}
@@ -74,7 +74,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  <span className="font-mono text-purple-500">{dx.dsm5Code}</span> Â· {Math.round(dx.confidence * 100)}% confidence
+                  <span className="font-mono text-purple-500">{dx.dsm5Code}</span>{' · '}{Math.round(dx.confidence * 100)}% confidence
                 </p>
                 <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[240px]">{dx.label.split(',')[0]}</p>
               </div>

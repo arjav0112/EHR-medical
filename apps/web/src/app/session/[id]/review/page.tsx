@@ -49,7 +49,7 @@ export default async function ReviewPage({
       <Navbar sessionId={sessionId} />
 
       {/* Two-panel layout — pushed down by navbar */}
-      <div className="flex flex-1 overflow-hidden pt-[78px] pr-4 pb-4 relative z-10">
+      <div className="flex flex-1 overflow-hidden pt-[78px] pb-4 pr-4 relative z-10">
         <SectionNav sessionId={sessionId} />
         <SectionContent sessionId={sessionId} />
       </div>

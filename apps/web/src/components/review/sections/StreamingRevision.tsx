@@ -42,6 +42,8 @@ export function StreamingRevision({
 
   useEffect(() => {
     if (!isActive) return;
+    // Guard: don't fire if feedback is empty (race between state batches)
+    if (!requestBody.feedback.trim()) return;
 
     let cancelled = false;
     const abort = new AbortController();
@@ -146,25 +148,64 @@ export function StreamingRevision({
 
   if (!isActive && !tokens) return null;
 
+  // Thinking animation before first token arrives
+  if (isActive && !tokens && !done) {
+    return (
+      <div className="h-full flex flex-col animate-in fade-in duration-500">
+        <div className="flex-1 bg-white border border-purple-100 rounded-2xl p-8 flex flex-col gap-6 shadow-sm">
+          {/* Pulsing thinking header */}
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span className="text-[11px] font-bold text-purple-500 uppercase tracking-widest">AI is thinking...</span>
+          </div>
+          {/* Skeleton lines */}
+          <div className="space-y-3">
+            <div className="h-3 bg-purple-50 rounded-full w-full animate-pulse" />
+            <div className="h-3 bg-purple-50 rounded-full w-5/6 animate-pulse" style={{ animationDelay: '100ms' }} />
+            <div className="h-3 bg-purple-50 rounded-full w-4/5 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <div className="h-3 bg-purple-50 rounded-full w-full animate-pulse" style={{ animationDelay: '150ms' }} />
+            <div className="h-3 bg-purple-50 rounded-full w-3/4 animate-pulse" style={{ animationDelay: '250ms' }} />
+          </div>
+        </div>
+        <div className="flex justify-end pr-2 mt-3">
+          <button
+            onClick={handleStop}
+            className="flex items-center gap-2 text-[11px] font-bold text-red-400 border border-red-200 bg-white px-4 py-2 rounded-xl hover:bg-red-50 transition-all uppercase tracking-widest"
+          >
+            <div className="w-2.5 h-2.5 bg-red-400 rounded-sm" />
+            Interrupt Protocol
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 animate-in fade-in duration-700">
-      <div className="glass-card bg-navy-900/50 border-white/10 p-6 shadow-inner relative group">
-        <div className="absolute top-0 left-0 w-1 h-full bg-neon-500/50 rounded-full" />
-        <p className="text-[15px] text-white leading-relaxed font-serif whitespace-pre-wrap">
-          {tokens}
-          {isActive && !done && (
-            <span className="inline-block w-2.5 h-[1.2em] bg-neon-500 ml-1 animate-pulse shadow-[0_0_10px_rgba(190,242,100,0.8)] align-middle" />
-          )}
-        </p>
+    <div className="h-full flex flex-col gap-3 animate-in fade-in duration-700">
+      <div className="flex-1 min-h-0 bg-white border border-green-200 rounded-2xl overflow-hidden flex flex-col shadow-sm relative">
+        {/* Left accent bar */}
+        <div className="absolute top-0 left-0 w-1 h-full bg-green-400 rounded-l-2xl" />
+        <div className="flex-1 overflow-y-auto px-8 py-7 scrollbar-hide">
+          <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">
+            {tokens}
+            {isActive && !done && (
+              <span className="inline-block w-[2px] h-[1.1em] bg-green-500 ml-1 animate-pulse align-middle rounded-full" />
+            )}
+          </p>
+        </div>
       </div>
 
       {isActive && !done && (
-        <div className="flex justify-end pr-2">
+        <div className="flex justify-end flex-shrink-0">
           <button
             onClick={handleStop}
-            className="group flex items-center gap-3 text-[10px] font-bold text-red-400 border border-red-500/30 px-5 py-2 rounded-xl hover:bg-red-500 hover:text-white transition-all uppercase tracking-[0.2em]"
+            className="flex items-center gap-2 text-[11px] font-bold text-red-400 border border-red-200 bg-white px-4 py-2 rounded-xl hover:bg-red-50 transition-all uppercase tracking-widest"
           >
-            <div className="w-3 h-3 bg-red-400 group-hover:bg-white" />
+            <div className="w-2.5 h-2.5 bg-red-400 rounded-sm" />
             Interrupt Protocol
           </button>
         </div>

@@ -28,8 +28,8 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
   const qualityScore = reviewPackage?.agentMetadata?.transcriptQualityScore;
 
   return (
-    <aside className="w-[284px] flex-shrink-0 p-4">
-      <div className="h-full bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.09)] border border-gray-100/80 flex flex-col overflow-y-auto">
+    <aside className="w-[284px] flex-shrink-0">
+      <div className="h-full m-4 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.09)] border border-gray-100/80 flex flex-col overflow-y-auto">
         {/* Sidebar header */}
         <div className="px-6 pt-6 pb-5 border-b border-gray-100">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">Documentation Review</p>

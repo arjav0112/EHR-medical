@@ -139,6 +139,16 @@ export function SOAPSection({
     setUiState('revising');
   }, []);
 
+  // Used by DependencyWarning — auto-fills feedback for synchronization
+  const handleSyncRevision = useCallback(() => {
+    clearInvalidated(section as any);
+    setFeedback(`Re-synchronize the ${SECTION_LABELS[section]} section with the latest approved upstream context.`);
+    setIsStreaming(true);
+    setStreamDone(false);
+    setStreamedContent('');
+    setUiState('revising');
+  }, [section, clearInvalidated]);
+
   const handleStreamComplete = useCallback(
     (result: { content: string; confidence: number; provenanceTag: string }) => {
       setIsStreaming(false);
@@ -188,10 +198,10 @@ export function SOAPSection({
         <SectionHeader section={section} currentSection={currentSection} />
 
         {isInvalidated && upstreamForWarning && (
-          <DependencyWarning
+        <DependencyWarning
             sectionName={section}
             upstreamSection={upstreamForWarning}
-            onRegenerate={handleStartRevision}
+            onRegenerate={handleSyncRevision}
             onKeep={() => clearInvalidated(section as any)}
           />
         )}
@@ -312,10 +322,10 @@ export function SOAPSection({
         {/* Two-column layout */}
         <div className="flex gap-5 flex-1 min-h-0">
 
-          {/* ── Left: original preview (dimmed) + feedback input stacked */}
-          <div className="flex flex-col gap-4 flex-1 min-h-0">
+          {/* Left: original preview (dimmed) + feedback input stacked */}
+          <div className={`flex flex-col gap-4 min-h-0 ${isStreaming || streamDone ? 'flex-1' : 'flex-1'}`}>
 
-            {/* Dimmed original — scrollable, takes remaining height */}
+            {/* Dimmed original */}
             <div className="flex-1 min-h-0 opacity-40 pointer-events-none">
               <div className="h-full bg-white border border-gray-100 rounded-2xl overflow-hidden">
                 <div className="h-full overflow-y-auto px-8 py-7 scrollbar-hide">
@@ -326,8 +336,8 @@ export function SOAPSection({
               </div>
             </div>
 
-            {/* Feedback input — fixed at bottom */}
-            {!isStreaming && (
+            {/* Feedback input — hidden while streaming or done */}
+            {!isStreaming && !streamDone && (
               <div className="flex-shrink-0">
                 <FeedbackInput value={feedback} onChange={setFeedback} onSubmit={handleStartRevision} isStreaming={isStreaming} />
                 <div className="mt-3 flex justify-start">
@@ -345,9 +355,9 @@ export function SOAPSection({
             )}
           </div>
 
-          {/* ── Right: streaming output */}
+          {/* Right: streaming output — always visible once triggered */}
           {(isStreaming || streamDone) && (
-            <div className="flex-1 min-h-0 flex flex-col gap-4">
+            <div className="flex-1 min-h-0 flex flex-col gap-3">
               <div className="flex-1 min-h-0">
                 <StreamingRevision
                   requestBody={{
@@ -371,12 +381,12 @@ export function SOAPSection({
               </div>
 
               {streamDone && !isStreaming && (
-                <div className="flex items-center justify-end gap-3 flex-shrink-0">
+                <div className="flex items-center justify-end gap-3 flex-shrink-0 pt-1">
                   <button
                     onClick={handleReviseAgain}
                     className="text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all"
                   >
-                    Discard & Try Again
+                    Discard &amp; Try Again
                   </button>
                   <button
                     onClick={handleApproveStreamedVersion}
@@ -401,7 +411,7 @@ export function SOAPSection({
   // ─────────────────────────────────────────────────────────────────────────
   if (uiState === 'editing') {
     return (
-      <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
+      <div className="flex flex-col h-full animate-in fade-in duration-500">
         <SectionHeader
           section={section}
           currentSection={currentSection}
@@ -413,34 +423,47 @@ export function SOAPSection({
           }
         />
 
-        <div className="bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden ring-1 ring-green-200">
-          <textarea
-            ref={textareaRef}
-            value={editBuffer}
-            onChange={(e) => setEditBuffer(e.target.value)}
-            className="w-full resize-none px-8 py-8 text-[16px] text-gray-800 leading-relaxed bg-transparent focus:outline-none min-h-[280px] scrollbar-hide"
-            autoFocus
-          />
-          <div className="bg-gray-50 px-8 py-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">Changes require your approval before saving</span>
-            <span className="text-[11px] font-mono text-gray-500">{editBuffer.length} chars</span>
-          </div>
-        </div>
+        {/* Two-column: textarea left, action buttons right */}
+        <div className="flex gap-5 flex-1 min-h-0">
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button onClick={() => setUiState('draft')} className="text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all">
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveEdit}
-            disabled={!editBuffer.trim()}
-            className="group flex items-center gap-2 px-7 py-2.5 bg-gray-900 text-white rounded-xl text-[12px] font-bold hover:bg-green-700 transition-all duration-300 shadow-sm hover:shadow-[0_4px_16px_rgba(22,163,74,0.30)] disabled:opacity-40"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            Save Changes
-          </button>
+          {/* Textarea card */}
+          <div className="flex-1 min-h-0 bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden flex flex-col ring-1 ring-green-200">
+            <textarea
+              ref={textareaRef}
+              value={editBuffer}
+              onChange={(e) => setEditBuffer(e.target.value)}
+              className="flex-1 w-full resize-none px-8 py-8 text-[15px] text-gray-800 leading-relaxed bg-transparent focus:outline-none overflow-y-auto scrollbar-hide"
+              autoFocus
+            />
+            <div className="bg-gray-50 px-8 py-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+              <span className="text-[11px] text-gray-400">Changes require your approval before saving</span>
+              <span className="text-[11px] font-mono text-gray-500">{editBuffer.length} chars</span>
+            </div>
+          </div>
+
+          {/* Right action column */}
+          <div className="flex flex-col gap-3 w-52 flex-shrink-0 pt-1">
+            <button
+              onClick={() => setUiState('draft')}
+              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:text-gray-900 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cancel
+            </button>
+
+            <button
+              onClick={handleSaveEdit}
+              disabled={!editBuffer.trim()}
+              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-bold bg-gray-900 text-white rounded-2xl hover:bg-green-700 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     );
