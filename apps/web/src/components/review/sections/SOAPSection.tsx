@@ -98,6 +98,7 @@ export function SOAPSection({
   const [streamedContent, setStreamedContent] = useState('');
   const [streamDone, setStreamDone] = useState(false);
   const [citationsOpen, setCitationsOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [revisionRounds, setRevisionRounds] = useState(soapSection.revisionRounds);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -188,12 +189,52 @@ export function SOAPSection({
   const isLowConfidence = currentSection.confidence < 0.75;
   const canApproveDirectly = !isLowConfidence || revisionRounds > 0;
 
+  // Fullscreen modal — classic popup with blurred backdrop
+  const FullscreenModal = fullscreen ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-200"
+      style={{ backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0,0,0,0.35)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) setFullscreen(false); }}
+      onKeyDown={(e) => e.key === 'Escape' && setFullscreen(false)}
+      tabIndex={-1}
+    >
+      {/* Floating panel */}
+      <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-5xl max-h-[90vh] animate-in zoom-in-95 duration-200 overflow-hidden">
+        {/* Panel header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-gray-100">
+          <div>
+            <h2 className="text-[18px] font-bold text-gray-900">{SECTION_LABELS[section]}</h2>
+            <p className="text-[11px] text-gray-400 mt-0.5">{SECTION_DESCRIPTIONS[section]}</p>
+          </div>
+          <button
+            onClick={() => setFullscreen(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+            title="Close"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* Scrollable text */}
+        <div className="flex-1 overflow-y-auto px-8 py-7">
+          <p className="text-[15px] text-gray-800 leading-[1.85] whitespace-pre-wrap">
+            {currentContent}
+          </p>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // ─────────────────────────────────────────────────────────────────────────
   // STATE A — Draft
   // ─────────────────────────────────────────────────────────────────────────
   if (uiState === 'draft') {
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500">
+        {/* Fullscreen modal — rendered at layout root so fixed positioning isn't clipped */}
+        {FullscreenModal}
+
         {/* Header */}
         <SectionHeader section={section} currentSection={currentSection} />
 
@@ -209,8 +250,19 @@ export function SOAPSection({
         {/* Horizontal split: card left, actions right */}
         <div className="flex gap-5 flex-1 min-h-0">
 
-          {/* ── Content card (scrollable) */}
-          <div className="flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0">
+          {/* Content card (scrollable) */}
+          <div className="group flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0 relative">
+            {/* Fullscreen icon — appears on hover */}
+            <button
+              onClick={() => setFullscreen(true)}
+              className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:border-gray-300 shadow-sm"
+              title="Fullscreen"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+
             {isLowConfidence && (
               <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-3 flex-shrink-0">
                 <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,11 +475,62 @@ export function SOAPSection({
           }
         />
 
+        {/* Fullscreen edit modal */}
+        {fullscreen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-200"
+            style={{ backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0,0,0,0.35)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setFullscreen(false); }}
+          >
+            <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-5xl h-[82vh] animate-in zoom-in-95 duration-200 overflow-hidden">
+              {/* Modal header */}
+              <div className="flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-gray-100">
+                <div>
+                  <h2 className="text-[18px] font-bold text-gray-900">{SECTION_LABELS[section]} — Editing</h2>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{SECTION_DESCRIPTIONS[section]}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setUiState('draft'); setFullscreen(false); }}
+                    className="text-[12px] font-semibold text-gray-500 border border-gray-200 px-4 py-2 rounded-xl hover:border-gray-300 transition-all"
+                  >Cancel</button>
+                  <button
+                    onClick={() => { handleSaveEdit(); setFullscreen(false); }}
+                    disabled={!editBuffer.trim()}
+                    className="text-[12px] font-bold bg-gray-900 text-white px-5 py-2 rounded-xl hover:bg-green-700 transition-all disabled:opacity-40"
+                  >Save Changes</button>
+                </div>
+              </div>
+              {/* Textarea */}
+              <textarea
+                value={editBuffer}
+                onChange={(e) => setEditBuffer(e.target.value)}
+                className="flex-1 w-full resize-none px-10 py-8 text-[15px] text-gray-800 leading-relaxed bg-transparent focus:outline-none overflow-y-auto"
+                autoFocus
+              />
+              <div className="bg-gray-50 px-8 py-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+                <span className="text-[11px] text-gray-400">Changes require your approval before saving</span>
+                <span className="text-[11px] font-mono text-gray-500">{editBuffer.length} chars</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Two-column: textarea left, action buttons right */}
         <div className="flex gap-5 flex-1 min-h-0">
 
           {/* Textarea card */}
-          <div className="flex-1 min-h-0 bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden flex flex-col ring-1 ring-green-200">
+          <div className="group flex-1 min-h-0 bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden flex flex-col ring-1 ring-green-200 relative">
+            {/* Fullscreen icon */}
+            <button
+              onClick={() => setFullscreen(true)}
+              className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:border-gray-300 shadow-sm"
+              title="Expand editor"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
             <textarea
               ref={textareaRef}
               value={editBuffer}
