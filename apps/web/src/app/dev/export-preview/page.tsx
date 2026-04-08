@@ -1,11 +1,9 @@
 'use client';
 
-import React, { use, useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSessionStore, selectAllApproved, type SectionKey } from '@/lib/store/sessionStore';
-import { generateFhirDocumentReference } from '@/lib/export/generateFhir';
+import type { SectionKey } from '@/lib/store/sessionStore';
 import type { ReviewPackage } from 'agents';
 
 // ── Mock data ──────────────────────────────────────────────────────────────────
@@ -325,7 +323,7 @@ type TabId = typeof TABS[number]['id'];
 // BlobProvider and ClinicalNotePDF are used directly inside that file (no dynamic
 // wrappers needed there), so none of the "su is not a function" pitfalls apply.
 const PDFPreviewClient = dynamic(
-  () => import('./PDFPreviewClient'),
+  () => import('../../session/[id]/export/PDFPreviewClient'),
   {
     ssr: false,
     loading: () => (
@@ -340,21 +338,19 @@ const PDFPreviewClient = dynamic(
   }
 );
 
-function PDFPreview({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+function PDFPreview() {
   return (
     <PDFPreviewClient
-      reviewPackage={reviewPackage}
-      sessionId={sessionId}
+      reviewPackage={MOCK_REVIEW_PACKAGE}
+      sessionId={MOCK_ID}
       clinicianNote=""
     />
   );
 }
 
 
-function JSONPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
-  const fhir = generateFhirDocumentReference(reviewPackage);
-  const jsonStr = JSON.stringify(fhir, null, 2);
-  const lines = jsonStr.split('\n');
+function JSONPreview() {
+  const lines = MOCK_JSON.split('\n');
   const colorize = (line: string) => {
     // keys in quotes — light cyan/blue
     line = line.replace(/"([^"]+)":/g, '<span style="color:#9cdcfe">"$1"</span>:');
@@ -399,45 +395,32 @@ function JSONPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
   );
 }
 
-function TextPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
-  const soap = reviewPackage.soapNote;
-  const textContent = (['subjective', 'objective', 'assessment', 'plan'] as const)
-    .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
-    .join('\n\n');
+function TextPreview() {
   return (
     <div className="h-full overflow-y-auto p-6 bg-white font-mono text-[12px] text-gray-700 leading-7 whitespace-pre-wrap">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
         <span className="w-2 h-2 rounded-full bg-gray-400" />
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plain Text · {textContent.split('\n').length} lines</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plain Text · {MOCK_TEXT.split('\n').length} lines</span>
       </div>
-      {textContent}
+      {MOCK_TEXT}
     </div>
   );
 }
 
-function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+function DocumentPreviewPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('pdf');
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = async () => {
-    const soap = reviewPackage.soapNote;
-    let content: string;
-    if (activeTab === 'json') {
-      const fhir = generateFhirDocumentReference(reviewPackage);
-      content = JSON.stringify(fhir, null, 2);
-    } else {
-      content = (['subjective', 'objective', 'assessment', 'plan'] as const)
-        .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
-        .join('\n\n');
-    }
+    const content = activeTab === 'json' ? MOCK_JSON : MOCK_TEXT;
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: '720px' }}>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: '620px' }}>
       {/* Tab bar */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white flex-shrink-0">
         <div className="flex items-center gap-1">
@@ -489,9 +472,9 @@ function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: Rev
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-hidden relative">
         {/* Slide animation wrapper */}
         <div className="h-full">
-          {activeTab === 'pdf' && <PDFPreview reviewPackage={reviewPackage} sessionId={sessionId} />}
-          {activeTab === 'json' && <JSONPreview reviewPackage={reviewPackage} />}
-          {activeTab === 'text' && <TextPreview reviewPackage={reviewPackage} />}
+          {activeTab === 'pdf' && <PDFPreview />}
+          {activeTab === 'json' && <JSONPreview />}
+          {activeTab === 'text' && <TextPreview />}
         </div>
       </div>
 
@@ -520,71 +503,15 @@ function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: Rev
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
-export default function ExportPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const router = useRouter();
-  const { sectionStatuses, reviewPackage: storePackage, reset } = useSessionStore();
-  const allApproved = useSessionStore(selectAllApproved);
-
+export default function ExportPreviewPage() {
   const [copyDone, setCopyDone] = useState(false);
   const [fhirLoading, setFhirLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [addendum, setAddendum] = useState('');
 
-  // Use real data if available, otherwise fall back to mock
-  const reviewPackage = storePackage ?? MOCK_REVIEW_PACKAGE;
-  const currentSectionStatuses = storePackage ? sectionStatuses : MOCK_SECTION_STATUSES;
-
-  const handleDownloadPDF = async () => {
-    setPdfLoading(true);
-    try {
-      const res = await fetch('/api/session/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reviewPackage),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `clinical-note-${id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('PDF download failed:', err);
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const handleDownloadFHIR = async () => {
-    setFhirLoading(true);
-    try {
-      const fhir = generateFhirDocumentReference(reviewPackage);
-      const blob = new Blob([JSON.stringify(fhir, null, 2)], { type: 'application/fhir+json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fhir-${id}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('FHIR export failed:', err);
-    } finally {
-      setFhirLoading(false);
-    }
-  };
-
-  const handleCopyText = async () => {
-    const soap = reviewPackage.soapNote;
-    const text = (['subjective', 'objective', 'assessment', 'plan'] as const)
-      .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
-      .join('\n\n');
-    await navigator.clipboard.writeText(text);
-    setCopyDone(true);
-    setTimeout(() => setCopyDone(false), 2500);
-  };
+  const mockPdfClick = async () => { setPdfLoading(true); await new Promise((r) => setTimeout(r, 1800)); setPdfLoading(false); };
+  const mockFhirClick = async () => { setFhirLoading(true); await new Promise((r) => setTimeout(r, 1400)); setFhirLoading(false); };
+  const mockCopyClick = async () => { setCopyDone(true); setTimeout(() => setCopyDone(false), 2500); };
 
   const sections = Object.keys(SECTION_LABELS) as SectionKey[];
 
@@ -664,13 +591,13 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-[12px] text-gray-400 mt-0.5">Switch tabs to preview the PDF, FHIR JSON bundle, or plain text export.</p>
               </div>
             </div>
-            <DocumentPreviewPanel reviewPackage={reviewPackage} sessionId={id} />
+            <DocumentPreviewPanel />
           </div>
         </div>
       </div>
 
       {/* ── Gray Section: Audit + Export Cards ── */}
-      <div className="px-6 max-w-[960px] mx-auto pt-10 pb-32">
+      <div className="px-6 max-w-[960px] mx-auto pt-10 pb-24">
 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 animate-in fade-in duration-700 delay-100">
@@ -694,18 +621,30 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                 </div>
               </div>
 
-              {/* Rows — each as a mini card */}
-              <div className="space-y-2">
+              {/* Rows */}
+              <div className="space-y-0.5">
                 {sections.map((key) => {
-                  const prov = provenanceLabel(currentSectionStatuses[key]);
+                  const prov = provenanceLabel(MOCK_SECTION_STATUSES[key]);
                   return (
-                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50/70 border border-gray-100 hover:bg-gray-50 transition-colors group">
+                    <div key={key} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
                       <span className="text-[14px] font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{SECTION_LABELS[key]}</span>
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border ${prov.style}`}>{prov.text}</span>
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${prov.style}`}>{prov.text}</span>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Violation footer */}
+              {MOCK_CONFIRMED_FLAGS.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                    <svg className="w-4 h-4 text-red-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <p className="text-[12px] font-semibold text-red-500">1 protocol violation logged in export bundle.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -751,7 +690,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                   <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">Formally rendered with cryptographic audit trail footer.</p>
                 </div>
               </div>
-              <button onClick={handleDownloadPDF} disabled={pdfLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+              <button onClick={mockPdfClick} disabled={pdfLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
                 {pdfLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Rendering...</> : 'Download PDF'}
               </button>
             </div>
@@ -771,7 +710,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                   <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">HL7-compliant DocumentReference for EHR integration.</p>
                 </div>
               </div>
-              <button onClick={handleDownloadFHIR} disabled={fhirLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+              <button onClick={mockFhirClick} disabled={fhirLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
                 {fhirLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Mapping...</> : 'Export FHIR'}
               </button>
             </div>
@@ -791,7 +730,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                   <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">Plain text for legacy EHR manual entry.</p>
                 </div>
               </div>
-              <button onClick={handleCopyText} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+              <button onClick={mockCopyClick} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
                 {copyDone ? <><svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>Copied!</> : 'Copy Text'}
               </button>
             </div>

@@ -309,17 +309,7 @@ export default function NewSessionPage() {
 
   // Processing overlay
   if (processingSessionId && isSubmitting) {
-    return (
-      <main className="min-h-screen bg-white flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="blob w-[600px] h-[600px] bg-green-200 -top-60 -right-40 animate-float" />
-          <div className="blob w-[400px] h-[400px] bg-green-100 -bottom-20 -left-20 animate-float" style={{ animationDelay: '-3s' }} />
-        </div>
-        <div className="w-full max-w-[500px] px-6 relative z-10">
-          <AgentProgress sessionId={processingSessionId} live={false} />
-        </div>
-      </main>
-    );
+    return <AgentProgress sessionId={processingSessionId} live={false} />;
   }
 
   return (

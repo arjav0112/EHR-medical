@@ -23,8 +23,8 @@ export function ConfidenceBar({ value, showLabel = true }: ConfidenceBarProps) {
     value >= 0.85
       ? { fill: '#BEF264', label: 'text-neon-400', glow: 'shadow-[0_0_15px_rgba(190,242,100,0.3)]' }
       : value >= 0.65
-      ? { fill: '#F59E0B', label: 'text-amber-400', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]' }
-      : { fill: '#EF4444', label: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]' };
+        ? { fill: '#F59E0B', label: 'text-amber-400', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]' }
+        : { fill: '#EF4444', label: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]' };
 
   return (
     <div className="w-full">
@@ -44,11 +44,11 @@ export function ConfidenceBar({ value, showLabel = true }: ConfidenceBarProps) {
         />
         {/* Subtle background segments */}
         <div className="absolute inset-0 flex justify-between pointer-events-none opacity-20">
-           {Array.from({ length: 4 }).map((_, i) => (
-             <div key={i} className="w-[1px] h-full bg-white/40" />
-           ))}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="w-[1px] h-full bg-white/40" />
+          ))}
         </div>
-        
+
         {/* Tooltip */}
         {showTooltip && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
@@ -61,7 +61,7 @@ export function ConfidenceBar({ value, showLabel = true }: ConfidenceBarProps) {
       </div>
       {showLabel && (
         <div className={`text-[10px] font-bold mt-1.5 text-right uppercase tracking-[0.2em] opacity-80 ${color.label}`}>
-          Neural Confidence: {pct}%
+          Confidence: {pct}%
         </div>
       )}
     </div>
