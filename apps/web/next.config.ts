@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
     'langchain',
     '@langchain/core',
     '@langchain/openai',
-    '@react-pdf/renderer',
   ],
   transpilePackages: ['agents'],
 };
