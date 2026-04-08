@@ -137,14 +137,9 @@ function Hero() {
             </Link>
             <Link
               href="#how-it-works"
-              className="flex items-center gap-2.5 text-[14px] font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              className="bg-white text-gray-900 text-[14px] font-semibold px-7 py-3.5 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm"
             >
               Book a Demo
-              <span className="w-6 h-6 bg-gray-900 rounded-sm flex items-center justify-center flex-shrink-0">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </span>
             </Link>
           </div>
 

@@ -323,7 +323,7 @@ type TabId = typeof TABS[number]['id'];
 // BlobProvider and ClinicalNotePDF are used directly inside that file (no dynamic
 // wrappers needed there), so none of the "su is not a function" pitfalls apply.
 const PDFPreviewClient = dynamic(
-  () => import('./PDFPreviewClient'),
+  () => import('../../session/[id]/export/PDFPreviewClient'),
   {
     ssr: false,
     loading: () => (

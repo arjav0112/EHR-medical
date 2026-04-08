@@ -1,10 +1,18 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import React, { use, useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Nav from '@/components/layout/Nav';
 import { useSessionStore, selectAllApproved, type SectionKey } from '@/lib/store/sessionStore';
 import { generateFhirDocumentReference } from '@/lib/export/generateFhir';
+import type { ReviewPackage } from 'agents';
+
+// ── Mock data ──────────────────────────────────────────────────────────────────
+
+const MOCK_ID = 'dev-preview-001';
+const MOCK_DATE = 'April 8, 2025';
+const MOCK_TS = '2025-04-08T14:22:00Z';
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   risk_flags: 'Risk Protocol',
@@ -14,18 +22,508 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   plan: 'Plan',
 };
 
+const MOCK_SECTION_STATUSES: Record<SectionKey, string> = {
+  risk_flags: 'approved',
+  subjective: 'edited',
+  objective: 'approved',
+  assessment: 'revised',
+  plan: 'approved',
+};
+
+const MOCK_CONFIRMED_FLAGS = [
+  { type: 'suicidal_ideation', label: 'Suicidal Ideation' },
+];
+
+const MOCK_SOAP = {
+  subjective: {
+    content: 'Patient presents with persistent low mood, decreased energy, and anhedonia for the past 3 weeks. Reports difficulty sleeping (early morning awakening) and reduced appetite with a 4 lb weight loss. Denies manic or hypomanic episodes. Patient notes increased irritability affecting occupational functioning.',
+    confidence: 0.92,
+    provenanceTag: 'clinician_edited',
+    revisionRounds: 1,
+  },
+  objective: {
+    content: 'Patient is alert and oriented ×4. Appearance appropriate, psychomotor activity mildly slowed. Speech normal rate and rhythm. Mood "depressed," affect constricted but reactive. Thought process linear and goal-directed. No perceptual disturbances. Insight fair, judgment intact. PHQ-9 score: 16 (moderate-severe).',
+    confidence: 0.88,
+    provenanceTag: 'approved',
+    revisionRounds: 0,
+  },
+  assessment: {
+    content: 'Major Depressive Disorder, single episode, moderate severity (DSM-5 296.22). Differential includes Persistent Depressive Disorder and Adjustment Disorder with depressed mood. Passive suicidal ideation without plan or intent, low acute risk per Columbia Protocol.',
+    confidence: 0.85,
+    provenanceTag: 'ai_revised',
+    revisionRounds: 2,
+  },
+  plan: {
+    content: '1. Initiate sertraline 50mg QD, titrate to 100mg after 2 weeks if tolerated.\n2. Refer to CBT – 8 sessions, weekly.\n3. Safety plan reviewed and signed; emergency contacts confirmed.\n4. Follow-up in 2 weeks or sooner PRN.\n5. Labs: TSH, CBC, CMP to rule out metabolic contributions.',
+    confidence: 0.9,
+    provenanceTag: 'approved',
+    revisionRounds: 0,
+  },
+};
+
+// ── Full mock ReviewPackage (matches the real type exactly) ──────────────────
+
+const MOCK_REVIEW_PACKAGE: ReviewPackage = {
+  sessionId: MOCK_ID,
+  reviewStatus: 'complete',
+  overallRiskLevel: 'low',
+  soapNote: {
+    subjective: {
+      content: 'Patient presents with persistent low mood, decreased energy, and anhedonia for the past 3 weeks. Reports difficulty sleeping (early morning awakening) and reduced appetite with a 4 lb weight loss. Denies manic or hypomanic episodes. Patient notes increased irritability affecting occupational functioning.',
+      confidence: 0.92,
+      sourceCitations: ['transcript:lines:4-18'],
+      status: 'edited',
+      revisionRounds: 1,
+      provenanceTag: 'clinician_edited',
+    },
+    objective: {
+      content: 'Patient is alert and oriented ×4. Appearance appropriate, psychomotor activity mildly slowed. Speech normal rate and rhythm. Mood "depressed," affect constricted but reactive. Thought process linear and goal-directed. No perceptual disturbances. Insight fair, judgment intact. PHQ-9 score: 16 (moderate-severe).',
+      confidence: 0.88,
+      sourceCitations: ['transcript:lines:22-35'],
+      status: 'approved',
+      revisionRounds: 0,
+      provenanceTag: 'approved',
+    },
+    assessment: {
+      content: 'Major Depressive Disorder, single episode, moderate severity (DSM-5 296.22). Differential includes Persistent Depressive Disorder and Adjustment Disorder with depressed mood. Passive suicidal ideation without plan or intent, low acute risk per Columbia Protocol.',
+      confidence: 0.85,
+      sourceCitations: ['transcript:lines:40-55'],
+      status: 'approved',
+      revisionRounds: 2,
+      provenanceTag: 'ai_revised',
+    },
+    plan: {
+      content: '1. Initiate sertraline 50mg QD, titrate to 100mg after 2 weeks if tolerated.\n2. Refer to CBT – 8 sessions, weekly.\n3. Safety plan reviewed and signed; emergency contacts confirmed.\n4. Follow-up in 2 weeks or sooner PRN.\n5. Labs: TSH, CBC, CMP to rule out metabolic contributions.',
+      confidence: 0.9,
+      sourceCitations: ['transcript:lines:60-72'],
+      status: 'approved',
+      revisionRounds: 0,
+      provenanceTag: 'approved',
+    },
+  },
+  riskFlags: [
+    {
+      type: 'suicidal_ideation',
+      severity: 'low',
+      evidence: 'Patient expresses passive thoughts of not wanting to wake up.',
+      transcriptLocation: 'lines:67-68',
+      protocolTriggered: 'Columbia Suicide Severity Rating Scale',
+      requiresImmediateAction: false,
+      status: 'confirmed',
+    },
+  ],
+  diagnosisSuggestions: [
+    {
+      dsm5Code: 'F32.1',
+      label: 'Major Depressive Disorder, single episode, moderate',
+      confidence: 0.87,
+      supportingCriteria: ['Depressed mood most of the day', 'Anhedonia', 'Sleep disturbance', 'Weight loss', 'Fatigue'],
+      conflictingSignals: ['No prior manic episodes ruled out'],
+      priorDiagnosisMatch: true,
+      intervalStatus: 'worsened',
+      specifier: 'moderate, without psychotic features',
+    },
+  ],
+  treatmentPlan: {
+    currentGoalsProgress: [
+      { goal: 'Reduce PHQ-9 below 10', status: 'in_progress', evidenceFromSession: 'PHQ-9 currently 16, down from 21 at intake' },
+    ],
+    newInterventions: ['Initiate sertraline 50mg QD', 'Weekly CBT referral'],
+    nextSessionFocus: 'Medication tolerability and sleep hygiene strategies',
+    referrals: ['CBT therapist', 'Psychiatry for medication management'],
+  },
+  agentMetadata: {
+    processingTimeMs: 14200,
+    transcriptQualityScore: 0.91,
+    agentsInvoked: ['transcript_quality', 'soap', 'risk', 'dsm', 'plan'],
+    lowConfidenceSections: [],
+  },
+  auditLog: [
+    { timestamp: '2025-04-08T14:10:00Z', section: 'subjective', action: 'ai_generated' },
+    { timestamp: '2025-04-08T14:11:00Z', section: 'objective', action: 'ai_generated' },
+    { timestamp: '2025-04-08T14:11:30Z', section: 'assessment', action: 'ai_generated' },
+    { timestamp: '2025-04-08T14:12:00Z', section: 'plan', action: 'ai_generated' },
+    { timestamp: '2025-04-08T14:18:00Z', section: 'subjective', action: 'clinician_edited', details: 'Expanded HPI detail' },
+    { timestamp: '2025-04-08T14:20:00Z', section: 'assessment', action: 'ai_revised', details: 'Incorporated clinician edits' },
+    { timestamp: '2025-04-08T14:22:00Z', section: 'all', action: 'clinician_approved' },
+  ],
+};
+
+// ── Built mock data strings ────────────────────────────────────────────────────
+
+const MOCK_JSON = JSON.stringify({
+  resourceType: 'Bundle',
+  id: MOCK_ID,
+  type: 'document',
+  timestamp: MOCK_TS,
+  entry: [
+    {
+      resource: {
+        resourceType: 'DocumentReference',
+        id: `doc-${MOCK_ID}`,
+        status: 'current',
+        type: { coding: [{ system: 'http://loinc.org', code: '34109-9', display: 'Note' }] },
+        date: MOCK_TS,
+        author: [{ display: 'EHR Copilot (AI-assisted)' }],
+        content: [{ attachment: { contentType: 'text/plain', title: 'Clinical Note' } }],
+      },
+    },
+    {
+      resource: {
+        resourceType: 'Composition',
+        id: `comp-${MOCK_ID}`,
+        status: 'final',
+        title: 'EHR Copilot Clinical Note',
+        date: MOCK_DATE,
+        section: [
+          { title: 'Subjective', text: { status: 'generated', div: MOCK_SOAP.subjective.content } },
+          { title: 'Objective', text: { status: 'generated', div: MOCK_SOAP.objective.content } },
+          { title: 'Assessment', text: { status: 'generated', div: MOCK_SOAP.assessment.content } },
+          { title: 'Plan', text: { status: 'generated', div: MOCK_SOAP.plan.content } },
+        ],
+      },
+    },
+    {
+      resource: {
+        resourceType: 'RiskAssessment',
+        id: `risk-${MOCK_ID}`,
+        status: 'final',
+        prediction: [
+          {
+            outcome: { text: 'Suicidal Ideation' },
+            qualitativeRisk: { coding: [{ code: 'low', display: 'Low acute risk — Columbia Protocol' }] },
+          },
+        ],
+      },
+    },
+  ],
+}, null, 2);
+
+const MOCK_TEXT = `EHR COPILOT — CLINICAL NOTE
+Session ID: ${MOCK_ID}
+Date: ${MOCK_DATE}
+Generated: AI-assisted · Clinician reviewed & approved
+${'─'.repeat(60)}
+
+SUBJECTIVE
+${MOCK_SOAP.subjective.content}
+[Confidence: 92% · Provenance: Clinician edited · Revisions: 1]
+
+${'─'.repeat(60)}
+
+OBJECTIVE
+${MOCK_SOAP.objective.content}
+[Confidence: 88% · Provenance: AI drafted · Approved · Revisions: 0]
+
+${'─'.repeat(60)}
+
+ASSESSMENT
+${MOCK_SOAP.assessment.content}
+[Confidence: 85% · Provenance: AI drafted · Revised 2× · Revisions: 2]
+
+${'─'.repeat(60)}
+
+PLAN
+${MOCK_SOAP.plan.content}
+[Confidence: 90% · Provenance: AI drafted · Approved · Revisions: 0]
+
+${'─'.repeat(60)}
+
+RISK FLAGS (CONFIRMED)
+⚠  SUICIDAL IDEATION — LOW
+   Evidence: "Patient expresses passive thoughts of not wanting to wake up."
+   Location: ~00:12:30 · Protocol: Columbia Suicide Severity Rating Scale
+
+${'─'.repeat(60)}
+
+AUDIT TRAIL
+2025-04-08T14:10:00Z · subjective  · ai_generated
+2025-04-08T14:11:00Z · objective   · ai_generated
+2025-04-08T14:11:30Z · assessment  · ai_generated
+2025-04-08T14:12:00Z · plan        · ai_generated
+2025-04-08T14:18:00Z · subjective  · clinician_edited
+2025-04-08T14:20:00Z · assessment  · ai_revised
+2025-04-08T14:22:00Z · all         · clinician_approved
+
+${'─'.repeat(60)}
+AI-assisted clinical documentation. Reviewed and approved by clinician.
+This note does not replace clinical judgment.                  Page 1 / 1`;
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
 function provenanceLabel(status: string): { text: string; style: string } {
-  if (status === 'edited') return { text: 'CLINICIAN OVERRIDE', style: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' };
-  if (status === 'revised') return { text: 'NEURAL REVISION', style: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
-  return { text: 'AI SYNTHESIZED', style: 'bg-neon-500/10 text-neon-400 border-neon-500/20' };
+  if (status === 'edited') return { text: 'Clinician Override', style: 'bg-blue-50 text-blue-600 border-blue-200' };
+  if (status === 'revised') return { text: 'Neural Revision', style: 'bg-violet-50 text-violet-600 border-violet-200' };
+  return { text: 'AI Synthesized', style: 'bg-green-50 text-green-700 border-green-200' };
 }
 
-// ─── Export Page ──────────────────────────────────────────────────────────────
+function confidenceColor(v: number) {
+  if (v >= 0.85) return 'bg-green-500';
+  if (v >= 0.65) return 'bg-amber-400';
+  return 'bg-red-500';
+}
+
+// ── Pill Navbar ────────────────────────────────────────────────────────────────
+
+function PillNav() {
+  return (
+    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+      <div className="w-full max-w-[900px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </span>
+          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
+        </Link>
+        <div className="flex items-center gap-2 text-[13px]">
+          <span className="text-gray-400 font-medium">New Session</span>
+          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          <span className="text-gray-400 font-medium">Review</span>
+          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          <span className="font-semibold text-green-600">Export</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session</span>
+          <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full truncate max-w-[160px]">{MOCK_ID}</span>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ── Document Preview Panel ─────────────────────────────────────────────────────
+
+const TABS = [
+  {
+    id: 'pdf', label: 'PDF Preview', icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    )
+  },
+  {
+    id: 'json', label: 'FHIR JSON', icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+      </svg>
+    )
+  },
+  {
+    id: 'text', label: 'Plain Text', icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="17" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="17" y1="18" x2="3" y2="18" />
+      </svg>
+    )
+  },
+] as const;
+
+type TabId = typeof TABS[number]['id'];
+
+// Import the entire PDF client as one dynamic chunk — react-pdf is browser-only.
+// BlobProvider and ClinicalNotePDF are used directly inside that file (no dynamic
+// wrappers needed there), so none of the "su is not a function" pitfalls apply.
+const PDFPreviewClient = dynamic(
+  () => import('./PDFPreviewClient'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full flex flex-col items-center justify-center gap-4 bg-gray-50">
+        <svg className="w-8 h-8 text-gray-300 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        <p className="text-[13px] text-gray-400 font-medium">Compiling PDF…</p>
+      </div>
+    ),
+  }
+);
+
+function PDFPreview({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+  return (
+    <PDFPreviewClient
+      reviewPackage={reviewPackage}
+      sessionId={sessionId}
+      clinicianNote=""
+    />
+  );
+}
+
+
+function JSONPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
+  const fhir = generateFhirDocumentReference(reviewPackage);
+  const jsonStr = JSON.stringify(fhir, null, 2);
+  const lines = jsonStr.split('\n');
+  const colorize = (line: string) => {
+    // keys in quotes — light cyan/blue
+    line = line.replace(/"([^"]+)":/g, '<span style="color:#9cdcfe">"$1"</span>:');
+    // string values — soft green
+    line = line.replace(/: "([^"]*)"/g, ': <span style="color:#ce9178">"$1"</span>');
+    // numbers + booleans — orange
+    line = line.replace(/: (true|false|null)/g, ': <span style="color:#569cd6">$1</span>');
+    // brackets & braces
+    line = line.replace(/([{}[\]])/g, '<span style="color:#ffd700">$1</span>');
+    return line;
+  };
+
+  return (
+    <div className="h-full flex flex-col" style={{ background: '#1e1e2e' }}>
+      {/* Header bar */}
+      <div className="flex items-center gap-2 px-5 py-3 flex-shrink-0" style={{ borderBottom: '2px solid #3b82f6' }}>
+        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8b949e' }}>
+          FHIR R4 Bundle · {lines.length} lines
+        </span>
+      </div>
+
+      {/* Code body */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 font-mono text-[13px] leading-[1.7]">
+        {lines.map((line, i) => (
+          <div key={i} className="flex hover:bg-white/[0.03] rounded">
+            <span
+              className="select-none w-10 flex-shrink-0 text-right pr-5 text-[12px]"
+              style={{ color: '#4a5568' }}
+            >
+              {i + 1}
+            </span>
+            <span
+              className="flex-1 whitespace-pre"
+              style={{ color: '#d4d4d4' }}
+              dangerouslySetInnerHTML={{ __html: colorize(line.replace(/</g, '&lt;').replace(/>/g, '&gt;')) }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TextPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
+  const soap = reviewPackage.soapNote;
+  const textContent = (['subjective', 'objective', 'assessment', 'plan'] as const)
+    .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
+    .join('\n\n');
+  return (
+    <div className="h-full overflow-y-auto p-6 bg-white font-mono text-[12px] text-gray-700 leading-7 whitespace-pre-wrap">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+        <span className="w-2 h-2 rounded-full bg-gray-400" />
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plain Text · {textContent.split('\n').length} lines</span>
+      </div>
+      {textContent}
+    </div>
+  );
+}
+
+function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+  const [activeTab, setActiveTab] = useState<TabId>('pdf');
+  const [copied, setCopied] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleCopy = async () => {
+    const soap = reviewPackage.soapNote;
+    let content: string;
+    if (activeTab === 'json') {
+      const fhir = generateFhirDocumentReference(reviewPackage);
+      content = JSON.stringify(fhir, null, 2);
+    } else {
+      content = (['subjective', 'objective', 'assessment', 'plan'] as const)
+        .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
+        .join('\n\n');
+    }
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: '720px' }}>
+      {/* Tab bar */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white flex-shrink-0">
+        <div className="flex items-center gap-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 ${activeTab === tab.id
+                ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+                }`}
+            >
+              <span className={activeTab === tab.id ? 'text-green-600' : 'text-gray-400'}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Copy button — only for JSON + Text tabs */}
+          {activeTab !== 'pdf' && (
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-800 bg-white border border-gray-200 px-3 py-1.5 rounded-lg transition-all hover:border-gray-300"
+            >
+              {copied ? (
+                <>
+                  <svg className="w-3.5 h-3.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  Copied
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                  Copy
+                </>
+              )}
+            </button>
+          )}
+          {/* PDF download pill */}
+          {activeTab === 'pdf' && (
+            <span className="text-[10px] font-bold text-gray-400 bg-white border border-gray-200 px-3 py-1.5 rounded-lg">
+              Preview Only
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Panel body */}
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-hidden relative">
+        {/* Slide animation wrapper */}
+        <div className="h-full">
+          {activeTab === 'pdf' && <PDFPreview reviewPackage={reviewPackage} sessionId={sessionId} />}
+          {activeTab === 'json' && <JSONPreview reviewPackage={reviewPackage} />}
+          {activeTab === 'text' && <TextPreview reviewPackage={reviewPackage} />}
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="flex items-center justify-between px-5 py-2 border-t border-gray-100 bg-white flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] text-gray-400">
+            {activeTab === 'pdf' && '⚡ Live react-pdf render · ClinicalNotePDF.tsx · A4'}
+            {activeTab === 'json' && `📦 FHIR R4 Bundle · ${Math.round(MOCK_JSON.length / 1024 * 10) / 10} KB`}
+            {activeTab === 'text' && `📝 Plain text · ${MOCK_TEXT.split('\n').length} lines`}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${activeTab === tab.id ? 'bg-green-500 w-4' : 'bg-gray-300'}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function ExportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { sectionStatuses, reviewPackage, input, reset } = useSessionStore();
+  const { sectionStatuses, reviewPackage: storePackage, reset } = useSessionStore();
   const allApproved = useSessionStore(selectAllApproved);
 
   const [copyDone, setCopyDone] = useState(false);
@@ -33,35 +531,11 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const [pdfLoading, setPdfLoading] = useState(false);
   const [addendum, setAddendum] = useState('');
 
-  useEffect(() => {
-    if (!allApproved) {
-      router.replace(`/session/${id}/review`);
-    }
-  }, [allApproved, id, router]);
-
-  if (!allApproved || !reviewPackage) return null;
-
-  const handleDownloadFHIR = async () => {
-    if (!reviewPackage) return;
-    setFhirLoading(true);
-    try {
-      const fhir = generateFhirDocumentReference(reviewPackage);
-      const blob = new Blob([JSON.stringify(fhir, null, 2)], { type: 'application/fhir+json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fhir-${id}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFhirLoading(false);
-    }
-  };
+  // Use real data if available, otherwise fall back to mock
+  const reviewPackage = storePackage ?? MOCK_REVIEW_PACKAGE;
+  const currentSectionStatuses = storePackage ? sectionStatuses : MOCK_SECTION_STATUSES;
 
   const handleDownloadPDF = async () => {
-    if (!reviewPackage) return;
     setPdfLoading(true);
     try {
       const res = await fetch('/api/session/pdf', {
@@ -78,17 +552,33 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
+      console.error('PDF download failed:', err);
     } finally {
       setPdfLoading(false);
     }
   };
 
+  const handleDownloadFHIR = async () => {
+    setFhirLoading(true);
+    try {
+      const fhir = generateFhirDocumentReference(reviewPackage);
+      const blob = new Blob([JSON.stringify(fhir, null, 2)], { type: 'application/fhir+json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fhir-${id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('FHIR export failed:', err);
+    } finally {
+      setFhirLoading(false);
+    }
+  };
+
   const handleCopyText = async () => {
     const soap = reviewPackage.soapNote;
-    const text = (
-      ['subjective', 'objective', 'assessment', 'plan'] as const
-    )
+    const text = (['subjective', 'objective', 'assessment', 'plan'] as const)
       .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
       .join('\n\n');
     await navigator.clipboard.writeText(text);
@@ -97,187 +587,315 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   };
 
   const sections = Object.keys(SECTION_LABELS) as SectionKey[];
-  const confirmedFlags = reviewPackage.riskFlags.filter((f) => f.status === 'confirmed');
 
   return (
-    <main className="min-h-screen bg-navy-950 selection:bg-neon-500/30 selection:text-neon-500">
-      <Nav />
-      <div className="pt-32 pb-40 px-6 max-w-[1000px] mx-auto relative">
-        {/* Background decorative elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-neon-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <main className="min-h-screen bg-[#f8faf8]">
+      <PillNav />
 
-        {/* ── Success header ── */}
-        <div className="text-center mb-20 relative z-10 animate-in fade-in slide-in-from-top-10 duration-1000">
-          <div className="w-24 h-24 bg-neon-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_50px_rgba(190,242,100,0.3)] rotate-3">
-            <svg className="w-12 h-12 text-navy-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+      {/* DEV BANNER
+      <div className="fixed top-[76px] inset-x-0 z-40 flex items-center justify-center gap-3 bg-amber-50 border-b border-amber-200 py-2">
+        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        <span className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Dev Preview — Mock Data — Export / PDF Download Page</span>
+      </div> */}
+
+      {/* ── Gray Section: Hero ── */}
+      <div className="pt-40 pb-16 px-6 max-w-[960px] mx-auto">
+
+        {/* ── Hero ── */}
+        <div className="text-center animate-in fade-in slide-in-from-top-6 duration-700">
+
+          {/* Badge — dark outlined pill (matches home page) */}
+          <div className="flex justify-center mb-7">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-gray-300 bg-white shadow-sm">
+              <span className="text-[13px] font-bold text-gray-800">✦</span>
+              <span className="text-[11px] font-semibold text-gray-700 uppercase tracking-[0.1em]">Export &amp; Verification</span>
+            </div>
           </div>
-          <h1 className="text-6xl font-serif font-medium text-white tracking-tight mb-4">Verification Complete</h1>
-          <p className="text-xl text-navy-400 font-serif font-light max-w-xl mx-auto leading-relaxed">
-            All clinical vectors have been synchronized and successfully captured into the immutable session state.
+
+          {/* Headline — green bar highlight (matches home page) */}
+          <h1 className="text-[52px] md:text-[58px] font-bold text-gray-900 leading-[1.08] tracking-[-0.025em] mb-6">
+            Verification <span className="text-green-600">Complete</span>
+          </h1>
+
+          <p className="text-[16px] text-gray-500 leading-[1.65] mb-9 max-w-[520px] mx-auto">
+            All clinical vectors have been synchronized and successfully captured into the immutable session state. Ready for export.
           </p>
+
+          {/* CTAs */}
+          <div className="flex flex-row items-center justify-center gap-4 mb-10">
+            <Link
+              href="/session/new"
+              className="bg-gray-900 text-white text-[14px] font-semibold px-7 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200 shadow-sm"
+            >
+              Start New Session
+            </Link>
+            <Link
+              href="/"
+              className="bg-white text-gray-700 text-[14px] font-semibold px-7 py-3.5 rounded-full hover:bg-gray-50 transition-colors duration-200 shadow-sm border border-gray-200"
+            >
+              Back to Home
+            </Link>
+          </div>
+
+          {/* Trust signals */}
+          <div className="flex flex-wrap items-center justify-center gap-5 text-[13px] text-gray-500 pt-4 border-t border-gray-200 max-w-md mx-auto">
+            {['HIPAA Compliant', 'Secure & Private', 'No credit card'].map((item) => (
+              <span key={item} className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                {item}
+              </span>
+            ))}
+          </div>
+
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+      </div>
 
-          {/* Left Column: Audit & Addendum */}
-          <div className="lg:col-span-12 xl:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
 
-            {/* Audit Summary Card */}
-            <div className="glass-card bg-white/[0.02] border-white/10 p-8 flex flex-col group transition-all duration-700 animate-in fade-in slide-in-from-left-10">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-[12px] font-bold text-white uppercase tracking-[0.3em]">Session Audit Matrix</h2>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-neon-500 shadow-[0_0_10px_rgba(190,242,100,0.8)] animate-pulse" />
-                  <span className="text-[10px] font-bold text-navy-500 uppercase tracking-widest font-mono">ID: {id.slice(0, 8)}</span>
+      {/* ── White Section: Document Preview ── */}
+      <div className="bg-white py-14">
+        <div className="px-6 max-w-[960px] mx-auto">
+          <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-[20px] font-bold text-gray-900">Document Preview</h2>
+                <p className="text-[12px] text-gray-400 mt-0.5">Switch tabs to preview the PDF, FHIR JSON bundle, or plain text export.</p>
+              </div>
+            </div>
+            <DocumentPreviewPanel reviewPackage={reviewPackage} sessionId={id} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Gray Section: Audit + Export Cards ── */}
+      <div className="px-6 max-w-[960px] mx-auto pt-10 pb-32">
+
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 animate-in fade-in duration-700 delay-100">
+
+          {/* Session Audit Matrix card */}
+          <div className="rounded-2xl overflow-hidden flex flex-col border border-gray-100" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white p-6">
+              {/* Card header */}
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0 border border-green-100">
+                  <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[17px] font-bold text-gray-900">Session Audit Matrix</h2>
+                    <span className="text-[10px] font-mono text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md flex-shrink-0 ml-2">{MOCK_ID.slice(0, 8)}</span>
+                  </div>
+                  <p className="text-[13px] text-gray-500 mt-0.5">Provenance trace for each clinical section</p>
                 </div>
               </div>
 
-              <div className="space-y-4 flex-1">
+              {/* Rows — each as a mini card */}
+              <div className="space-y-2">
                 {sections.map((key) => {
-                  const status = sectionStatuses[key];
-                  const prov = provenanceLabel(status);
+                  const prov = provenanceLabel(currentSectionStatuses[key]);
                   return (
-                    <div key={key} className="flex items-center justify-between py-3 border-b border-white/[0.03] last:border-0 group/row">
-                      <span className="text-[14px] font-serif font-medium text-navy-300 group-hover/row:text-white transition-colors">{SECTION_LABELS[key]}</span>
-                      <span className={`text-[9px] font-bold px-3 py-1 rounded-lg border uppercase tracking-wider backdrop-blur-md transition-all ${prov.style}`}>
-                        {prov.text}
-                      </span>
+                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50/70 border border-gray-100 hover:bg-gray-50 transition-colors group">
+                      <span className="text-[14px] font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{SECTION_LABELS[key]}</span>
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border ${prov.style}`}>{prov.text}</span>
                     </div>
                   );
                 })}
               </div>
+            </div>
+          </div>
 
-              {confirmedFlags.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-red-500/20">
-                  <div className="flex items-start gap-4 text-red-400">
-                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <p className="text-[13px] font-bold uppercase tracking-wider leading-relaxed">
-                      {confirmedFlags.length} Protocol Violation{confirmedFlags.length > 1 ? 's' : ''} detected and permanently logged in neutral export bundle.
-                    </p>
-                  </div>
+          {/* Clinician Commentary card */}
+          <div className="rounded-2xl overflow-hidden flex flex-col border border-gray-100" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white p-6 flex flex-col flex-1">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-11 h-11 bg-gray-50 rounded-2xl flex items-center justify-center flex-shrink-0 border border-gray-100">
+                  <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
                 </div>
-              )}
-            </div>
-
-            {/* Clinician Addendum Card */}
-            <div className="glass-card bg-white/[0.02] border-white/10 p-8 flex flex-col group animate-in fade-in slide-in-from-right-10 duration-1000">
-              <h2 className="text-[12px] font-bold text-white uppercase tracking-[0.3em] mb-6">Clinician Final Commentary</h2>
-              <div className="relative group/field flex-1 mb-6">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                <textarea
-                  value={addendum}
-                  onChange={(e) => setAddendum(e.target.value)}
-                  placeholder="Capture any final neural insights or clinical deviations..."
-                  rows={6}
-                  className="w-full bg-navy-950/40 border border-white/5 group-focus-within/field:border-neon-500/30 rounded-2xl px-6 py-6 text-[15px] text-white placeholder-navy-700 leading-relaxed font-serif focus:outline-none transition-all duration-500 min-h-[220px]"
-                />
+                <div>
+                  <h2 className="text-[17px] font-bold text-gray-900">Clinician Final Commentary</h2>
+                  <p className="text-[13px] text-gray-500 mt-0.5">Appended to PDF and JSON metadata stream</p>
+                </div>
               </div>
-              <p className="text-[10px] font-bold text-navy-600 uppercase tracking-widest text-center italic">Final addendum will be appended to the PDF/JSON metadata stream.</p>
+              <textarea
+                value={addendum}
+                onChange={(e) => setAddendum(e.target.value)}
+                placeholder="Capture any final insights or clinical deviations..."
+                rows={6}
+                className="flex-1 w-full bg-gray-50 border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl px-4 py-3.5 text-[14px] text-gray-700 placeholder-gray-400 leading-relaxed focus:outline-none transition-all duration-200 resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Export Cards ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150">
+
+          {/* PDF card */}
+          <div className="rounded-2xl overflow-hidden border border-gray-100 group hover:shadow-lg transition-all duration-300 flex flex-col" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white p-6 flex flex-col flex-1">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0 border border-green-100 group-hover:bg-green-100 transition-colors">
+                  <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-[17px] font-bold text-gray-900">Protocol PDF</h3>
+                  <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">Formally rendered with cryptographic audit trail footer.</p>
+                </div>
+              </div>
+              <button onClick={handleDownloadPDF} disabled={pdfLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+                {pdfLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Rendering...</> : 'Download PDF'}
+              </button>
             </div>
           </div>
 
-          {/* Bottom Grid: Export Options */}
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-
-            {/* PDF Export */}
-            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10">
-              <div className="w-14 h-14 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
-                <svg className="w-7 h-7 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
-                </svg>
+          {/* FHIR card */}
+          <div className="rounded-2xl overflow-hidden border border-gray-100 group hover:shadow-lg transition-all duration-300 flex flex-col" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white p-6 flex flex-col flex-1">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0 border border-green-100 group-hover:bg-green-100 transition-colors">
+                  <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-[17px] font-bold text-gray-900">FHIR R4 Bundle</h3>
+                  <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">HL7-compliant DocumentReference for EHR integration.</p>
+                </div>
               </div>
-              <h3 className="text-xl font-serif font-medium text-white mb-2">Protocol PDF</h3>
-              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
-                Formally rendered clinical documentation with cryptographic audit trail footer.
-              </p>
-              <button
-                onClick={handleDownloadPDF}
-                disabled={pdfLoading}
-                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-                <span className="relative z-10">
-                  {pdfLoading ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <span className="w-3.5 h-3.5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
-                      Rendering...
-                    </span>
-                  ) : 'Synthesize PDF'}
-                </span>
+              <button onClick={handleDownloadFHIR} disabled={fhirLoading} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+                {fhirLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Mapping...</> : 'Export FHIR'}
               </button>
             </div>
+          </div>
 
-            {/* FHIR Export */}
-            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-100">
-              <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
-                <svg className="w-7 h-7 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /><line x1="12" y1="2" x2="12" y2="22" />
-                </svg>
+          {/* Copy card */}
+          <div className="rounded-2xl overflow-hidden border border-gray-100 group hover:shadow-lg transition-all duration-300 flex flex-col" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white p-6 flex flex-col flex-1">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0 border border-green-100 group-hover:bg-green-100 transition-colors">
+                  <svg className="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-[17px] font-bold text-gray-900">Copy to Clipboard</h3>
+                  <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">Plain text for legacy EHR manual entry.</p>
+                </div>
               </div>
-              <h3 className="text-xl font-serif font-medium text-white mb-2">FHIR R4 Bundle</h3>
-              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
-                Machine-readable DocumentReference for seamless integration into HL7-compliant systems.
-              </p>
-              <button
-                onClick={handleDownloadFHIR}
-                disabled={fhirLoading}
-                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-                <span className="relative z-10">
-                  {fhirLoading ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Mapping...
-                    </span>
-                  ) : 'Export FHIR'}
-                </span>
-              </button>
-            </div>
-
-            {/* Clipboard Copy */}
-            <div className="glass-card bg-white/[0.02] border-white/10 p-8 group/card transition-all duration-500 hover:bg-white/[0.04] animate-in slide-in-from-bottom-10 delay-200">
-              <div className="w-14 h-14 bg-neon-500/10 border border-neon-500/20 rounded-2xl flex items-center justify-center mb-8 group-hover/card:scale-110 transition-transform">
-                <svg className="w-7 h-7 text-neon-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-serif font-medium text-white mb-2">Clipboard Stream</h3>
-              <p className="text-[13px] text-navy-400 leading-relaxed mb-8 flex-1 font-serif">
-                Instant textual extraction for immediate manual entry into legacy EHR endpoints.
-              </p>
-              <button
-                onClick={handleCopyText}
-                className="w-full group/btn relative bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.2em] py-4 rounded-xl hover:bg-neon-500 hover:text-navy-950 hover:border-transparent transition-all duration-500 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-                <span className="relative z-10">{copyDone ? '✓ Sequence Copied' : 'Initiate Copy'}</span>
+              <button onClick={handleCopyText} className="mt-auto w-full bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-[13px] font-bold uppercase tracking-[0.08em] py-3 rounded-full transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                {copyDone ? <><svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>Copied!</> : 'Copy Text'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── Start New Session ── */}
-        <div className="text-center mt-32 relative z-10 animate-in slide-in-from-bottom-5 duration-1000 delay-500">
-          <button
-            onClick={() => { reset(); router.push('/session/new'); }}
-            className="group inline-flex items-center gap-4 text-[13px] font-bold text-navy-400 hover:text-white uppercase tracking-[0.3em] transition-all"
-          >
-            <span className="w-12 h-[1px] bg-white/10 group-hover:bg-neon-500 group-hover:w-20 transition-all" />
-            Initialize New Neural Stream
-            <span className="w-12 h-[1px] bg-white/10 group-hover:bg-neon-500 group-hover:w-20 transition-all" />
-          </button>
-          <p className="text-[11px] text-navy-600 mt-12 max-w-lg mx-auto leading-relaxed font-serif uppercase tracking-widest opacity-50">
-            Automated session archival. Digital clinical representation finalized.
-            Neural patterns preserved for future predictive analytics.
-          </p>
-        </div>
+
+
+
 
       </div>
+
+      {/* ── Footer — matching home page ── */}
+      <footer className="relative overflow-hidden bg-white">
+        <div
+          className="absolute top-0 left-0 right-0 h-[160px] pointer-events-none"
+          style={{
+            backgroundImage: "url('/mountain-cta-v2.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+        <div
+          className="absolute top-0 left-0 right-0 h-[160px] pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.65) 35%, rgba(255,255,255,0.95) 60%, #ffffff 75%)',
+          }}
+        />
+
+        <div className="relative z-10 max-w-[1200px] mx-auto px-8 pt-10 pb-0">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-10 pb-12">
+            {/* Brand */}
+            <div className="md:col-span-2">
+              <Link href="/" className="flex items-center gap-2.5 mb-4">
+                <span className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </span>
+                <span className="text-[17px] font-bold text-gray-900">EHR Copilot</span>
+              </Link>
+              <p className="text-[13px] leading-relaxed max-w-[260px] mb-7" style={{ color: '#6b7280' }}>
+                Discover an AI-driven clinical documentation platform that helps teams document accurately and efficiently. This innovative solution uses artificial intelligence to simplify clinical workflows.
+              </p>
+              <div className="flex gap-2.5">
+                {[
+                  { label: 'Facebook', icon: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z', green: false },
+                  { label: 'X', icon: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z', green: true },
+                  { label: 'LinkedIn', icon: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z M4 6a2 2 0 100-4 2 2 0 000 4z', green: false },
+                  { label: 'Instagram', icon: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z', green: false },
+                ].map(({ label, icon, green }) => (
+                  <a
+                    key={label}
+                    href="#"
+                    aria-label={label}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${green
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'border border-gray-200 text-gray-500 hover:text-white hover:bg-green-600 hover:border-green-600'
+                      }`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d={icon} />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Link columns */}
+            {[
+              { title: 'Product', links: ['Features', 'Pricing', 'Integrations', 'Changelog', 'Roadmap'] },
+              { title: 'Company', links: ['About Us', 'Careers', 'Blog', 'Partners', 'Contact Us'] },
+              { title: 'Resources', links: ['Help Center', 'Documentation', 'Video Tutorials', 'Community Forum', 'FAQs'] },
+              { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'GDPR Compliance', 'Security'] },
+            ].map(({ title, links }) => (
+              <div key={title}>
+                <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
+                <ul className="space-y-2.5">
+                  {links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom bar */}
+          <div className="py-5 border-t border-gray-100 flex items-center justify-between">
+            <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
+            <div className="flex items-center gap-4 text-[12px] text-gray-400">
+              <span>HIPAA Compliant</span>
+              <span>·</span>
+              <span>SOC 2 Type II</span>
+              <span>·</span>
+              <span>GDPR Ready</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

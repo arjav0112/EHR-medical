@@ -13,6 +13,7 @@ const ReviseInputSchema = z.object({
     gender: z.string(),
     knownDiagnoses: z.array(z.string()),
     sessionType: z.string(),
+    currentMedications: z.array(z.string()),
   }),
   currentRevisionRounds: z.number().int().min(0).default(0),
 });

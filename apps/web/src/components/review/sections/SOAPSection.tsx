@@ -8,6 +8,7 @@ import { ProvenanceTag } from '../ProvenanceTag';
 import { FeedbackInput } from './FeedbackInput';
 import { StreamingRevision } from './StreamingRevision';
 import { DependencyWarning } from './DependencyWarning';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -218,9 +219,7 @@ export function SOAPSection({
         </div>
         {/* Scrollable text */}
         <div className="flex-1 overflow-y-auto px-8 py-7">
-          <p className="text-[15px] text-gray-800 leading-[1.85] whitespace-pre-wrap">
-            {currentContent}
-          </p>
+          <MarkdownContent content={currentContent} />
         </div>
       </div>
     </div>
@@ -276,9 +275,7 @@ export function SOAPSection({
 
             {/* Scrollable text */}
             <div className="flex-1 overflow-y-auto px-8 py-7 scrollbar-hide">
-              <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {currentContent}
-              </p>
+              <MarkdownContent content={currentContent} />
             </div>
 
             {/* Citations footer */}
@@ -381,9 +378,7 @@ export function SOAPSection({
             <div className="flex-1 min-h-0 opacity-40 pointer-events-none">
               <div className="h-full bg-white border border-gray-100 rounded-2xl overflow-hidden">
                 <div className="h-full overflow-y-auto px-8 py-7 scrollbar-hide">
-                  <p className="text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {currentContent}
-                  </p>
+                  <MarkdownContent content={currentContent} className="opacity-60" />
                 </div>
               </div>
             </div>
@@ -597,9 +592,7 @@ export function SOAPSection({
         {/* ── Content card */}
         <div className="flex-1 bg-white border-l-4 border-l-green-500 border border-green-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-8 py-7 scrollbar-hide">
-            <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">
-              {currentContent}
-            </p>
+            <MarkdownContent content={currentContent} />
           </div>
 
           {currentSection.sourceCitations.length > 0 && (

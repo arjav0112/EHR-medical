@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,43 +57,41 @@ const AGENTS: AgentNode[] = [
   },
 ];
 
-// ─── Water fill step ──────────────────────────────────────────────────────────
+// ─── Pipeline step ───────────────────────────────────────────────────────────
 
 function PipelineStep({
   agent,
   status,
   isLast,
+  index,
 }: {
   agent: AgentNode;
   status: AgentStatus;
   isLast: boolean;
+  index: number;
 }) {
   const isDone = status === 'complete';
   const isRunning = status === 'running';
   const isError = status === 'error';
 
-  const dotColor = isDone
-    ? 'bg-emerald-500'
-    : isRunning
-    ? 'bg-violet-500'
-    : isError
-    ? 'bg-red-500'
-    : 'bg-gray-200';
-
-  const labelColor = isDone
-    ? 'text-emerald-600'
-    : isRunning
-    ? 'text-violet-600'
-    : isError
-    ? 'text-red-500'
-    : 'text-gray-400';
-
   return (
-    <div className="flex gap-4">
+    <div
+      className="flex gap-5 animate-in fade-in slide-in-from-left-4"
+      style={{ animationDelay: `${index * 80}ms`, animationDuration: '500ms', animationFillMode: 'both' }}
+    >
       {/* Pipe column */}
-      <div className="flex flex-col items-center w-8 flex-shrink-0">
+      <div className="flex flex-col items-center w-9 flex-shrink-0">
         {/* Node dot */}
-        <div className={`relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-700 ${dotColor}`}>
+        <div
+          className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 border ${isDone
+              ? 'bg-green-600 border-green-600'
+              : isRunning
+                ? 'bg-green-50 border-green-300'
+                : isError
+                  ? 'bg-red-50 border-red-300'
+                  : 'bg-gray-50 border-gray-200'
+            }`}
+        >
           {isDone && (
             <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -102,33 +99,29 @@ function PipelineStep({
           )}
           {isRunning && (
             <>
-              <div className="absolute inset-0 rounded-full bg-violet-400 animate-ping opacity-40" />
-              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+              <div className="absolute inset-0 rounded-xl bg-green-300 animate-ping opacity-30" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-600 animate-pulse" />
             </>
           )}
-          {isError && <span className="text-white text-[13px] font-bold">!</span>}
+          {isError && <span className="text-red-500 text-[13px] font-bold">!</span>}
           {status === 'pending' && <div className="w-2 h-2 rounded-full bg-gray-300" />}
         </div>
 
-        {/* Connector pipe */}
+        {/* Connector */}
         {!isLast && (
-          <div className="relative w-[3px] flex-1 min-h-[36px] overflow-hidden rounded-full bg-gray-100 my-1">
-            {/* Water fill — fills from top if this step is done */}
+          <div className="relative w-[2px] flex-1 min-h-[28px] overflow-hidden rounded-full bg-gray-100 my-1.5">
             <div
-              className="absolute top-0 left-0 right-0 rounded-full transition-all duration-1000 ease-in-out"
+              className="absolute top-0 left-0 right-0 rounded-full transition-all duration-700 ease-in-out"
               style={{
                 height: isDone ? '100%' : '0%',
-                background: isDone
-                  ? 'linear-gradient(to bottom, #a78bfa, #10b981)'
-                  : 'transparent',
+                background: isDone ? '#16a34a' : 'transparent',
               }}
             />
-            {/* Flowing shimmer when currently running */}
             {isRunning && (
               <div
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: 'linear-gradient(to bottom, transparent, #a78bfa 40%, #a78bfa 60%, transparent)',
+                  background: 'linear-gradient(to bottom, transparent, #16a34a 40%, #16a34a 60%, transparent)',
                   animation: 'flow 1.2s linear infinite',
                 }}
               />
@@ -138,11 +131,12 @@ function PipelineStep({
       </div>
 
       {/* Content */}
-      <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
+      <div className={`pb-6 ${isLast ? 'pb-0' : ''} pt-1.5`}>
         <p className={`text-[14px] font-semibold leading-tight transition-colors duration-500 ${isDone ? 'text-gray-700' : isRunning ? 'text-gray-900' : 'text-gray-400'}`}>
           {agent.label}
         </p>
-        <p className={`text-[12px] mt-0.5 transition-colors duration-500 ${labelColor}`}>
+        <p className={`text-[12px] mt-0.5 transition-colors duration-500 ${isDone ? 'text-green-600' : isRunning ? 'text-green-600' : isError ? 'text-red-500' : 'text-gray-400'
+          }`}>
           {agent.statusLabel[status]}
         </p>
       </div>
@@ -164,6 +158,38 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
   // Sync mockStatuses when preview state changes
   useEffect(() => {
     if (!live && mockStatuses) setStatuses(mockStatuses);
+  }, [live, mockStatuses]);
+
+  // Auto-animation when live=false and no mockStatuses (production loading overlay)
+  useEffect(() => {
+    if (live || mockStatuses) return;
+
+    const agentKeys = AGENTS.map((a) => a.key);
+    let step = 0;
+
+    const tick = () => {
+      step++;
+      setStatuses(() => {
+        const next: Record<string, AgentStatus> = {};
+        agentKeys.forEach((key, i) => {
+          if (step > i + 1) next[key] = 'complete';
+          else if (step === i + 1) next[key] = 'running';
+          else next[key] = 'pending';
+        });
+        return next;
+      });
+
+      // Loop back after all complete + brief pause
+      if (step > agentKeys.length + 1) {
+        step = 0;
+        setStatuses(Object.fromEntries(agentKeys.map((k) => [k, 'pending'])));
+      }
+    };
+
+    const id = setInterval(tick, 2000);
+    // Kick off the first step immediately
+    tick();
+    return () => clearInterval(id);
   }, [live, mockStatuses]);
 
   useEffect(() => {
@@ -210,9 +236,9 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
 
   return (
     <>
-      {/* Pill navbar — matches review page design */}
+      {/* ── Pill navbar — matching home page ── */}
       <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-        <div className="w-full max-w-[900px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+        <div className="w-full max-w-[860px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +253,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
             <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span className="font-semibold text-violet-600">Processing</span>
+            <span className="font-semibold text-green-600">Processing</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -239,91 +265,97 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
         </div>
       </header>
 
+      {/* ── Main content ── */}
+      <main className="min-h-screen flex items-center justify-center px-6" style={{ background: '#f8faf8' }}>
 
-      <main className="h-screen flex items-center justify-center px-6 relative pt-14">
-        {/* Fixed background — always covers full viewport */}
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 0,
-            backgroundImage: 'url(/plitvice-bg-wide.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        {/* Soft overlay */}
-        <div className="fixed inset-0 bg-white/15" style={{ zIndex: 1 }} />
+        <div className="w-full max-w-[520px] animate-in fade-in slide-in-from-bottom-6 duration-700">
 
-        <div className="relative z-10 w-full max-w-5xl flex items-stretch gap-10 bg-white border border-gray-100 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.07)] overflow-hidden">
+          {/* ── Center card ── */}
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden" style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' }}>
 
-          {/* ── Left: Avatar panel ─────────────────────────────────────── */}
-          <div className="w-[340px] flex-shrink-0 bg-gradient-to-b from-violet-50 to-emerald-50 flex flex-col items-center justify-center py-14 px-10 gap-6">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-violet-200/40 blur-2xl scale-125" />
-              <Image
-                src="/doctor-avatar.png"
-                alt="Clinical AI"
-                width={180}
-                height={180}
-                className="relative rounded-2xl object-cover"
-                priority
-              />
-            </div>
-            <div className="text-center">
-              <p className="text-[15px] font-bold text-gray-800">EHR Copilot</p>
-              <p className="text-[12px] text-gray-500 mt-1">Clinical AI is working…</p>
-            </div>
-
-            {/* Mini progress ring */}
-            <div className="flex flex-col items-center gap-1.5 w-full">
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700 ease-in-out"
-                  style={{
-                    width: `${progressPct}%`,
-                    background: 'linear-gradient(to right, #a78bfa, #10b981)',
-                  }}
-                />
+            {/* Header */}
+            <div className="px-8 pt-8 pb-6 border-b border-gray-100">
+              {/* Badge */}
+              <div className="flex justify-center mb-5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-gray-300 bg-white shadow-sm">
+                  <span className="text-[13px] font-bold text-gray-800">✦</span>
+                  <span className="text-[11px] font-semibold text-gray-700 uppercase tracking-[0.1em]">Processing</span>
+                </div>
               </div>
-              <p className="text-[11px] font-mono text-gray-400">{completedCount} / {AGENTS.length} agents complete</p>
-            </div>
-          </div>
 
-          {/* ── Right: Pipeline progress ────────────────────────────────── */}
-          <div className="flex-1 py-10 pr-10">
-            <div className="mb-7">
-              <p className="text-[11px] font-bold text-violet-500 uppercase tracking-[0.2em] mb-1">Processing</p>
-              <h2 className="text-[22px] font-bold text-gray-900 leading-tight">Running clinical agents</h2>
-              <p className="text-[13px] text-gray-400 mt-1">This usually takes 15–30 seconds.</p>
+              <h2 className="text-[24px] font-bold text-gray-900 text-center leading-tight mb-2">
+                Running Clinical Agents
+              </h2>
+              <p className="text-[13px] text-gray-500 text-center leading-relaxed">
+                This usually takes 15–30 seconds. Sit tight.
+              </p>
+
+              {/* Progress bar */}
+              <div className="mt-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Progress</span>
+                  <span className="text-[11px] font-bold text-gray-500">{completedCount}/{AGENTS.length}</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-in-out"
+                    style={{
+                      width: `${progressPct}%`,
+                      background: allDone
+                        ? '#16a34a'
+                        : 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)',
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Pipeline */}
-            <div className="mt-6">
+            {/* Pipeline steps */}
+            <div className="px-8 py-6">
               {AGENTS.map((agent, i) => (
                 <PipelineStep
                   key={agent.key}
                   agent={agent}
                   status={statuses[agent.key] ?? 'pending'}
                   isLast={i === AGENTS.length - 1}
+                  index={i}
                 />
               ))}
             </div>
 
-            {/* States */}
-            {hasError && (
-              <div className="mt-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[13px] text-red-600 font-medium">
-                An agent encountered an error. Please check the transcript and try again.
+            {/* Status footer */}
+            {(hasError || allDone) && (
+              <div className="px-8 pb-6">
+                {hasError && (
+                  <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-[13px] text-red-600 font-medium">
+                    <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    An agent encountered an error. Please check the transcript and try again.
+                  </div>
+                )}
+                {allDone && (
+                  <div className="flex items-center gap-2.5 bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-[13px] text-green-700 font-semibold">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    All agents complete — redirecting to review…
+                  </div>
+                )}
               </div>
             )}
-            {allDone && (
-              <div className="mt-6 flex items-center gap-2.5 text-[13px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-4 py-3 rounded-xl">
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          </div>
+
+          {/* Trust signals below card */}
+          <div className="flex flex-wrap items-center justify-center gap-5 text-[12px] text-gray-400 mt-6">
+            {['HIPAA Compliant', 'End-to-End Encrypted', 'SOC 2 Ready'].map((item) => (
+              <span key={item} className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
-                All agents complete — redirecting to review…
-              </div>
-            )}
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </main>
