@@ -75,12 +75,16 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Google Sign-In popup loads scripts from apis.google.com and accounts.google.com
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://apis.google.com https://accounts.google.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob:",
-      "connect-src 'self' blob: data:",
-      "frame-src 'self' blob:",
+      // Google profile photos, data URIs
+      "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com",
+      // Firebase Firestore, Auth token exchange, and Google APIs
+      "connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com wss://*.firebaseio.com",
+      // Google Sign-In popup frame
+      "frame-src 'self' blob: https://accounts.google.com https://*.firebaseapp.com",
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "form-action 'self'",

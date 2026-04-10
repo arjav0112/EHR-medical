@@ -534,7 +534,7 @@ function DocumentPreviewPanel({ reviewPackage, sessionId, clinicianNote }: { rev
 export default function ExportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { sectionStatuses, reviewPackage: storePackage, reset } = useSessionStore();
+  const { sectionStatuses, reviewPackage: storePackage, reset, setReviewPackage, setSessionId } = useSessionStore();
   const allApproved = useSessionStore(selectAllApproved);
 
   const [copyDone, setCopyDone] = useState(false);
@@ -544,6 +544,21 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const [commentaryAdded, setCommentaryAdded] = useState(false);
 
   const finalCommentary = commentaryAdded ? addendum : '';
+
+  // Hydrate from API (Redis → Firestore fallback) when store is empty
+  // This handles navigation from the dashboard where the store isn't pre-populated.
+  useEffect(() => {
+    if (storePackage || id === 'dev-preview-001') return;
+    fetch(`/api/session/${id}/review`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.reviewPackage) {
+          setReviewPackage(data.reviewPackage);
+          setSessionId(id);
+        }
+      })
+      .catch(() => { /* silent — falls back to MOCK below */ });
+  }, [id, storePackage, setReviewPackage, setSessionId]);
 
   // Use real data if available, otherwise fall back to mock
   const reviewPackage = storePackage ?? MOCK_REVIEW_PACKAGE;

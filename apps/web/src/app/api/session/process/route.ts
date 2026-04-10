@@ -1,7 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SessionInputSchema } from 'agents';
+import { SessionInputSchema, type SessionInput } from 'agents';
 import { ehrGraph } from 'agents';
 import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
+import { saveSession } from '@/lib/firebase/sessions';
+import type { ReviewPackage } from 'agents';
+
+// ─── Firestore helper ─────────────────────────────────────────────────────────
+async function saveSessionToFirestore({
+  sessionId, reviewPackage, input, createdAt, clinicianId,
+}: {
+  sessionId: string;
+  reviewPackage: ReviewPackage;
+  input: SessionInput;
+  createdAt: Date;
+  clinicianId: string;
+}) {
+  await saveSession({
+    sessionId,
+    clinicianId,
+    patientId:          input.patient.id,
+    patientAge:         input.patient.age,
+    patientGender:      input.patient.gender,
+    knownDiagnoses:     input.patient.knownDiagnoses,
+    currentMedications: input.patient.currentMedications,
+    sessionType:        input.session.sessionType,
+    sessionNumber:      input.session.sessionNumber,
+    modality:           input.session.modality,
+    durationMinutes:    input.session.durationMinutes,
+    status:             'complete',
+    overallRiskLevel:   reviewPackage.overallRiskLevel,
+    reviewPackage,
+    createdAt,
+  });
+}
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
@@ -33,6 +64,11 @@ export async function POST(req: NextRequest) {
   }
 
   const input = parsed.data;
+  // clinicianId: sent from client when logged in, falls back to 'default'
+  const clinicianId: string =
+    (typeof body === 'object' && body !== null && 'clinicianId' in body)
+      ? String((body as Record<string, unknown>).clinicianId)
+      : 'default';
 
   // PII guard
   if (containsPII(input.session.transcript)) {
@@ -88,6 +124,15 @@ export async function POST(req: NextRequest) {
       setReviewPackage(sessionId, result.reviewPackage),
       setSessionInput(sessionId, input),
     ]);
+
+    // Persist to Firestore (fire-and-forget — never blocks the response)
+    saveSessionToFirestore({
+      sessionId,
+      reviewPackage: result.reviewPackage,
+      input,
+      createdAt: new Date(startTime),
+      clinicianId,
+    }).catch((e) => console.error('[Firestore] saveSession failed:', e));
 
     return NextResponse.json(
       {
