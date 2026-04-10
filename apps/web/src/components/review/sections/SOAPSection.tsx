@@ -9,6 +9,7 @@ import { FeedbackInput } from './FeedbackInput';
 import { StreamingRevision } from './StreamingRevision';
 import { DependencyWarning } from './DependencyWarning';
 import { MarkdownContent } from '@/components/ui/MarkdownContent';
+import { ObjectiveBarometerPanel } from './ObjectiveBarometerPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -342,6 +343,11 @@ export function SOAPSection({
             </button>
           </div>
         </div>
+
+        {/* Barometer panel — Objective section only */}
+        {section === 'objective' && soapSection.barometers && (
+          <ObjectiveBarometerPanel barometers={soapSection.barometers} />
+        )}
       </div>
     );
   }
@@ -418,6 +424,7 @@ export function SOAPSection({
                       gender: sessionInput?.patient.gender ?? '',
                       knownDiagnoses: sessionInput?.patient.knownDiagnoses ?? [],
                       sessionType: sessionInput?.session.sessionType ?? 'follow_up',
+                      currentMedications: sessionInput?.patient.currentMedications ?? [],
                     },
                     currentRevisionRounds: revisionRounds,
                   }}
@@ -642,6 +649,11 @@ export function SOAPSection({
             Refine with AI
           </button>
         </div>
+
+        {/* Barometer panel — Objective section only */}
+        {section === 'objective' && currentSection.barometers && (
+          <ObjectiveBarometerPanel barometers={currentSection.barometers} />
+        )}
       </div>
     </div>
   );

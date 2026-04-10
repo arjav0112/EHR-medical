@@ -46,12 +46,24 @@ const MOCK_SOAP = {
     confidence: 0.88,
     provenanceTag: 'approved',
     revisionRounds: 0,
+    barometers: {
+      psychomotor: { level: 'mild', description: 'Mildly slowed, cooperative, no agitation observed', trend: 'stable' },
+      speech: { level: 'normal', description: 'Normal rate and rhythm, spontaneous and coherent', trend: 'improved' },
+    },
   },
   assessment: {
-    content: 'Major Depressive Disorder, single episode, moderate severity (DSM-5 296.22). Differential includes Persistent Depressive Disorder and Adjustment Disorder with depressed mood. Passive suicidal ideation without plan or intent, low acute risk per Columbia Protocol.',
+    content: 'Major Depressive Disorder, single episode, moderate severity (DSM-5 296.22). Differential includes Persistent Depressive Disorder and Adjustment Disorder with depressed mood. Passive suicidal ideation without plan or intent, low acute risk per Columbia Protocol.\n\n---\n\n**DSM-5 Criteria Evaluation**\n\n| DSM-5 Criterion | Evidence | Status | Δ vs Prior |\n|---|---|---|---|\n| Depressed mood nearly every day | "completely numb and unable to get out of bed" | ✓ Met | → Stable |\n| Anhedonia | Reports inability to enjoy activities previously enjoyed | ✓ Met | → Stable |\n| Sleep disturbance | Early morning awakening reported | ✓ Met | ↑ Worsened |\n| Appetite/weight change | 4 lb weight loss in 3 weeks | ✓ Met | ★ New |\n| Fatigue or loss of energy | Decreased energy daily | ✓ Met | → Stable |\n| Concentration difficulty | Impaired occupational functioning noted | ~ Partial | → Stable |\n| Psychomotor change | Mildly slowed on MSE | ~ Partial | → Stable |\n| Duration ≥2 weeks | 3 weeks reported | ✓ Met | ↓ Improved |',
     confidence: 0.85,
     provenanceTag: 'ai_revised',
     revisionRounds: 2,
+    criteriaTable: [
+      { criterion: 'Depressed mood nearly every day', evidence: '"completely numb and unable to get out of bed"', met: 'yes', changeFromPrior: 'stable' },
+      { criterion: 'Anhedonia', evidence: 'Reports inability to enjoy activities previously enjoyed', met: 'yes', changeFromPrior: 'stable' },
+      { criterion: 'Sleep disturbance', evidence: 'Early morning awakening reported', met: 'yes', changeFromPrior: 'worsened' },
+      { criterion: 'Appetite/weight change', evidence: '4 lb weight loss in 3 weeks', met: 'yes', changeFromPrior: 'new' },
+      { criterion: 'Fatigue or loss of energy', evidence: 'Decreased energy daily', met: 'yes', changeFromPrior: 'stable' },
+      { criterion: 'Concentration difficulty', evidence: 'Impaired occupational functioning noted', met: 'partial', changeFromPrior: 'stable' },
+    ],
   },
   plan: {
     content: '1. Initiate sertraline 50mg QD, titrate to 100mg after 2 weeks if tolerated.\n2. Refer to CBT – 8 sessions, weekly.\n3. Safety plan reviewed and signed; emergency contacts confirmed.\n4. Follow-up in 2 weeks or sooner PRN.\n5. Labs: TSH, CBC, CMP to rule out metabolic contributions.',
@@ -340,12 +352,12 @@ const PDFPreviewClient = dynamic(
   }
 );
 
-function PDFPreview({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+function PDFPreview({ reviewPackage, sessionId, clinicianNote }: { reviewPackage: ReviewPackage; sessionId: string; clinicianNote?: string }) {
   return (
     <PDFPreviewClient
       reviewPackage={reviewPackage}
       sessionId={sessionId}
-      clinicianNote=""
+      clinicianNote={clinicianNote}
     />
   );
 }
@@ -368,7 +380,7 @@ function JSONPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: '#1e1e2e' }}>
+    <div className="flex flex-col" style={{ height: '80vh', background: '#1e1e2e' }}>
       {/* Header bar */}
       <div className="flex items-center gap-2 px-5 py-3 flex-shrink-0" style={{ borderBottom: '2px solid #3b82f6' }}>
         <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -405,7 +417,7 @@ function TextPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
     .map((k) => `## ${k.toUpperCase()}\n${soap[k]?.content ?? ''}`)
     .join('\n\n');
   return (
-    <div className="h-full overflow-y-auto p-6 bg-white font-mono text-[12px] text-gray-700 leading-7 whitespace-pre-wrap">
+    <div className="overflow-y-auto p-6 bg-white font-mono text-[12px] text-gray-700 leading-7 whitespace-pre-wrap" style={{ height: '80vh' }}>
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
         <span className="w-2 h-2 rounded-full bg-gray-400" />
         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plain Text · {textContent.split('\n').length} lines</span>
@@ -415,7 +427,7 @@ function TextPreview({ reviewPackage }: { reviewPackage: ReviewPackage }) {
   );
 }
 
-function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: ReviewPackage; sessionId: string }) {
+function DocumentPreviewPanel({ reviewPackage, sessionId, clinicianNote }: { reviewPackage: ReviewPackage; sessionId: string; clinicianNote?: string }) {
   const [activeTab, setActiveTab] = useState<TabId>('pdf');
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -437,7 +449,7 @@ function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: Rev
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: '720px' }}>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
       {/* Tab bar */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white flex-shrink-0">
         <div className="flex items-center gap-1">
@@ -486,10 +498,9 @@ function DocumentPreviewPanel({ reviewPackage, sessionId }: { reviewPackage: Rev
       </div>
 
       {/* Panel body */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-hidden relative">
-        {/* Slide animation wrapper */}
-        <div className="h-full">
-          {activeTab === 'pdf' && <PDFPreview reviewPackage={reviewPackage} sessionId={sessionId} />}
+      <div ref={scrollRef} className="relative">
+        <div>
+          {activeTab === 'pdf' && <PDFPreview reviewPackage={reviewPackage} sessionId={sessionId} clinicianNote={clinicianNote} />}
           {activeTab === 'json' && <JSONPreview reviewPackage={reviewPackage} />}
           {activeTab === 'text' && <TextPreview reviewPackage={reviewPackage} />}
         </div>
@@ -530,6 +541,9 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const [fhirLoading, setFhirLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [addendum, setAddendum] = useState('');
+  const [commentaryAdded, setCommentaryAdded] = useState(false);
+
+  const finalCommentary = commentaryAdded ? addendum : '';
 
   // Use real data if available, otherwise fall back to mock
   const reviewPackage = storePackage ?? MOCK_REVIEW_PACKAGE;
@@ -541,7 +555,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
       const res = await fetch('/api/session/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reviewPackage),
+        body: JSON.stringify({ ...reviewPackage, clinicianNote: finalCommentary }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
@@ -664,7 +678,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-[12px] text-gray-400 mt-0.5">Switch tabs to preview the PDF, FHIR JSON bundle, or plain text export.</p>
               </div>
             </div>
-            <DocumentPreviewPanel reviewPackage={reviewPackage} sessionId={id} />
+            <DocumentPreviewPanel reviewPackage={reviewPackage} sessionId={id} clinicianNote={finalCommentary} />
           </div>
         </div>
       </div>
@@ -725,11 +739,41 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
               </div>
               <textarea
                 value={addendum}
-                onChange={(e) => setAddendum(e.target.value)}
+                onChange={(e) => { if (!commentaryAdded) setAddendum(e.target.value); }}
                 placeholder="Capture any final insights or clinical deviations..."
-                rows={6}
-                className="flex-1 w-full bg-gray-50 border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl px-4 py-3.5 text-[14px] text-gray-700 placeholder-gray-400 leading-relaxed focus:outline-none transition-all duration-200 resize-none"
+                rows={12}
+                disabled={commentaryAdded}
+                className={`w-full border rounded-xl px-4 py-3.5 text-[14px] text-gray-700 placeholder-gray-400 leading-relaxed focus:outline-none transition-all duration-200 resize-none ${commentaryAdded
+                  ? 'bg-green-50/50 border-green-200 cursor-not-allowed opacity-80'
+                  : 'bg-gray-50 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100'
+                  }`}
               />
+              {/* Add / Edit buttons */}
+              <div className="flex items-center gap-3 mt-3">
+                {!commentaryAdded ? (
+                  <button
+                    onClick={() => { if (addendum.trim()) setCommentaryAdded(true); }}
+                    disabled={!addendum.trim()}
+                    className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 active:scale-[0.97] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg> */}
+                    Add Commentary
+                  </button>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-green-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                      Commentary Added
+                    </span>
+                    <button
+                      onClick={() => setCommentaryAdded(false)}
+                      className="text-[12px] font-medium text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

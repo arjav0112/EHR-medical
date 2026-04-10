@@ -27,15 +27,55 @@ export interface SessionInput {
   };
 }
 
+// ─── Objective Barometers ─────────────────────────────────────────────────────
+
+export type BarometerLevel = 'normal' | 'mild' | 'moderate' | 'severe';
+export type BarometerTrend = 'improved' | 'stable' | 'worsened' | 'no_prior_data';
+
+export interface SingleBarometer {
+  level: BarometerLevel;
+  description: string;         // e.g. "Mildly slowed, cooperative"
+  trend: BarometerTrend;
+}
+
+export interface VitalSignsBarometer {
+  bloodPressure?: string;      // e.g. "128/82 mmHg"
+  heartRate?: string;          // e.g. "88 bpm"
+  weight?: string;             // e.g. "72 kg"
+  level: BarometerLevel;
+  trend: BarometerTrend;
+}
+
+export interface ObjectiveBarometers {
+  vitalSigns?: VitalSignsBarometer;  // undefined = not recorded → hidden in UI
+  psychomotor: SingleBarometer;
+  speech: SingleBarometer;
+}
+
+// ─── Assessment Criteria Table ────────────────────────────────────────────────
+
+export interface AssessmentCriteriaRow {
+  criterion: string;           // DSM-5 criterion name
+  evidence: string;            // verbatim or paraphrased transcript evidence
+  met: 'yes' | 'no' | 'partial';
+  changeFromPrior: 'improved' | 'stable' | 'worsened' | 'new' | 'na';
+}
+
 // ─── SOAP ──────────────────────────────────────────────────────────────────────
 
 export interface SOAPSection {
   content: string;
-  confidence: number;             // 0-1
+  confidence: number;             // 0-1 — OVERRIDDEN by hallucinationGuard after generation
   sourceCitations: string[];      // e.g. ["transcript:lines:12-18"]
   status: 'draft' | 'approved' | 'edited' | 'revised';
   revisionRounds: number;
   provenanceTag: 'ai_drafted' | 'ai_revised' | 'clinician_edited' | 'approved';
+  hallucinationRisk?: number;     // 0-1 from guard agent; 0 = grounded, 1 = fabricated
+  groundingIssues?: string[];     // specific claims flagged as ungrounded
+  // Objective-only
+  barometers?: ObjectiveBarometers;
+  // Assessment-only
+  criteriaTable?: AssessmentCriteriaRow[];
 }
 
 export interface SOAPNote {
@@ -91,6 +131,22 @@ export interface TreatmentPlan {
   referrals: string[];
 }
 
+// ─── Hallucination Guard ──────────────────────────────────────────────────────
+
+export interface SectionGuardResult {
+  section: 'subjective' | 'objective' | 'assessment' | 'plan';
+  groundedConfidence: number;     // 0-1 independently scored (replaces self-reported)
+  hallucinationRisk: number;      // 0-1; ≥0.4 = flagged for clinician review
+  groundingIssues: string[];      // list of specific fabricated/ungrounded claims
+  reasoning: string;              // chain-of-thought explanation
+}
+
+export interface HallucinationReport {
+  sections: SectionGuardResult[];
+  overallHallucinationRisk: number;  // max across sections
+  flaggedSections: string[];         // section names that exceeded threshold
+}
+
 // ─── Audit ────────────────────────────────────────────────────────────────────
 
 export interface AuditEntry {
@@ -120,6 +176,7 @@ export interface ReviewPackage {
     transcriptQualityScore: number;
     agentsInvoked: string[];
     lowConfidenceSections: string[];
+    hallucinationReport?: HallucinationReport;
   };
   auditLog: AuditEntry[];
 }
@@ -133,6 +190,7 @@ export interface GraphState {
   riskFlags: RiskFlag[];
   diagnosisSuggestions: DiagnosisSuggestion[];
   treatmentPlan: TreatmentPlan | null;
+  hallucinationReport: HallucinationReport | null;
   reviewPackage: ReviewPackage | null;
   auditLog: AuditEntry[];
   error: string | null;

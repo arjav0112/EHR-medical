@@ -13,6 +13,7 @@ import { soapNode } from './agents/soapAgent';
 import { riskNode } from './agents/riskAgent';
 import { dsmNode } from './agents/dsmAgent';
 import { planNode } from './agents/planAgent';
+import { hallucinationGuardNode } from './agents/hallucinationGuardAgent';
 import { reviewBundlerNode } from './agents/reviewBundler';
 
 // ─── State Annotation ─────────────────────────────────────────────────────────
@@ -40,6 +41,10 @@ export const GraphStateAnnotation = Annotation.Root({
     reducer: (_, next) => next,
   }),
   reviewPackage: Annotation<ReviewPackage | null>({
+    default: () => null,
+    reducer: (_, next) => next,
+  }),
+  hallucinationReport: Annotation<import('./types/index').HallucinationReport | null>({
     default: () => null,
     reducer: (_, next) => next,
   }),
@@ -72,6 +77,7 @@ const workflow = new StateGraph(GraphStateAnnotation)
   .addNode('riskNode', riskNode)
   .addNode('dsmNode', dsmNode)
   .addNode('planNode', planNode)
+  .addNode('hallucinationGuardNode', hallucinationGuardNode)
   .addNode('reviewBundlerNode', reviewBundlerNode)
   // Entry
   .addEdge('__start__', 'transcriptQualityNode')
@@ -84,9 +90,10 @@ const workflow = new StateGraph(GraphStateAnnotation)
   .addEdge('transcriptQualityNode', 'riskNode')
   .addEdge('soapNode', 'dsmNode')
   .addEdge('riskNode', 'dsmNode')
-  // Sequential tail
+  // Sequential tail — guard runs after plan, before bundling
   .addEdge('dsmNode', 'planNode')
-  .addEdge('planNode', 'reviewBundlerNode')
+  .addEdge('planNode', 'hallucinationGuardNode')
+  .addEdge('hallucinationGuardNode', 'reviewBundlerNode')
   .addEdge('reviewBundlerNode', END);
 
 export const ehrGraph = workflow.compile();
