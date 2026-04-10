@@ -338,12 +338,12 @@ const PDFPreviewClient = dynamic(
   }
 );
 
-function PDFPreview() {
+function PDFPreview({ clinicianNote }: { clinicianNote?: string }) {
   return (
     <PDFPreviewClient
       reviewPackage={MOCK_REVIEW_PACKAGE}
       sessionId={MOCK_ID}
-      clinicianNote=""
+      clinicianNote={clinicianNote}
     />
   );
 }
@@ -407,7 +407,7 @@ function TextPreview() {
   );
 }
 
-function DocumentPreviewPanel() {
+function DocumentPreviewPanel({ clinicianNote }: { clinicianNote?: string }) {
   const [activeTab, setActiveTab] = useState<TabId>('pdf');
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -420,7 +420,7 @@ function DocumentPreviewPanel() {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: '620px' }}>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
       {/* Tab bar */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white flex-shrink-0">
         <div className="flex items-center gap-1">
@@ -469,10 +469,9 @@ function DocumentPreviewPanel() {
       </div>
 
       {/* Panel body */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-hidden relative">
-        {/* Slide animation wrapper */}
-        <div className="h-full">
-          {activeTab === 'pdf' && <PDFPreview />}
+      <div ref={scrollRef} className="relative">
+        <div>
+          {activeTab === 'pdf' && <PDFPreview clinicianNote={clinicianNote} />}
           {activeTab === 'json' && <JSONPreview />}
           {activeTab === 'text' && <TextPreview />}
         </div>
@@ -508,6 +507,9 @@ export default function ExportPreviewPage() {
   const [fhirLoading, setFhirLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [addendum, setAddendum] = useState('');
+  const [commentaryAdded, setCommentaryAdded] = useState(false);
+
+  const finalCommentary = commentaryAdded ? addendum : '';
 
   const mockPdfClick = async () => { setPdfLoading(true); await new Promise((r) => setTimeout(r, 1800)); setPdfLoading(false); };
   const mockFhirClick = async () => { setFhirLoading(true); await new Promise((r) => setTimeout(r, 1400)); setFhirLoading(false); };
@@ -591,7 +593,7 @@ export default function ExportPreviewPage() {
                 <p className="text-[12px] text-gray-400 mt-0.5">Switch tabs to preview the PDF, FHIR JSON bundle, or plain text export.</p>
               </div>
             </div>
-            <DocumentPreviewPanel />
+            <DocumentPreviewPanel clinicianNote={finalCommentary} />
           </div>
         </div>
       </div>
@@ -664,11 +666,41 @@ export default function ExportPreviewPage() {
               </div>
               <textarea
                 value={addendum}
-                onChange={(e) => setAddendum(e.target.value)}
+                onChange={(e) => { if (!commentaryAdded) setAddendum(e.target.value); }}
                 placeholder="Capture any final insights or clinical deviations..."
-                rows={6}
-                className="flex-1 w-full bg-gray-50 border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl px-4 py-3.5 text-[14px] text-gray-700 placeholder-gray-400 leading-relaxed focus:outline-none transition-all duration-200 resize-none"
+                rows={12}
+                disabled={commentaryAdded}
+                className={`w-full border rounded-xl px-4 py-3.5 text-[14px] text-gray-700 placeholder-gray-400 leading-relaxed focus:outline-none transition-all duration-200 resize-none ${commentaryAdded
+                  ? 'bg-green-50/50 border-green-200 cursor-not-allowed opacity-80'
+                  : 'bg-gray-50 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100'
+                  }`}
               />
+              {/* Add / Edit buttons */}
+              <div className="flex items-center gap-3 mt-3">
+                {!commentaryAdded ? (
+                  <button
+                    onClick={() => { if (addendum.trim()) setCommentaryAdded(true); }}
+                    disabled={!addendum.trim()}
+                    className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 active:scale-[0.97] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg> */}
+                    Add Commentary
+                  </button>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-green-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                      Commentary Added
+                    </span>
+                    <button
+                      onClick={() => setCommentaryAdded(false)}
+                      className="text-[12px] font-medium text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

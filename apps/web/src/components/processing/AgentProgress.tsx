@@ -55,6 +55,12 @@ const AGENTS: AgentNode[] = [
     sublabel: 'Building care recommendations',
     statusLabel: { pending: 'Queued', running: 'Planning…', complete: 'Complete', error: 'Failed' },
   },
+  {
+    key: 'hallucination_guard',
+    label: 'Hallucination guard',
+    sublabel: 'Auditing AI outputs against transcript',
+    statusLabel: { pending: 'Queued', running: 'Verifying grounding…', complete: 'Verified', error: 'Failed' },
+  },
 ];
 
 // ─── Pipeline step ───────────────────────────────────────────────────────────
@@ -266,7 +272,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       </header>
 
       {/* ── Main content ── */}
-      <main className="min-h-screen flex items-center justify-center px-6" style={{ background: '#f8faf8' }}>
+      <main className="min-h-screen flex items-center justify-center px-6 pt-24" style={{ background: '#f8faf8' }}>
 
         <div className="w-full max-w-[520px] animate-in fade-in slide-in-from-bottom-6 duration-700">
 

@@ -1,21 +1,110 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
-import type { SOAPNote } from '../types/index';
+import type { SOAPNote, AssessmentCriteriaRow } from '../types/index';
 
-const soapSection = () =>
+// ─── Zod Schemas ──────────────────────────────────────────────────────────────
+// Each helper is a FACTORY (called with ()) so Zod emits inline schemas,
+// never $ref/$defs — Gemini's API rejects JSON Schema $ref references.
+
+const makeLevel = () => z.enum(['normal', 'mild', 'moderate', 'severe']);
+const makeTrend = () => z.enum(['improved', 'stable', 'worsened', 'no_prior_data']);
+
+const makeBarometer = () =>
   z.object({
-    content: z.string(),
-    confidence: z.number().min(0).max(1),
-    sourceCitations: z.array(z.string()),
+    level: makeLevel(),
+    description: z.string().describe('Brief clinical description, e.g. "Mildly slowed, cooperative"'),
+    trend: makeTrend().describe('Compared to most recent prior session note'),
   });
 
-const SOAPOutputSchema = z.object({
-  subjective: soapSection(),
-  objective: soapSection(),
-  assessment: soapSection(),
-  plan: soapSection(),
+const makeVitalSigns = () =>
+  z.object({
+    bloodPressure: z.string().optional().describe('e.g. "128/82 mmHg" — omit if not documented'),
+    heartRate: z.string().optional().describe('e.g. "88 bpm" — omit if not documented'),
+    weight: z.string().optional().describe('e.g. "72 kg" — omit if not documented'),
+    level: makeLevel(),
+    trend: makeTrend(),
+  });
+
+const makeAssessmentCriteriaRow = () =>
+  z.object({
+    criterion: z.string().describe('DSM-5 criterion name (concise, e.g. "Depressed mood ≥2 weeks")'),
+    evidence: z.string().describe('Verbatim or paraphrased transcript evidence supporting/refuting this criterion'),
+    met: z.enum(['yes', 'no', 'partial']),
+    changeFromPrior: z.enum(['improved', 'stable', 'worsened', 'new', 'na']).describe('"na" if no prior session data'),
+  });
+
+const SubjectiveSchema = z.object({
+  content: z.string(),
+  confidence: z.number().min(0).max(1),
+  sourceCitations: z.array(z.string()),
 });
+
+const ObjectiveSchema = z.object({
+  content: z.string(),
+  confidence: z.number().min(0).max(1),
+  sourceCitations: z.array(z.string()),
+  barometers: z.object({
+    vitalSigns: makeVitalSigns().optional().describe(
+      'Only include if vitals are explicitly documented in transcript. For telehealth sessions without vitals, omit this field entirely.',
+    ),
+    psychomotor: makeBarometer(),
+    speech: makeBarometer(),
+  }),
+});
+
+const AssessmentSchema = z.object({
+  content: z.string(),
+  confidence: z.number().min(0).max(1),
+  sourceCitations: z.array(z.string()),
+  criteriaTable: z.array(makeAssessmentCriteriaRow()).describe(
+    'DSM-5 criteria evaluation table for the primary working diagnosis. Include all relevant criteria (typically 5-9 rows).',
+  ),
+});
+
+const PlanSchema = z.object({
+  content: z.string(),
+  confidence: z.number().min(0).max(1),
+  sourceCitations: z.array(z.string()),
+});
+
+const SOAPOutputSchema = z.object({
+  subjective: SubjectiveSchema,
+  objective: ObjectiveSchema,
+  assessment: AssessmentSchema,
+  plan: PlanSchema,
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function criteriaTableToMarkdown(rows: AssessmentCriteriaRow[]): string {
+  if (!rows.length) return '';
+
+  const MET_LABELS: Record<string, string> = {
+    yes: '✓ Met',
+    no: '✗ Not Met',
+    partial: '~ Partial',
+  };
+  const CHANGE_LABELS: Record<string, string> = {
+    improved: '↓ Improved',
+    stable: '→ Stable',
+    worsened: '↑ Worsened',
+    new: '★ New',
+    na: '— N/A',
+  };
+
+  const header = '| DSM-5 Criterion | Evidence | Status | Δ vs Prior |\n|---|---|---|---|';
+  const body = rows
+    .map(
+      (r) =>
+        `| ${r.criterion} | ${r.evidence} | ${MET_LABELS[r.met] ?? r.met} | ${CHANGE_LABELS[r.changeFromPrior] ?? r.changeFromPrior} |`,
+    )
+    .join('\n');
+
+  return `\n\n---\n\n**DSM-5 Criteria Evaluation**\n\n${header}\n${body}`;
+}
+
+// ─── System Prompt ─────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(sessionType: string, verbosity: string): string {
   return `You are an expert psychiatric clinician generating a clinically rigorous SOAP note from a therapy session transcript. Your output must be indistinguishable from a note written by a board-certified psychiatrist or PMHNP.
@@ -52,36 +141,61 @@ SECTION-BY-SECTION CLINICAL REQUIREMENTS
   • Judgment: Poor / Limited / Fair / Good — patient's ability to make safe, sound decisions.
   • Vital signs and BMI if documented in session.
 
-[A – ASSESSMENT] — Clinical formulation and diagnostic reasoning.
-  • For follow-up sessions: Begin with an Interval History statement — how is the patient's condition since the last encounter? (e.g., "Interval history: Patient reports worsening depressive symptoms since last session two weeks ago despite medication adjustment.")
-  • State the primary working diagnosis with full DSM-5 specificity (e.g., "Major Depressive Disorder, recurrent, severe, without psychotic features" not just "Depression").
-  • List up to 3 differential diagnoses with brief clinical justification for each.
-  • Explicitly state which DSM-5 criteria are being met and which are not (supporting vs. conflicting evidence).
-  • For chronic conditions, state whether each is: IMPROVED / STABLE / WORSENED since last encounter.
-  • Comment on clinical risk level: low / moderate / high (tie to the Risk section if applicable).
-  • Reference the MSE findings to support your formulation (e.g., "Blunted affect and anhedonia noted on MSE are consistent with the severity of the depressive episode.").
+  BAROMETERS (structured fields — required):
+  You MUST also populate the barometers object:
+  - vitalSigns: ONLY include if vitals (BP, HR, or weight) are explicitly stated in the transcript. For telehealth/virtual sessions without documented vitals, OMIT this field entirely. Do not guess or fabricate.
+  - psychomotor: Classify Behaviour/Psychomotor level as one of: normal | mild | moderate | severe.
+    Compare against prior session notes to determine trend: improved | stable | worsened | no_prior_data.
+  - speech: Classify Speech level as one of: normal | mild | moderate | severe.
+    Compare against prior session notes to determine trend.
 
-[P – PLAN] — Specific, actionable next steps. Each item must be tied to a diagnosis or identified need.
-  • Pharmacotherapy: For each medication — drug name, dose, route, frequency, purpose, and change made (new / continue / adjust / discontinue). Include rationale (e.g., "Increasing sertraline from 50mg to 100mg daily due to partial response and worsening PHQ-9 score").
-  • Non-pharmacological interventions: Specific therapeutic modalities with frequency (e.g., "Continue weekly CBT sessions targeting cognitive restructuring of catastrophic thinking patterns").
-  • Safety planning: If any risk is present, document the specific safety protocol activated (e.g., "Columbia Suicide Severity Rating Scale administered; safety plan updated and reviewed with patient").
-  • Patient education: Topics discussed (e.g., "Educated patient on sleep hygiene and circadian rhythm disruption in depression").
-  • Referrals: Specialist name, reason, urgency (e.g., "Referral placed to psychiatry for medication evaluation — STAT given severity of symptoms").
-  • Labs/Diagnostics: Any ordered tests and clinical rationale (e.g., "TSH ordered to rule out hypothyroidism as contributing factor to fatigue").
-  • Follow-up: Specific timeline (e.g., "Return in 2 weeks for medication check-in; sooner if symptoms worsen or safety concerns arise").
+[A – ASSESSMENT] — Clinical formulation and diagnostic reasoning.
+  • For follow-up sessions: Begin with an Interval History statement — how is the patient's condition since the last encounter?
+  • State the primary working diagnosis with full DSM-5 specificity.
+  • List up to 3 differential diagnoses with brief clinical justification for each.
+  • Explicitly state which DSM-5 criteria are being met and which are not.
+  • For chronic conditions, state whether each is: IMPROVED / STABLE / WORSENED since last encounter.
+  • Comment on clinical risk level: low / moderate / high.
+  • Reference the MSE findings to support your formulation.
+
+  CRITERIA TABLE (structured fields — required):
+  You MUST populate criteriaTable with a row for each relevant DSM-5 criterion for the PRIMARY working diagnosis.
+  - Include all applicable criteria (typically 5-9 rows for MDD, Bipolar, etc.)
+  - evidence: quote or paraphrase specific transcript support
+  - met: 'yes' | 'no' | 'partial'
+  - changeFromPrior: compare to prior notes if available, else 'na'
+
+[P – PLAN] — Specific, actionable next steps. Each item MUST be tied to a diagnosis or identified need.
+  FORMAT RULE (strictly required): Write EVERY plan item as a numbered markdown list entry:
+    1. **[Category]**: [Full description of action]  [Target: symptom/problem addressed]  [Timeframe: when/how often]
+
+  Categories to cover (use exactly these labels):
+  • **Pharmacotherapy**: drug name, dose, route, frequency, purpose, and change made (e.g., NEW / CONTINUED / DOSE ADJUSTED)
+  • **Psychotherapy**: modality, frequency, focus and rationale
+  • **Safety Planning**: if any risk present — specific protocol, contacted persons, follow-up check
+  • **Patient Education**: exact topics reviewed
+  • **Referrals**: specialist, reason, urgency
+  • **Labs/Diagnostics**: test name, clinical rationale, timeframe
+  • **Follow-up**: exact date/days, conditions for earlier contact
+
+  Example format:
+  1. **Pharmacotherapy**: Sertraline 50 mg PO QD — initiate today; titrate to 100 mg at week 2 if tolerated.  [Target: Major Depressive Disorder, insomnia]  [Timeframe: Start immediately]
+  2. **Psychotherapy**: CBT, weekly 50-min sessions × 12 weeks; focus on cognitive restructuring and behavioral activation.  [Target: Depressive cognitions, social withdrawal]  [Timeframe: Begin next session]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GLOBAL RULES (apply to all sections)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. CITE specific transcript line ranges for EVERY factual claim using "transcript:lines:X-Y". Estimate from content.
+1. CITE specific transcript line ranges for EVERY factual claim using "transcript:lines:X-Y".
 2. NEVER fabricate clinical details not present in the transcript. If data is absent, document as "not reported" or "not observed."
-3. NEVER place subjective patient reports in the Objective section, and NEVER place clinician MSE observations in the Subjective section.
-4. Use formal clinical language (e.g., "anhedonia" not "lack of enjoyment"; "psychomotor retardation" not "moving slowly").
-5. Confidence (0–1): Mark ≥0.75 only when transcript clearly and directly supports the claim. Low-evidence sections must score lower.
+3. NEVER place subjective patient reports in the Objective section, and vice versa.
+4. Use formal clinical language.
+5. Confidence (0–1): Mark ≥0.75 only when transcript clearly and directly supports the claim.
 6. For ${sessionType === 'intake' ? 'intake sessions: document full past medical history, social history, family psychiatric history, and medication history.' : 'follow-up sessions: focus on interval changes, treatment response, and goal progress.'}
 
 Return structured JSON only.`;
 }
+
+// ─── Node ─────────────────────────────────────────────────────────────────────
 
 export async function soapNode(state: GraphState): Promise<Partial<GraphState>> {
   try {
@@ -94,8 +208,8 @@ export async function soapNode(state: GraphState): Promise<Partial<GraphState>> 
 
     const priorContext =
       state.input.priorNotes.length > 0
-        ? `\n\nPRIOR SESSION NOTES (for interval history and goal tracking):\n${state.input.priorNotes
-            .map((n) => `Session ${n.session}: ${n.soapNote.slice(0, 500)}`)
+        ? `\n\nPRIOR SESSION NOTES (for barometer trend comparison and interval history):\n${state.input.priorNotes
+            .map((n) => `Session ${n.session}: ${n.soapNote.slice(0, 600)}`)
             .join('\n---\n')}`
         : '';
 
@@ -124,21 +238,31 @@ ${session.transcript}`,
       key: keyof typeof result,
       raw: typeof result[keyof typeof result],
     ) => {
-      if (raw.confidence < 0.75) lowConfidenceSections.push(key as string);
+      if ((raw as any).confidence < 0.75) lowConfidenceSections.push(key as string);
       return {
-        content: raw.content,
-        confidence: raw.confidence,
-        sourceCitations: raw.sourceCitations,
+        content: (raw as any).content,
+        confidence: (raw as any).confidence,
+        sourceCitations: (raw as any).sourceCitations,
         status: 'draft' as const,
         revisionRounds: 0,
         provenanceTag: 'ai_drafted' as const,
       };
     };
 
+    // Append criteria table as markdown to assessment content
+    const assessmentMarkdownSuffix = criteriaTableToMarkdown(result.assessment.criteriaTable);
+
     const soapNote: SOAPNote = {
       subjective: toSection('subjective', result.subjective),
-      objective: toSection('objective', result.objective),
-      assessment: toSection('assessment', result.assessment),
+      objective: {
+        ...toSection('objective', result.objective),
+        barometers: result.objective.barometers,
+      },
+      assessment: {
+        ...toSection('assessment', result.assessment),
+        content: result.assessment.content + assessmentMarkdownSuffix,
+        criteriaTable: result.assessment.criteriaTable as AssessmentCriteriaRow[],
+      },
       plan: toSection('plan', result.plan),
     };
 
@@ -149,7 +273,7 @@ ${session.transcript}`,
           timestamp: new Date().toISOString(),
           section: 'soap',
           action: 'ai_generated',
-          details: `Low confidence sections: ${lowConfidenceSections.join(', ') || 'none'}`,
+          details: `Low confidence sections: ${lowConfidenceSections.join(', ') || 'none'} | Barometers: psychomotor=${result.objective.barometers.psychomotor.level}, speech=${result.objective.barometers.speech.level} | Criteria table: ${result.assessment.criteriaTable.length} rows`,
         },
       ],
     };

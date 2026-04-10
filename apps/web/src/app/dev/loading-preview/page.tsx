@@ -8,25 +8,34 @@ type AgentStatus = 'pending' | 'running' | 'complete' | 'error';
 // Each frame represents one tick of the animation
 const ANIMATION_FRAMES: Record<string, AgentStatus>[] = [
   // Frame 0: All waiting
-  { transcript_quality: 'pending', soap: 'pending', risk: 'pending', dsm: 'pending', plan: 'pending' },
+  { transcript_quality: 'pending', soap: 'pending', risk: 'pending', dsm: 'pending', plan: 'pending', hallucination_guard: 'pending' },
   // Frame 1: Transcript running
-  { transcript_quality: 'running', soap: 'pending', risk: 'pending', dsm: 'pending', plan: 'pending' },
+  { transcript_quality: 'running', soap: 'pending', risk: 'pending', dsm: 'pending', plan: 'pending', hallucination_guard: 'pending' },
   // Frame 2: Transcript done, SOAP running
-  { transcript_quality: 'complete', soap: 'running', risk: 'pending', dsm: 'pending', plan: 'pending' },
+  { transcript_quality: 'complete', soap: 'running', risk: 'pending', dsm: 'pending', plan: 'pending', hallucination_guard: 'pending' },
   // Frame 3: SOAP done, Risk running
-  { transcript_quality: 'complete', soap: 'complete', risk: 'running', dsm: 'pending', plan: 'pending' },
+  { transcript_quality: 'complete', soap: 'complete', risk: 'running', dsm: 'pending', plan: 'pending', hallucination_guard: 'pending' },
   // Frame 4: Risk done, DSM running
-  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'running', plan: 'pending' },
+  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'running', plan: 'pending', hallucination_guard: 'pending' },
   // Frame 5: DSM done, Plan running
-  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'complete', plan: 'running' },
-  // Frame 6: All done
-  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'complete', plan: 'complete' },
+  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'complete', plan: 'running', hallucination_guard: 'pending' },
+  // Frame 6: Plan done, Hallucination Guard running
+  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'complete', plan: 'complete', hallucination_guard: 'running' },
+  // Frame 7: All done
+  { transcript_quality: 'complete', soap: 'complete', risk: 'complete', dsm: 'complete', plan: 'complete', hallucination_guard: 'complete' },
 ];
 
 export default function LoadingPreviewPage() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Force grey bg on body so no white bleeds through
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = '#f8faf8';
+    return () => { document.body.style.backgroundColor = prev; };
+  }, []);
 
   useEffect(() => {
     if (isPaused) {
@@ -52,15 +61,13 @@ export default function LoadingPreviewPage() {
   const currentStatuses = ANIMATION_FRAMES[frameIndex];
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col">
+    <div className="h-screen overflow-hidden" style={{ background: '#f8faf8' }}>
       {/* Component preview — AgentProgress renders its own navbar */}
-      <div className="flex-1">
-        <AgentProgress
-          sessionId="preview-session"
-          live={false}
-          mockStatuses={currentStatuses}
-        />
-      </div>
+      <AgentProgress
+        sessionId="preview-session"
+        live={false}
+        mockStatuses={currentStatuses}
+      />
 
       {/* Controls bar — pinned to bottom */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white border border-gray-200 shadow-lg rounded-full px-5 py-2.5 flex items-center gap-4">

@@ -17,6 +17,14 @@ export type {
   AuditEntry,
   ReviewPackage,
   GraphState,
+  HallucinationReport,
+  SectionGuardResult,
+  BarometerLevel,
+  BarometerTrend,
+  SingleBarometer,
+  VitalSignsBarometer,
+  ObjectiveBarometers,
+  AssessmentCriteriaRow,
 } from './types/index';
 
 export { SessionInputSchema } from './types/index';

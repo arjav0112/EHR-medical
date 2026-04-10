@@ -51,10 +51,11 @@ export async function reviewBundlerNode(
     agentMetadata: {
       processingTimeMs,
       transcriptQualityScore: state.transcriptQualityScore,
-      agentsInvoked: ['transcriptQuality', 'soap', 'risk', 'dsm', 'plan'].filter(
+      agentsInvoked: ['transcriptQuality', 'soap', 'risk', 'dsm', 'plan', 'hallucinationGuard'].filter(
         Boolean,
       ),
       lowConfidenceSections: lowConfidenceSections as string[],
+      hallucinationReport: state.hallucinationReport ?? undefined,
     },
     auditLog: [...state.auditLog, ...sectionAuditEntries],
   };

@@ -20,6 +20,7 @@ interface StreamingRevisionProps {
       gender: string;
       knownDiagnoses: string[];
       sessionType: string;
+      currentMedications: string[];
     };
     currentRevisionRounds: number;
   };
