@@ -1,53 +1,5 @@
 import Link from 'next/link';
-
-// ─── Navbar ────────────────────────────────────────────────────────────────────
-function Navbar() {
-  return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[860px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </span>
-          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
-        </Link>
-
-        {/* Nav Links */}
-        <nav className="hidden md:flex items-center gap-7">
-          {[
-            { label: 'Features', href: '#for-clinicians' },
-            { label: 'How it Works', href: '#how-it-works' },
-            { label: 'Pricing', href: '#pricing' },
-          ].map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Right side */}
-        <div className="flex items-center gap-3">
-          <a href="#" className="text-[14px] font-semibold text-gray-700 hover:text-gray-900 transition-colors duration-200 hidden md:block">
-            Log in
-          </a>
-          <Link
-            href="/session/new"
-            className="bg-gray-900 text-white text-[13px] font-semibold px-5 py-2.5 rounded-full hover:bg-gray-800 transition-colors duration-200"
-          >
-            Get Started Free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+import HomeNavbar from '@/components/HomeNavbar';
 
 // ─── Hero ──────────────────────────────────────────────────────────────────────
 function Hero() {
@@ -979,7 +931,7 @@ function Footer() {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
-      <Navbar />
+      <HomeNavbar />
       <Hero />
       <TrustedBy />
       <FeaturesSection />

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { AgentProgress } from '@/components/processing/AgentProgress';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SessionType = 'intake' | 'follow_up' | 'crisis';
@@ -61,7 +62,7 @@ function Navbar() {
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-[12px]">
-          <span className="text-gray-400 font-medium">Clinical Dashboard</span>
+          <Link href="/dashboard" className="text-gray-400 font-medium hover:text-gray-700 transition-colors">Clinical Dashboard</Link>
           <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
@@ -186,6 +187,7 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NewSessionPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { setInput, setReviewPackage, setProcessingStatus, setSessionId, setError } = useSessionStore();
 
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
@@ -269,7 +271,10 @@ export default function NewSessionPage() {
       const res = await fetch('/api/session/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionInput),
+        body: JSON.stringify({
+          ...sessionInput,
+          clinicianId: user?.uid ?? 'default',
+        }),
       });
 
       if (res.status === 422) {
