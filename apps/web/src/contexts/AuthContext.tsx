@@ -18,7 +18,9 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  doc, setDoc, getDoc, addDoc, collection, serverTimestamp,
+} from 'firebase/firestore';
 import { app, db } from '@/lib/firebase/config';
 
 const auth = getAuth(app);
@@ -37,6 +39,28 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// ── Detect device info ─────────────────────────────────────────────────────────
+
+function getDeviceInfo() {
+  if (typeof window === 'undefined') return { browser: 'Unknown', os: 'Unknown' };
+  const ua = navigator.userAgent;
+  let browser = 'Unknown Browser';
+  let os = 'Unknown OS';
+
+  if (ua.includes('Edg/'))        browser = 'Edge';
+  else if (ua.includes('Chrome')) browser = 'Chrome';
+  else if (ua.includes('Firefox')) browser = 'Firefox';
+  else if (ua.includes('Safari'))  browser = 'Safari';
+
+  if (ua.includes('Windows'))       os = 'Windows';
+  else if (ua.includes('Mac'))      os = 'macOS';
+  else if (ua.includes('iPhone'))   os = 'iPhone';
+  else if (ua.includes('Android'))  os = 'Android';
+  else if (ua.includes('Linux'))    os = 'Linux';
+
+  return { browser, os };
+}
+
 // ── Firestore user record ──────────────────────────────────────────────────────
 
 async function upsertUser(user: User) {
@@ -54,6 +78,17 @@ async function upsertUser(user: User) {
   } else {
     await setDoc(ref, { lastLoginAt: serverTimestamp() }, { merge: true });
   }
+
+  // Write a session record so Account tab can show real active devices
+  const { browser, os } = getDeviceInfo();
+  await addDoc(collection(db, 'users', user.uid, 'sessions'), {
+    browser,
+    os,
+    sessionId: crypto.randomUUID(),
+    createdAt: serverTimestamp(),
+    lastSeen:  serverTimestamp(),
+    active:    true,
+  });
 }
 
 // ── Provider ───────────────────────────────────────────────────────────────────

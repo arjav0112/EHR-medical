@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 
-export default function HomeNavbar() {
+export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void }) {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,12 +53,12 @@ export default function HomeNavbar() {
         {/* Right side */}
         <div className="flex items-center gap-3">
           {!loading && !user && (
-            <Link
-              href="/auth"
+            <button
+              onClick={onLoginClick}
               className="text-[14px] font-semibold text-gray-700 hover:text-gray-900 transition-colors duration-200 hidden md:block"
             >
               Log in
-            </Link>
+            </button>
           )}
 
           {/* Avatar dropdown when logged in */}

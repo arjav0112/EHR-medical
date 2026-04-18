@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SessionRecord } from '@/lib/firebase/sessions';
 import { useAuth } from '@/contexts/AuthContext';
+import SettingsModal from '@/components/SettingsModal';
 
 // ─── Risk badge config ────────────────────────────────────────────────────────
 const RISK_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
@@ -47,14 +48,33 @@ function formatDateShort(date: Date | null): string {
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
-function Navbar({ sessionCount, userInitials, userPhoto }: {
+function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: {
   sessionCount: number;
   userInitials: string;
   userPhoto?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
 }) {
   const { signOut } = useAuth();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'profile'|'account'>('profile');
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   return (
+    <>
     <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
       <div className="w-full max-w-[1100px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -77,21 +97,77 @@ function Navbar({ sessionCount, userInitials, userPhoto }: {
             </svg>
             New Session
           </Link>
-          {/* User avatar */}
-          <div className="flex items-center gap-2 pl-1 border-l border-gray-100">
+
+          {/* Avatar + dropdown */}
+          <div className="relative pl-1 border-l border-gray-100" ref={menuRef}>
             <button
-              onClick={async () => { await signOut(); router.push('/'); }}
-              title="Sign out"
-              className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[12px] font-bold hover:bg-green-700 transition-colors flex-shrink-0"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[12px] font-bold hover:ring-2 hover:ring-green-300 transition-all flex-shrink-0 focus:outline-none"
+              aria-label="Account menu"
             >
-              {userPhoto ? <img src={userPhoto} className="w-8 h-8 rounded-full object-cover" alt="" /> : userInitials}
+              {userPhoto
+                ? <img src={userPhoto} className="w-8 h-8 rounded-full object-cover" alt="" />
+                : userInitials}
             </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-11 w-60 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.14)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+                {/* User info */}
+                <div className="px-4 py-3.5 border-b border-gray-100">
+                  <p className="text-[13px] font-bold text-gray-900 truncate">{userName || 'Clinician'}</p>
+                  <p className="text-[11px] text-gray-400 truncate mt-0.5">{userEmail}</p>
+                </div>
+
+                <div className="py-1.5">
+                  {/* Account */}
+                  <button
+                    onClick={() => { setMenuOpen(false); setSettingsTab('account'); setShowSettings(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Account
+                  </button>
+
+                  {/* Settings */}
+                  <button
+                    onClick={() => { setMenuOpen(false); setSettingsTab('profile'); setShowSettings(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
+                  </button>
+
+                  <div className="h-px bg-gray-100 my-1" />
+
+                  {/* Sign out */}
+                  <button
+                    onClick={async () => { setMenuOpen(false); await signOut(); router.push('/'); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors text-left"
+                  >
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </header>
+
+    {/* Settings floating modal */}
+    {showSettings && <SettingsModal onClose={() => setShowSettings(false)} initialTab={settingsTab} />}
+  </>
   );
 }
+
 
 // ─── Risk badge ───────────────────────────────────────────────────────────────
 function RiskBadge({ level }: { level: string }) {
@@ -402,6 +478,8 @@ export default function DashboardPage() {
         sessionCount={total}
         userInitials={userInitials}
         userPhoto={user?.photoURL}
+        userName={user?.displayName}
+        userEmail={user?.email}
       />
 
       <div className="pt-24 pb-16 px-6 max-w-[1100px] mx-auto">

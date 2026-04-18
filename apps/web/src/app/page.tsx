@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import HomeNavbar from '@/components/HomeNavbar';
+import AuthModal from '@/components/AuthModal';
 
 // ─── Hero ──────────────────────────────────────────────────────────────────────
 function Hero() {
@@ -929,9 +933,11 @@ function Footer() {
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
+  const [showAuth, setShowAuth] = useState(false);
+
   return (
     <main className="min-h-screen bg-white">
-      <HomeNavbar />
+      <HomeNavbar onLoginClick={() => setShowAuth(true)} />
       <Hero />
       <TrustedBy />
       <FeaturesSection />
@@ -939,6 +945,8 @@ export default function HomePage() {
       <Specialities />
       <FinalCTA />
       <Footer />
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </main>
   );
 }
