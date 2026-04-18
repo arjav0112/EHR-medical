@@ -767,3 +767,201 @@ soap/
 ├── README.md                         ← Full project docs + setup guide
 └── docker-compose.yml                ← Web service + healthcheck
 ```
+
+---
+
+## 13. Post-Batch 8 — UI/UX Modernization & Production Hardening
+
+This batch focused on transitioning the entire app to a premium **light-mode clinical aesthetic**, fixing production-blocking bugs, and wiring real data through stages that were previously using mock content.
+
+---
+
+### Design System Shift: Dark → Light Clinical
+
+The UI was fully redesigned away from the dark-mode neon palette toward a clean, clinical light-mode system used by premium SaaS tools (Linear, Vercel, Notion):
+
+| Token | Value | Usage |
+|---|---|---
+| Primary background | `#f8faf8` | Page background (slightly warm white) |
+| Card surface | `#ffffff` + `border-gray-100` | All cards and panels |
+| Primary CTA | `bg-gray-900` text-white | "Get Started Free", submit buttons |
+| Accent | `text-green-600` / `bg-green-600` | Active states, success indicators |
+| Pill nav | `bg-white rounded-full shadow` | Floating navbar |
+
+**Why this matters clinically**: High-contrast light UIs reduce eye strain in bright clinical environments (exam rooms, nursing stations). Dark mode is great for developers; clinicians work under fluorescent lights.
+
+---
+
+### Home Page (`app/page.tsx`)
+
+**Navbar**: Replaced the full-width header with a floating pill-shaped navbar — `fixed top-4`, max-width `860px`, centered. The pill design is used by Vercel, Linear, and similar premium products. It creates visual hierarchy without adding weight.
+
+**Hero CTA buttons**: The "Book a Demo" button was redesigned to match "Get Started Free":
+- Before: bare text + dark square play icon (inconsistent, visually cheap)
+- After: `bg-white rounded-full border border-gray-200 shadow-sm px-7 py-3.5` — matches the pill aesthetic of the entire design system
+
+---
+
+### Loading/Processing Screen (`AgentProgress.tsx`)
+
+**Full redesign**:
+- Removed: background image, cartoon doctor avatar, opaque overlays
+- Added: centered card on `#f8faf8` background, same pill navbar as rest of app, clean vertical agent pipeline list
+
+**Auto-animation in production** (`live={false}` mode):
+The component has two modes:
+1. `live={true}` — polls `/api/session/[id]/status` every 2s for real agent progress
+2. `live={false}` — used in production when the status API isn't fully wired; auto-cycles through states using `setInterval`
+
+```ts
+// Auto-cycle when not in live polling mode
+useEffect(() => {
+  if (live) return;
+  const interval = setInterval(() => {
+    setAnimatedStep(prev => Math.min(prev + 1, STEPS.length - 1));
+  }, 1800);
+  return () => clearInterval(interval);
+}, [live]);
+```
+
+This ensures the loading screen always shows meaningful progress animation rather than freezing at step 0 — a production parity issue that was invisible in dev preview.
+
+**Layout fix**: Changed `h-screen` to `min-h-screen` and removed `pt-20` from the main container so the card centers perfectly in the full viewport regardless of content length.
+
+---
+
+### Export Page (`/session/[id]/export/page.tsx`)
+
+**Full layout refactor** to match home page aesthetic:
+- Bento-grid card layout for audit matrix and export cards
+- Pill-shaped tab nav for PDF / FHIR / Text preview
+- Removed raw red warning containers, replaced with status badge system
+
+**Real data wiring** — Previously, `DocumentPreviewPanel` and all sub-preview components were hardcoded to `MOCK_REVIEW_PACKAGE`. Refactored to prop-drill `reviewPackage` and `sessionId` from the main page, which reads from `useSessionStore`:
+
+```ts
+// Main component
+const reviewPackage = storePackage ?? MOCK_REVIEW_PACKAGE;  // real or fallback
+
+// Passed down to all previews
+<DocumentPreviewPanel reviewPackage={reviewPackage} sessionId={id} />
+```
+
+| Preview tab | Before | After |
+|---|---|---|
+| PDF Preview | `MOCK_REVIEW_PACKAGE` | Real `reviewPackage` from Zustand |
+| FHIR JSON | `MOCK_JSON` string | `generateFhirDocumentReference(reviewPackage)` |
+| Plain Text | `MOCK_TEXT` string | SOAP sections joined from real data |
+| Copy button | Copied mock content | Copies real FHIR or real SOAP text |
+
+**Panel sizing**: Increased from `620px` to `720px` height to show more PDF content without scrolling. Bottom padding on export cards increased from `pb-24` to `pb-32` to ensure content is fully reachable.
+
+---
+
+### Revision API Type Safety (`api/session/revise/route.ts`)
+
+Fixed a TypeScript build error caused by a schema mismatch. The `patientContext` Zod schema was missing `currentMedications`, which the rest of the codebase expected:
+
+```ts
+// Before (missing field)
+patientContext: z.object({
+  age: z.number(),
+  gender: z.string(),
+  knownDiagnoses: z.array(z.string()),
+  sessionType: z.string(),
+})
+
+// After (matches full type)
+patientContext: z.object({
+  age: z.number(),
+  gender: z.string(),
+  knownDiagnoses: z.array(z.string()),
+  sessionType: z.string(),
+  currentMedications: z.array(z.string()),
+})
+```
+
+**Why this caused a runtime error and not just a TS error**: When `reviseSection()` was called with the `patientContext` from the validated body, the missing field caused the agent to either crash or silently omit medication context from the revision prompt — degrading clinical quality.
+
+---
+
+### Markdown Rendering in SOAP Sections (`MarkdownContent.tsx`)
+
+**Problem**: AI-generated SOAP notes use markdown formatting (`**bold**`, `* bullets`, `## headers`, numbered lists). The previous `<p className="whitespace-pre-wrap">` approach rendered these as raw asterisks and hashes — unreadable.
+
+**Solution**: Built a zero-dependency inline markdown parser as a React component. Deliberately avoided adding `react-markdown` (adds ~80KB to bundle) for this specific use case.
+
+```ts
+// src/components/ui/MarkdownContent.tsx
+export function MarkdownContent({ content, className }: { content: string; className?: string }) {
+  // Line-by-line parser:
+  // - ## → <h3>, ### → <h4>
+  // - * item / - item → <ul><li>
+  // - 1. item → <ol><li>
+  // - paragraph → <p>
+  // Each line runs through inlineFormat() for **bold**, *italic*, `code`, citations
+}
+```
+
+**Inline formatter** (`inlineFormat`): Uses regex race — finds the earliest match among bold/italic/code/citation patterns, processes it, continues on the remainder. This handles interleaved formatting like `**bold with \`code\`**` correctly.
+
+**Citation rendering**: `(transcript:lines:42-44)` patterns are rendered as subtle gray monospace spans — visually de-emphasized since they're audit metadata, not clinical content.
+
+Applied to all 4 rendering locations in `SOAPSection.tsx`:
+- Draft view
+- Approved view  
+- Locked/preview view
+- Streamed revision view
+
+---
+
+### Resume Entry (for reference)
+
+```latex
+\textbf{EHR Copilot — AI Clinical Documentation Platform} $|$
+\textit{Next.js, LangGraph, TypeScript, Redis} \hfill \textbf{April 2026}
+\href{https://github.com/arjav0112/EHR-medical}{{Project-Link}}
+\begin{itemize}[leftmargin=*, noitemsep, topsep=2pt]
+  \item Built a full-stack clinical documentation system using a multi-agent LangGraph
+    pipeline that transforms raw session transcripts into structured SOAP notes,
+    DSM-5 diagnoses, and risk assessments in 15-30 seconds
+  \item Engineered a real-time streaming revision workflow with SSE-based token delivery
+    allowing clinicians to iteratively refine AI-drafted sections with natural language
+    feedback, with Redis-backed session persistence across page refreshes
+  \item Implemented HIPAA-aligned export system supporting PDF generation (react-pdf),
+    FHIR R4 Bundle (HL7-compliant), and cryptographic audit trail, alongside a
+    provenance tracking model annotating each section as AI-drafted, clinician-edited,
+    or AI-revised
+\end{itemize}
+```
+
+---
+
+## Final Architecture (Post Batch 9)
+
+```
+/                → Home page (pill navbar, hero, features, CTA)
+/session/new     → Transcript form → POST /api/session/process
+                   → AgentProgress (auto-animation or live polling)
+                   → 422 low quality → inline error
+/demo            → demoData.ts → Zustand → /session/demo/review
+/session/[id]/review → RiskFlagsSection → SOAPSection (MarkdownContent)
+                        → StreamingRevision (SSE) → revision persisted to store
+/session/[id]/export → DocumentPreviewPanel (real data: PDF / FHIR / text)
+                        → PDF download, FHIR download, copy to clipboard
+/api/session/process → LangGraph ehrGraph → ReviewPackage → SSE events
+/api/session/revise  → reviseSection generator → SSE stream
+/api/session/pdf     → ClinicalNotePDF → PDF blob
+```
+
+**Data flow for export (fully wired)**:
+```
+useSessionStore.reviewPackage (hydrated from /api/session/process)
+  ↓
+ExportPage (storePackage ?? MOCK_REVIEW_PACKAGE)
+  ↓
+DocumentPreviewPanel(reviewPackage, sessionId)
+  ├── PDFPreview → PDFPreviewClient → ClinicalNotePDF (real sections)
+  ├── JSONPreview → generateFhirDocumentReference(reviewPackage) (real FHIR)
+  └── TextPreview → soapNote sections joined (real text)
+```
