@@ -391,7 +391,7 @@ function AccountTab() {
       <div className="grid grid-cols-2 gap-3 mb-6">
         {[
           { label: 'Email',      value: user?.email ?? '—' },
-          { label: 'UID',        value: user?.uid?.slice(0, 12) + '…' ?? '—' },
+          { label: 'UID',        value: user?.uid ? `${user.uid.slice(0, 12)}…` : '—' },
           { label: 'Created',    value: fmt(userDoc?.createdAt) },
           { label: 'Last Login', value: fmt(userDoc?.lastLoginAt) },
         ].map(({ label, value }) => (
@@ -600,12 +600,12 @@ export default function SettingsModal({ onClose, initialTab = 'profile' }: { onC
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center px-4 py-6"
+      className="fixed inset-0 z-[999] flex items-center justify-center px-3 py-3"
       style={{ background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative w-full max-w-[1020px] max-h-[92vh] bg-white rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.22)] border border-gray-100 flex overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
+        className="relative w-full max-w-[95vw] h-[96vh] bg-white rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.22)] border border-gray-100 flex overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}

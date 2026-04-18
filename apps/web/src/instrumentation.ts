@@ -1,6 +1,6 @@
 /**
  * Next.js instrumentation hook — runs once on server startup (Node.js runtime only).
- * Verifies Firestore is reachable and logs the result.
+ * Verifies Firebase project config is present and logs the result.
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
@@ -9,30 +9,25 @@ export async function register() {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (!projectId) {
-    console.warn('⚠️  [Firebase] NEXT_PUBLIC_FIREBASE_PROJECT_ID not set — skipping DB check.');
+    console.warn('⚠️  [Firebase] NEXT_PUBLIC_FIREBASE_PROJECT_ID not set — skipping config check.');
     return;
   }
 
-  try {
-    const { initializeApp, getApps, getApp } = await import('firebase/app');
-    const { getFirestore, collection, getDocs, query, limit } = await import('firebase/firestore');
+  // Firestore security rules now require authentication, so we skip the live
+  // connection probe at startup (it would always fail without a user token).
+  // Just confirm the env vars are wired correctly.
+  const required = [
+    'NEXT_PUBLIC_FIREBASE_API_KEY',
+    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+    'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+    'NEXT_PUBLIC_FIREBASE_APP_ID',
+  ];
 
-    const config = {
-      apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-      authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-      projectId,
-      storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-      appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-    };
+  const missing = required.filter(k => !process.env[k]);
 
-    const app = getApps().length ? getApp() : initializeApp(config);
-    const db  = getFirestore(app);
-
-    const snap = await getDocs(query(collection(db, 'sessions'), limit(1)));
-
-    console.log(`✅ [Firebase] Firestore OK — project: ${projectId} · sessions collection: ${snap.size} doc(s) sampled`);
-  } catch (err) {
-    console.error('❌ [Firebase] Firestore connection failed:', err instanceof Error ? err.message : err);
+  if (missing.length > 0) {
+    console.warn(`⚠️  [Firebase] Missing env vars: ${missing.join(', ')}`);
+  } else {
+    console.log(`✅ [Firebase] Config OK — project: ${projectId}`);
   }
 }
