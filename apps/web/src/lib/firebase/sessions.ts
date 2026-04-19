@@ -86,9 +86,18 @@ export async function listSessionsForClinician(
   // Simple collection scan — avoids composite index requirement.
   // Filter + sort in JS, which is fine for per-clinician volumes.
   const snap = await getDocs(collection(db, SESSIONS_COL));
-  return snap.docs
-    .map((d) => fromDoc(d.id, d.data()))
-    .filter((s) => s.clinicianId === clinicianId)
+  const results: SessionRecord[] = [];
+
+  for (const d of snap.docs) {
+    try {
+      const record = fromDoc(d.id, d.data());
+      if (record.clinicianId === clinicianId) results.push(record);
+    } catch {
+      // Skip malformed / pre-auth legacy documents silently
+    }
+  }
+
+  return results
     .sort((a, b) => {
       const ta = a.completedAt?.getTime() ?? 0;
       const tb = b.completedAt?.getTime() ?? 0;

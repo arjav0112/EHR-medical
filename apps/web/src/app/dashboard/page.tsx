@@ -400,7 +400,8 @@ function SessionDrawer({ session, onClose }: { session: SessionRecord; onClose: 
 
 // ─── Main dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, photoURL: contextPhotoURL } = useAuth();
+
   const router = useRouter();
 
   const [sessions, setSessions]     = useState<SessionRecord[]>([]);
@@ -477,7 +478,8 @@ export default function DashboardPage() {
       <Navbar
         sessionCount={total}
         userInitials={userInitials}
-        userPhoto={user?.photoURL}
+        userPhoto={contextPhotoURL ?? user?.photoURL}
+
         userName={user?.displayName}
         userEmail={user?.email}
       />

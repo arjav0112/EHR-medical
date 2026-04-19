@@ -11,7 +11,6 @@ import type { ReviewPackage } from 'agents';
  */
 
 export async function POST(req: NextRequest) {
-  console.log('[PDF_API] POST request received (Split JS/TS Route)');
 
   let reviewPackage: ReviewPackage;
   let clinicianNote = '';
@@ -35,7 +34,6 @@ export async function POST(req: NextRequest) {
   const tsStr = now.toISOString();
 
   try {
-    console.log('[PDF_API] Starting renderToBuffer...');
 
     // We use React.createElement here to render the imported TSX component
     // within the pure .ts route handler.
@@ -43,7 +41,6 @@ export async function POST(req: NextRequest) {
       React.createElement(PDFDocument, { reviewPackage, dateStr, tsStr, clinicianNote: clinicianNote || '' }) as any
     );
 
-    console.log(`[PDF_API] PDF successfully generated. Size: ${buffer.byteLength} bytes`);
 
     return new Response(new Uint8Array(buffer), {
       status: 200,
