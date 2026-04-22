@@ -6,6 +6,7 @@ import { RiskFlagsSection } from './sections/RiskFlagsSection';
 import { SOAPSection } from './sections/SOAPSection';
 import { SectionSkeleton } from '@/components/ui/Skeleton';
 import type { SessionInput, ReviewPackage } from 'agents';
+import { getSessionRecord } from '@/lib/firebase/sessions';
 
 // function StickyPatientHeader({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
 //   // if (!input \&\& !reviewPackage) return null;
@@ -150,10 +151,49 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
         setReviewPackage(pkg);
         setSessionId(sessionId);
         if (sessionInput) setInput(sessionInput);
+        setHydrating(false);
       })
-      .catch(() => setHydrationFailed(true))
-      .finally(() => setHydrating(false));
-  }, [reviewPackage, sessionId, hydrating, hydrationFailed, setReviewPackage, setSessionId]);
+      .catch(async (err) => {
+        if (err.message === 'not found' || err.message.includes('not found')) {
+          // Fallback to native Firebase fetch
+          try {
+            console.log('Firebase Fallback: Fetching session directly from Firestore');
+            const record = await getSessionRecord(sessionId);
+            if (record && record.reviewPackage) {
+              setReviewPackage(record.reviewPackage);
+              setSessionId(sessionId);
+              
+              const rehydratedInput = {
+                session: {
+                  transcript:      '',
+                  sessionType:     record.sessionType,
+                  sessionNumber:   record.sessionNumber,
+                  durationMinutes: record.durationMinutes,
+                  modality:        record.modality,
+                },
+                patient: {
+                  id:                 record.patientId,
+                  age:                record.patientAge,
+                  gender:             record.patientGender,
+                  knownDiagnoses:     record.knownDiagnoses,
+                  currentMedications: record.currentMedications,
+                },
+                priorNotes:           [],
+                clinicianPreferences: { noteVerbosity: 'standard', alwaysIncludeRiskSection: true },
+              } as any;
+              
+              setInput(rehydratedInput);
+              setHydrating(false);
+              return;
+            }
+          } catch (fbErr) {
+            console.error('Firebase fallback also failed', fbErr);
+          }
+        }
+        setHydrationFailed(true);
+        setHydrating(false);
+      });
+  }, [reviewPackage, sessionId, hydrating, hydrationFailed, setReviewPackage, setSessionId, setInput]);
 
   const status = sectionStatuses[activeSection];
 

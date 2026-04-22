@@ -2,40 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SessionInputSchema, type SessionInput } from 'agents';
 import { ehrGraph } from 'agents';
 import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
-import { saveSession } from '@/lib/firebase/sessions';
-import { checkSessionQuota } from '@/lib/firebase/users';
 import type { ReviewPackage } from 'agents';
 
 export const maxDuration = 60; // Prevent 15s Hobby timeout for LLM generation
-
-// ─── Firestore helper ─────────────────────────────────────────────────────────
-async function saveSessionToFirestore({
-  sessionId, reviewPackage, input, createdAt, clinicianId,
-}: {
-  sessionId: string;
-  reviewPackage: ReviewPackage;
-  input: SessionInput;
-  createdAt: Date;
-  clinicianId: string;
-}) {
-  await saveSession({
-    sessionId,
-    clinicianId,
-    patientId:          input.patient.id,
-    patientAge:         input.patient.age,
-    patientGender:      input.patient.gender,
-    knownDiagnoses:     input.patient.knownDiagnoses,
-    currentMedications: input.patient.currentMedications,
-    sessionType:        input.session.sessionType,
-    sessionNumber:      input.session.sessionNumber,
-    modality:           input.session.modality,
-    durationMinutes:    input.session.durationMinutes,
-    status:             'complete',
-    overallRiskLevel:   reviewPackage.overallRiskLevel,
-    reviewPackage,
-    createdAt,
-  });
-}
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
@@ -84,23 +53,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Subscription quota check (skip for anonymous/default users) ─────────────
-  if (clinicianId && clinicianId !== 'default') {
-    const quota = await checkSessionQuota(clinicianId);
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: 'quota_exceeded',
-          message: quota.reason,
-          tier: quota.tier,
-          used: quota.used,
-          limit: quota.limit,
-          upgradeUrl: '/pricing',
-        },
-        { status: 402 },
-      );
-    }
-  }
+  // ── Subscription quota check has been moved to the client side.
 
   const sessionId = `session-${input.patient.id}-${input.session.sessionNumber}-${Date.now()}`;
   await setSessionStatus(sessionId, {
@@ -146,14 +99,7 @@ export async function POST(req: NextRequest) {
       setSessionInput(sessionId, input),
     ]);
 
-    // Persist to Firestore (fire-and-forget — never blocks the response)
-    saveSessionToFirestore({
-      sessionId,
-      reviewPackage: result.reviewPackage,
-      input,
-      createdAt: new Date(startTime),
-      clinicianId,
-    }).catch((e) => console.error('[Firestore] saveSession failed:', e));
+    // Note: session is saved to Firestore strictly by the client.
 
     return NextResponse.json(
       {
