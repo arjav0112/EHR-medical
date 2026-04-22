@@ -1,5 +1,5 @@
 {
   "buildCommand": "pnpm build",
-  "outputDirectory": ".next",
+  "outputDirectory": "apps/web/.next",
   "regions": ["bom1"]
 }
