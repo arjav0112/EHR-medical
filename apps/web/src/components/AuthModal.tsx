@@ -9,9 +9,10 @@ type Mode = 'login' | 'signup';
 interface AuthModalProps {
   onClose: () => void;
   initialMode?: Mode;
+  redirectTo?: string;
 }
 
-export default function AuthModal({ onClose, initialMode = 'login' }: AuthModalProps) {
+export default function AuthModal({ onClose, initialMode = 'login', redirectTo = '/dashboard' }: AuthModalProps) {
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
 
@@ -46,7 +47,7 @@ export default function AuthModal({ onClose, initialMode = 'login' }: AuthModalP
         if (!displayName.trim()) { setError('Display name is required.'); setLoading(false); return; }
         await signUp(email, password, displayName);
       }
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Authentication failed.';
       setError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
@@ -60,7 +61,7 @@ export default function AuthModal({ onClose, initialMode = 'login' }: AuthModalP
     setLoading(true);
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Google sign-in failed.');
     } finally {
