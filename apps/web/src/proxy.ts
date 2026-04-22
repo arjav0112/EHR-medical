@@ -158,12 +158,16 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://apis.google.com https://accounts.google.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://apis.google.com https://accounts.google.com https://checkout.razorpay.com",
+
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com",
-      "connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com wss://*.firebaseio.com",
-      "frame-src 'self' blob: https://accounts.google.com https://*.firebaseapp.com",
+      "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.razorpay.com",
+
+      "connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com wss://*.firebaseio.com https://api.razorpay.com https://lumberjack.razorpay.com",
+
+      "frame-src 'self' blob: https://accounts.google.com https://*.firebaseapp.com https://api.razorpay.com https://*.razorpay.com",
+
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "form-action 'self'",

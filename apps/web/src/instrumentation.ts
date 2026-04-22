@@ -1,9 +1,19 @@
 /**
- * Next.js instrumentation hook — runs once on server startup (Node.js runtime only).
- * Verifies Firebase project config is present and logs the result.
+ * Next.js instrumentation hook — runs once on server startup.
+ * Initialises Sentry (server + edge) and validates Firebase config.
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
+  // ── Sentry ────────────────────────────────────────────────────────────────
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('../sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('../sentry.edge.config');
+  }
+
+  // ── Firebase env check ───────────────────────────────────────────────────
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -13,9 +23,6 @@ export async function register() {
     return;
   }
 
-  // Firestore security rules now require authentication, so we skip the live
-  // connection probe at startup (it would always fail without a user token).
-  // Just confirm the env vars are wired correctly.
   const required = [
     'NEXT_PUBLIC_FIREBASE_API_KEY',
     'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
