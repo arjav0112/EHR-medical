@@ -1,8 +1,7 @@
 {
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
   "buildCommand": "cd ../.. && pnpm --filter web build",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": ".next",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "regions": ["bom1"]
 }
