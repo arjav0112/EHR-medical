@@ -3,6 +3,8 @@ import { Inter, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/contexts/AuthContext';
+import OfflineBanner from '@/components/OfflineBanner';
+
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,10 +26,14 @@ export const metadata: Metadata = {
   keywords: ['EHR', 'mental health', 'SOAP notes', 'clinical documentation', 'AI'],
 };
 
+
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${cormorant.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} ${cormorant.variable}`}>
+
       <body suppressHydrationWarning className="font-sans antialiased bg-white text-gray-900">
+        <OfflineBanner />
         <AuthProvider>
           <ToastProvider>
             {children}

@@ -38,7 +38,6 @@ export async function getSessionStatus(id: string): Promise<SessionStatus | null
 import type { ReviewPackage, SessionInput } from 'agents';
 
 export async function setReviewPackage(id: string, pkg: ReviewPackage): Promise<void> {
-  console.log(`[REDIS] Saving review package for ID: ${id}`);
   await redis.set(`review:${id}`, JSON.stringify(pkg), { ex: SESSION_TTL });
 }
 

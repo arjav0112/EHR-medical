@@ -31,11 +31,14 @@ const googleProvider = new GoogleAuthProvider();
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  photoURL: string | null;           // separate from user.photoURL — survives profile updates
+  updatePhotoURL: (url: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -66,20 +69,32 @@ function getDeviceInfo() {
 async function upsertUser(user: User) {
   const ref = doc(db, 'users', user.uid);
   const snap = await getDoc(ref);
+
   if (!snap.exists()) {
+    // New user — initialise with free tier
     await setDoc(ref, {
       uid:         user.uid,
       email:       user.email,
       displayName: user.displayName ?? '',
       photoURL:    user.photoURL ?? '',
+      tier:        'free',
       createdAt:   serverTimestamp(),
       lastLoginAt: serverTimestamp(),
     });
   } else {
-    await setDoc(ref, { lastLoginAt: serverTimestamp() }, { merge: true });
+    // Existing user — update lastLoginAt and backfill tier if missing
+    const existingTier = snap.data()?.tier;
+    await setDoc(
+      ref,
+      {
+        lastLoginAt: serverTimestamp(),
+        ...(existingTier === undefined ? { tier: 'free' } : {}),
+      },
+      { merge: true },
+    );
   }
 
-  // Write a session record so Account tab can show real active devices
+  // Write a session record for Account tab
   const { browser, os } = getDeviceInfo();
   await addDoc(collection(db, 'users', user.uid, 'sessions'), {
     browser,
@@ -94,16 +109,32 @@ async function upsertUser(user: User) {
 // ── Provider ───────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]       = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user,     setUser]     = useState<User | null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [photoURL, setPhotoURL] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u) {
+        // Immediately seed from Firebase Auth as a fast fallback
+        if (u.photoURL) setPhotoURL(u.photoURL);
+        // Then read Firestore (source of truth) — overrides stale Auth value
+        try {
+          const snap = await getDoc(doc(db, 'users', u.uid));
+          const fsPhotoURL = snap.data()?.photoURL as string | undefined;
+          if (fsPhotoURL) setPhotoURL(fsPhotoURL);
+        } catch {
+          // Firestore offline — keep the Auth fallback
+        }
+      } else {
+        setPhotoURL(null);
+      }
       setLoading(false);
     });
     return unsub;
   }, []);
+
 
   const signIn: AuthContextValue['signIn'] = async (email, password) => {
     const { user: u } = await signInWithEmailAndPassword(auth, email, password);
@@ -123,13 +154,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut: AuthContextValue['signOut'] = async () => {
     await firebaseSignOut(auth);
+    setPhotoURL(null);
   };
 
+  const updatePhotoURL = (url: string) => setPhotoURL(url);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, photoURL, updatePhotoURL, signIn, signUp, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
+
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────────

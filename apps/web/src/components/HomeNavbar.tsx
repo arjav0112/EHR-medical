@@ -47,7 +47,7 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
           ) : (
             <a href="#how-it-works" className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">How it Works</a>
           )}
-          <a href="#pricing" className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">Pricing</a>
+          <Link href="/pricing" className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">Pricing</Link>
         </nav>
 
         {/* Right side */}

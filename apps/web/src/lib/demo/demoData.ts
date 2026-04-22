@@ -146,7 +146,7 @@ export const demoReviewPackage: ReviewPackage = {
       ],
       conflictingSignals: ['No manic episodes identified', 'Substance use not assessed this session'],
       priorDiagnosisMatch: true,
-      intervalStatus: 'worsening',
+      intervalStatus: 'worsened',
     },
   ],
 

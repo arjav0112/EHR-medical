@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import { useSessionStore } from '@/lib/store/sessionStore';
+
 
 export default function GlobalError({
   error,
@@ -10,8 +13,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const router = useRouter();
+  const router   = useRouter();
   const { reset: resetStore } = useSessionStore();
+
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
 
   const handleStartOver = () => {
     resetStore();

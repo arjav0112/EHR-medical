@@ -44,7 +44,6 @@ export async function GET(
   }
 
   // ── Fallback: Firestore (persistent, survives Redis TTL) ────────────────────
-  console.log(`[review] Redis miss for ${id} — falling back to Firestore`);
 
   let record = null;
   try {

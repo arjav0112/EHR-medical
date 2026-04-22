@@ -3,6 +3,7 @@ import { SessionInputSchema, type SessionInput } from 'agents';
 import { ehrGraph } from 'agents';
 import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
 import { saveSession } from '@/lib/firebase/sessions';
+import { checkSessionQuota } from '@/lib/firebase/users';
 import type { ReviewPackage } from 'agents';
 
 // ─── Firestore helper ─────────────────────────────────────────────────────────
@@ -79,6 +80,24 @@ export async function POST(req: NextRequest) {
       },
       { status: 422 },
     );
+  }
+
+  // ── Subscription quota check (skip for anonymous/default users) ─────────────
+  if (clinicianId && clinicianId !== 'default') {
+    const quota = await checkSessionQuota(clinicianId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: 'quota_exceeded',
+          message: quota.reason,
+          tier: quota.tier,
+          used: quota.used,
+          limit: quota.limit,
+          upgradeUrl: '/pricing',
+        },
+        { status: 402 },
+      );
+    }
   }
 
   const sessionId = `session-${input.patient.id}-${input.session.sessionNumber}-${Date.now()}`;
