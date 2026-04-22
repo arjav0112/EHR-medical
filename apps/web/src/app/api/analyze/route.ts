@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ehrGraph, SessionInputSchema } from 'agents';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });

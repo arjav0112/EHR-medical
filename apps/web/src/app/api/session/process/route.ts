@@ -6,6 +6,8 @@ import { saveSession } from '@/lib/firebase/sessions';
 import { checkSessionQuota } from '@/lib/firebase/users';
 import type { ReviewPackage } from 'agents';
 
+export const maxDuration = 60; // Prevent 15s Hobby timeout for LLM generation
+
 // ─── Firestore helper ─────────────────────────────────────────────────────────
 async function saveSessionToFirestore({
   sessionId, reviewPackage, input, createdAt, clinicianId,
@@ -167,6 +169,7 @@ export async function POST(req: NextRequest) {
       },
     );
   } catch (err) {
+    console.error('[Process API Error]:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     await setSessionStatus(sessionId, { status: 'error', currentNode: '', percentComplete: 0, error: message });
     return NextResponse.json(
