@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import HomeNavbar from '@/components/HomeNavbar';
 import AuthModal from '@/components/AuthModal';
 
 // ─── Hero ──────────────────────────────────────────────────────────────────────
-function Hero() {
+function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
   return (
     <section className="relative pt-28 pb-16 px-8 overflow-hidden bg-white">
       {/* Green radial glow — behind the right card area */}
@@ -85,12 +87,12 @@ function Hero() {
 
           {/* CTAs */}
           <div className="flex flex-row items-center gap-4 mb-10">
-            <Link
-              href="/session/new"
+            <button
+              onClick={onGetStartedClick}
               className="bg-gray-900 text-white text-[14px] font-semibold px-7 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200 shadow-sm"
             >
               Get Started Free
-            </Link>
+            </button>
             <Link
               href="#how-it-works"
               className="bg-white text-gray-900 text-[14px] font-semibold px-7 py-3.5 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm"
@@ -741,7 +743,7 @@ function Specialities() {
 
 
 // ─── Final CTA ─────────────────────────────────────────────────────────────────
-function FinalCTA() {
+function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -779,12 +781,12 @@ function FinalCTA() {
             Join thousands of clinicians who have reclaimed their time. No credit card required.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/session/new"
+            <button
+              onClick={onGetStartedClick}
               className="bg-gray-900 text-white text-[14px] font-semibold px-8 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200 shadow-sm"
             >
               Get Started Free
-            </Link>
+            </button>
             <button className="text-[14px] font-medium text-gray-600 hover:text-gray-900 transition-colors px-6 py-3.5">
               Request Demo
             </button>
@@ -931,22 +933,52 @@ function Footer() {
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
-export default function HomePage() {
+// ─── Page Content ──────────────────────────────────────────────────────────────
+function HomeContent() {
   const [showAuth, setShowAuth] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('/dashboard');
+  const { user } = useAuth();
+  const router = useRouter();
+  const params = useSearchParams();
+
+  useEffect(() => {
+    if (params.get('auth') === 'required') {
+      const nextPath = params.get('next') || '/session/new';
+      setRedirectTo(nextPath);
+      setShowAuth(true);
+    }
+  }, [params]);
+
+  const handleGetStarted = () => {
+    if (user) {
+      router.push('/session/new');
+    } else {
+      setRedirectTo('/session/new');
+      setShowAuth(true);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white">
       <HomeNavbar onLoginClick={() => setShowAuth(true)} />
-      <Hero />
+      <Hero onGetStartedClick={handleGetStarted} />
       <TrustedBy />
       <FeaturesSection />
       <HowItWorks />
       <Specialities />
-      <FinalCTA />
+      <FinalCTA onGetStartedClick={handleGetStarted} />
       <Footer />
 
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} redirectTo={redirectTo} />}
     </main>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

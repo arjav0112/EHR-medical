@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { SessionRecord } from '@/lib/firebase/sessions';
+import { type SessionRecord, listSessionsForClinician } from '@/lib/firebase/sessions';
 import { useAuth } from '@/contexts/AuthContext';
 import SettingsModal from '@/components/SettingsModal';
 
@@ -422,16 +422,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return; // wait for auth
     const clinicianId = user.uid;
-    fetch(`/api/sessions?clinicianId=${clinicianId}`)
-      .then((r) => r.json())
+    listSessionsForClinician(clinicianId, { pageSize: 100 })
       .then((data) => {
-        // Dates come as ISO strings from JSON — convert back
-        const mapped = (data.sessions ?? []).map((s: SessionRecord & { createdAt: string; completedAt: string }) => ({
-          ...s,
-          createdAt:   s.createdAt ? new Date(s.createdAt) : null,
-          completedAt: s.completedAt ? new Date(s.completedAt) : null,
-        }));
-        setSessions(mapped);
+        setSessions(data);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

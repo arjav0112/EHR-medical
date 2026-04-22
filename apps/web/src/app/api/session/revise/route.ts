@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { reviseSection } from 'agents';
 
+export const maxDuration = 60;
+
 const ReviseInputSchema = z.object({
   section: z.enum(['subjective', 'objective', 'assessment', 'plan']),
   currentDraft: z.string().min(1),

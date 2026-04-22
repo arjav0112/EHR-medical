@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { AgentProgress } from '@/components/processing/AgentProgress';
 import { useAuth } from '@/contexts/AuthContext';
+import { checkSessionQuota } from '@/lib/firebase/users';
+import { saveSession } from '@/lib/firebase/sessions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SessionType = 'intake' | 'follow_up' | 'crisis';
@@ -239,6 +241,22 @@ export default function NewSessionPage() {
     if (!validate()) return;
     setIsSubmitting(true);
     setLowQualityError(null);
+
+    // ── Check subscription quota natively on the client ──
+    try {
+      if (user?.uid) {
+        const quota = await checkSessionQuota(user.uid);
+        if (!quota.allowed) {
+          setError(quota.reason);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Quota check failed:', err);
+      // Soft fail, allow through if Firestore read fails
+    }
+
     setProcessingStatus('processing');
 
     const sessionInput = {
@@ -299,6 +317,33 @@ export default function NewSessionPage() {
       const sessionId = body.sessionId || res.headers.get('X-Session-Id') || tempSessionId;
       setReviewPackage(reviewPackage);
       setSessionId(sessionId);
+
+      // ── Client-side Firestore save ──
+      try {
+        if (user?.uid) {
+          await saveSession({
+            sessionId,
+            clinicianId: user.uid,
+            patientId: sessionInput.patient.id,
+            patientAge: sessionInput.patient.age,
+            patientGender: sessionInput.patient.gender,
+            knownDiagnoses: sessionInput.patient.knownDiagnoses,
+            currentMedications: sessionInput.patient.currentMedications,
+            sessionType: sessionInput.session.sessionType,
+            sessionNumber: sessionInput.session.sessionNumber,
+            modality: sessionInput.session.modality,
+            durationMinutes: sessionInput.session.durationMinutes,
+            status: 'complete',
+            overallRiskLevel: reviewPackage.overallRiskLevel,
+            reviewPackage,
+            createdAt: new Date(),
+          });
+        }
+      } catch (saveErr) {
+        console.error('Failed to save session to Firestore natively:', saveErr);
+        // We can continue to the review page even if this fails, as Redis has the data
+      }
+
       router.push(`/session/${sessionId}/review`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Processing failed';
