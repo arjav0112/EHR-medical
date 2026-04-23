@@ -4,7 +4,7 @@ import { ehrGraph } from 'agents';
 import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
 import type { ReviewPackage } from 'agents';
 
-export const maxDuration = 60; // Prevent 15s Hobby timeout for LLM generation
+export const maxDuration = 300; // Allow up to 5 minutes for LLM generation (Requires Vercel Pro)
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
