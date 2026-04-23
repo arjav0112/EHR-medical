@@ -10,19 +10,19 @@ import SettingsModal from '@/components/SettingsModal';
 // ─── Risk badge config ────────────────────────────────────────────────────────
 const RISK_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   critical: { label: 'Critical', color: '#dc2626', bg: '#fef2f2', dot: 'bg-red-500 animate-pulse' },
-  high:     { label: 'High',     color: '#ea580c', bg: '#fff7ed', dot: 'bg-orange-500' },
+  high: { label: 'High', color: '#ea580c', bg: '#fff7ed', dot: 'bg-orange-500' },
   moderate: { label: 'Moderate', color: '#d97706', bg: '#fffbeb', dot: 'bg-yellow-500' },
-  low:      { label: 'Low',      color: '#16a34a', bg: '#f0fdf4', dot: 'bg-green-500' },
+  low: { label: 'Low', color: '#16a34a', bg: '#f0fdf4', dot: 'bg-green-500' },
 };
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
-  intake:    'Intake',
+  intake: 'Intake',
   follow_up: 'Follow-up',
-  crisis:    'Crisis',
+  crisis: 'Crisis',
 };
 
 const MODALITY_ICONS: Record<string, string> = {
-  in_person:  '🏥',
+  in_person: '🏥',
   telehealth: '💻',
 };
 
@@ -30,9 +30,9 @@ function formatDate(date: Date | null): string {
   if (!date) return '—';
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
-    day:   'numeric',
-    year:  'numeric',
-    hour:  'numeric',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   }).format(date);
@@ -42,8 +42,8 @@ function formatDateShort(date: Date | null): string {
   if (!date) return '—';
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
-    day:   'numeric',
-    year:  'numeric',
+    day: 'numeric',
+    year: 'numeric',
   }).format(date);
 }
 
@@ -59,7 +59,7 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'profile'|'account'>('profile');
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'account'>('profile');
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -75,96 +75,96 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
 
   return (
     <>
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[1100px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </span>
-          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <span className="text-[12px] font-semibold text-gray-500">{sessionCount} sessions</span>
-          <Link
-            href="/session/new"
-            className="flex items-center gap-2 px-5 py-2 bg-gray-900 text-white text-[12px] font-bold rounded-full hover:bg-green-700 transition-all duration-200"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            New Session
+      <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+        <div className="w-full max-w-[1100px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </span>
+            <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
           </Link>
 
-          {/* Avatar + dropdown */}
-          <div className="relative pl-1 border-l border-gray-100" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[12px] font-bold hover:ring-2 hover:ring-green-300 transition-all flex-shrink-0 focus:outline-none"
-              aria-label="Account menu"
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-semibold text-gray-500">{sessionCount} sessions</span>
+            <Link
+              href="/session/new"
+              className="flex items-center gap-2 px-5 py-2 bg-gray-900 text-white text-[12px] font-bold rounded-full hover:bg-green-700 transition-all duration-200"
             >
-              {userPhoto
-                ? <img src={userPhoto} className="w-8 h-8 rounded-full object-cover" alt="" />
-                : userInitials}
-            </button>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              New Session
+            </Link>
 
-            {menuOpen && (
-              <div className="absolute right-0 top-11 w-60 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.14)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-                {/* User info */}
-                <div className="px-4 py-3.5 border-b border-gray-100">
-                  <p className="text-[13px] font-bold text-gray-900 truncate">{userName || 'Clinician'}</p>
-                  <p className="text-[11px] text-gray-400 truncate mt-0.5">{userEmail}</p>
+            {/* Avatar + dropdown */}
+            <div className="relative pl-1 border-l border-gray-100" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[12px] font-bold hover:ring-2 hover:ring-green-300 transition-all flex-shrink-0 focus:outline-none"
+                aria-label="Account menu"
+              >
+                {userPhoto
+                  ? <img src={userPhoto} className="w-8 h-8 rounded-full object-cover" alt="" />
+                  : userInitials}
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-11 w-60 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.14)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+                  {/* User info */}
+                  <div className="px-4 py-3.5 border-b border-gray-100">
+                    <p className="text-[13px] font-bold text-gray-900 truncate">{userName || 'Clinician'}</p>
+                    <p className="text-[11px] text-gray-400 truncate mt-0.5">{userEmail}</p>
+                  </div>
+
+                  <div className="py-1.5">
+                    {/* Account */}
+                    <button
+                      onClick={() => { setMenuOpen(false); setSettingsTab('account'); setShowSettings(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Account
+                    </button>
+
+                    {/* Settings */}
+                    <button
+                      onClick={() => { setMenuOpen(false); setSettingsTab('profile'); setShowSettings(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Settings
+                    </button>
+
+                    <div className="h-px bg-gray-100 my-1" />
+
+                    {/* Sign out */}
+                    <button
+                      onClick={async () => { setMenuOpen(false); await signOut(); router.push('/'); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sign out
+                    </button>
+                  </div>
                 </div>
-
-                <div className="py-1.5">
-                  {/* Account */}
-                  <button
-                    onClick={() => { setMenuOpen(false); setSettingsTab('account'); setShowSettings(true); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Account
-                  </button>
-
-                  {/* Settings */}
-                  <button
-                    onClick={() => { setMenuOpen(false); setSettingsTab('profile'); setShowSettings(true); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                  </button>
-
-                  <div className="h-px bg-gray-100 my-1" />
-
-                  {/* Sign out */}
-                  <button
-                    onClick={async () => { setMenuOpen(false); await signOut(); router.push('/'); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors text-left"
-                  >
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Sign out
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    {/* Settings floating modal */}
-    {showSettings && <SettingsModal onClose={() => setShowSettings(false)} initialTab={settingsTab} />}
-  </>
+      {/* Settings floating modal */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} initialTab={settingsTab} />}
+    </>
   );
 }
 
@@ -206,7 +206,7 @@ function StatCard({ label, value, sub, icon, color }: {
 function SessionRow({ session, onClick }: { session: SessionRecord; onClick: () => void }) {
   const risk = RISK_CONFIG[session.overallRiskLevel] ?? RISK_CONFIG.low;
   const diagLabel = session.primaryDiagnosis?.label ?? '—';
-  const diagCode  = session.primaryDiagnosis?.dsm5Code ?? '';
+  const diagCode = session.primaryDiagnosis?.dsm5Code ?? '';
   const confidence = session.primaryDiagnosis?.confidence;
 
   return (
@@ -404,13 +404,13 @@ export default function DashboardPage() {
 
   const router = useRouter();
 
-  const [sessions, setSessions]     = useState<SessionRecord[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [search, setSearch]         = useState('');
+  const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [filterRisk, setFilterRisk] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
-  const [selected, setSelected]     = useState<SessionRecord | null>(null);
+  const [selected, setSelected] = useState<SessionRecord | null>(null);
 
   // Auth guard — redirect to /auth if not logged in
   useEffect(() => {
@@ -430,9 +430,9 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  const total        = sessions.length;
-  const critical     = sessions.filter((s) => s.overallRiskLevel === 'critical' || s.overallRiskLevel === 'high').length;
-  const thisWeek     = sessions.filter((s) => {
+  const total = sessions.length;
+  const critical = sessions.filter((s) => s.overallRiskLevel === 'critical' || s.overallRiskLevel === 'high').length;
+  const thisWeek = sessions.filter((s) => {
     if (!s.completedAt) return false;
     const diff = Date.now() - s.completedAt.getTime();
     return diff < 7 * 24 * 60 * 60 * 1000;

@@ -62,11 +62,11 @@ export type GraphState = typeof GraphStateAnnotation.State;
 
 // ─── Routing ──────────────────────────────────────────────────────────────────
 
-function routeAfterQuality(state: GraphState): 'parallel_soap_risk' | typeof END {
+function routeAfterQuality(state: GraphState): string[] | typeof END {
   if (state.error || state.transcriptQualityScore < 0.4) {
     return END;
   }
-  return 'parallel_soap_risk';
+  return ['soapNode', 'riskNode'];
 }
 
 // ─── Graph Definition ─────────────────────────────────────────────────────────
@@ -81,18 +81,17 @@ const workflow = new StateGraph(GraphStateAnnotation)
   .addNode('reviewBundlerNode', reviewBundlerNode)
   // Entry
   .addEdge('__start__', 'transcriptQualityNode')
-  // Quality gate
-  .addConditionalEdges('transcriptQualityNode', routeAfterQuality, {
-    parallel_soap_risk: 'soapNode',
-    [END]: END,
-  })
-  // Parallel SOAP + Risk (fan-out from quality, then fan-in at dsm)
-  .addEdge('transcriptQualityNode', 'riskNode')
+  // Quality gate fan-out
+  .addConditionalEdges('transcriptQualityNode', routeAfterQuality)
+  // Run DSM and Guard immediately after SOAP
   .addEdge('soapNode', 'dsmNode')
-  .addEdge('riskNode', 'dsmNode')
-  // Sequential tail — guard runs after plan, before bundling
-  .addEdge('dsmNode', 'planNode')
-  .addEdge('planNode', 'hallucinationGuardNode')
+  .addEdge('soapNode', 'hallucinationGuardNode')
+  // Run Plan after both SOAP and Risk are complete
+  .addEdge('soapNode', 'planNode')
+  .addEdge('riskNode', 'planNode')
+  // Fan-in all parallel branches to the final bundler
+  .addEdge('dsmNode', 'reviewBundlerNode')
+  .addEdge('planNode', 'reviewBundlerNode')
   .addEdge('hallucinationGuardNode', 'reviewBundlerNode')
   .addEdge('reviewBundlerNode', END);
 
