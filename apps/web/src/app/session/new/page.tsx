@@ -295,8 +295,16 @@ export default function NewSessionPage() {
         }),
       });
 
-      if (res.status === 422) {
-        const body = await res.json().catch(() => ({})) as { message?: string; qualityScore?: number };
+      if (!res.ok && res.status !== 200) {
+        // Fallback for non-streamed server errors (e.g. initial 500)
+        const body = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(body.message ?? `Server error ${res.status}`);
+      }
+
+      // Read the streamed NDJSON body
+      const body = await res.json();
+
+      if (body.error === 'low_quality_transcript') {
         setLowQualityError({
           message: body.message ?? 'Transcript quality too low to process.',
           score: body.qualityScore ?? 0,
@@ -307,12 +315,9 @@ export default function NewSessionPage() {
         return;
       }
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { message?: string };
-        throw new Error(body.message ?? `Server error ${res.status}`);
+      if (body.error) {
+        throw new Error(body.message ?? `Server error: ${body.error}`);
       }
-
-      const body = await res.json();
       const reviewPackage = body;
       const sessionId = body.sessionId || res.headers.get('X-Session-Id') || tempSessionId;
       setReviewPackage(reviewPackage);

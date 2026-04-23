@@ -62,65 +62,93 @@ export async function POST(req: NextRequest) {
     percentComplete: 5,
   });
 
-  try {
-    const result = await (ehrGraph as any).invoke({ input });
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Send an initial space to immediately flush headers and bypass Vercel initial timeout
+      controller.enqueue(encoder.encode(' '));
 
-    if (result.error?.startsWith('LOW_QUALITY_TRANSCRIPT')) {
-      await setSessionStatus(sessionId, {
-        status: 'error',
-        currentNode: 'transcriptQualityNode',
-        percentComplete: 15,
-        error: result.error,
-      });
-      return NextResponse.json(
-        {
-          error: 'low_quality_transcript',
-          message: result.error.replace('LOW_QUALITY_TRANSCRIPT: ', ''),
-          qualityScore: result.transcriptQualityScore,
-        },
-        {
-          status: 422,
-          headers: { 'X-Processing-Time': `${Date.now() - startTime}ms` },
-        },
-      );
-    }
+      // Keep the connection alive while the long-running LangGraph resolves
+      const keepAlive = setInterval(() => {
+        controller.enqueue(encoder.encode(' '));
+      }, 2000);
 
-    if (result.error) {
-      throw new Error(result.error);
-    }
+      try {
+        const result = await (ehrGraph as any).invoke({ input });
+        clearInterval(keepAlive);
 
-    await Promise.all([
-      setSessionStatus(sessionId, {
-        status: 'complete',
-        currentNode: 'reviewBundlerNode',
-        percentComplete: 100,
-      }),
-      setReviewPackage(sessionId, result.reviewPackage),
-      setSessionInput(sessionId, input),
-    ]);
+        if (result.error?.startsWith('LOW_QUALITY_TRANSCRIPT')) {
+          await setSessionStatus(sessionId, {
+            status: 'error',
+            currentNode: 'transcriptQualityNode',
+            percentComplete: 15,
+            error: result.error,
+          });
+          controller.enqueue(
+            encoder.encode(
+              '\n' +
+                JSON.stringify({
+                  error: 'low_quality_transcript',
+                  message: result.error.replace('LOW_QUALITY_TRANSCRIPT: ', ''),
+                  qualityScore: result.transcriptQualityScore,
+                })
+            )
+          );
+          controller.close();
+          return;
+        }
 
-    // Note: session is saved to Firestore strictly by the client.
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
-    return NextResponse.json(
-      {
-        ...result.reviewPackage,
-        sessionId, // Explicitly include in body for easier frontend capture
-      },
-      {
-        status: 200,
-        headers: {
-          'X-Processing-Time': `${Date.now() - startTime}ms`,
-          'X-Session-Id': sessionId,
-        },
-      },
-    );
-  } catch (err) {
-    console.error('[Process API Error]:', err);
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    await setSessionStatus(sessionId, { status: 'error', currentNode: '', percentComplete: 0, error: message });
-    return NextResponse.json(
-      { error: 'processing_error', message },
-      { status: 500, headers: { 'X-Processing-Time': `${Date.now() - startTime}ms` } },
-    );
-  }
+        await Promise.all([
+          setSessionStatus(sessionId, {
+            status: 'complete',
+            currentNode: 'reviewBundlerNode',
+            percentComplete: 100,
+          }),
+          setReviewPackage(sessionId, result.reviewPackage),
+          setSessionInput(sessionId, input),
+        ]);
+
+        controller.enqueue(
+          encoder.encode(
+            '\n' +
+              JSON.stringify({
+                ...result.reviewPackage,
+                sessionId,
+              })
+          )
+        );
+        controller.close();
+      } catch (err) {
+        clearInterval(keepAlive);
+        console.error('[Process API Error]:', err);
+        const message = err instanceof Error ? err.message : 'Internal server error';
+        await setSessionStatus(sessionId, { status: 'error', currentNode: '', percentComplete: 0, error: message });
+
+        controller.enqueue(
+          encoder.encode(
+            '\n' +
+              JSON.stringify({
+                error: 'processing_error',
+                message,
+              })
+          )
+        );
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Processing-Time': `${Date.now() - startTime}ms`,
+      'X-Session-Id': sessionId,
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
 }
