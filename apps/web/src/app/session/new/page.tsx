@@ -254,7 +254,6 @@ export default function NewSessionPage() {
       }
     } catch (err) {
       console.error('Quota check failed:', err);
-      // Soft fail, allow through if Firestore read fails
     }
 
     setProcessingStatus('processing');
@@ -282,11 +281,10 @@ export default function NewSessionPage() {
     };
 
     setInput(sessionInput as any);
-    const tempSessionId = `session-${Date.now()}`;
-    setProcessingSessionId(tempSessionId);
 
     try {
-      const res = await fetch('/api/session/process', {
+      // ── Step 1: Fire the job — returns sessionId in <1s ──
+      const fireRes = await fetch('/api/session/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -295,26 +293,67 @@ export default function NewSessionPage() {
         }),
       });
 
-      if (res.status === 422) {
-        const body = await res.json().catch(() => ({})) as { message?: string; qualityScore?: number };
-        setLowQualityError({
-          message: body.message ?? 'Transcript quality too low to process.',
-          score: body.qualityScore ?? 0,
-        });
-        setIsSubmitting(false);
-        setProcessingSessionId(null);
-        setProcessingStatus('idle');
-        return;
+      const fireBody = await fireRes.json() as { sessionId?: string; error?: string; message?: string };
+
+      if (!fireRes.ok || fireBody.error) {
+        if (fireBody.error === 'pii_detected') {
+          throw new Error(fireBody.message ?? 'PII detected in transcript.');
+        }
+        throw new Error(fireBody.message ?? `Server error ${fireRes.status}`);
       }
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { message?: string };
-        throw new Error(body.message ?? `Server error ${res.status}`);
-      }
+      const sessionId = fireBody.sessionId!;
+      setProcessingSessionId(sessionId);
 
-      const body = await res.json();
-      const reviewPackage = body;
-      const sessionId = body.sessionId || res.headers.get('X-Session-Id') || tempSessionId;
+      // ── Step 2: Poll /api/session/status/[sessionId] until done ──
+      const POLL_INTERVAL_MS = 3000;
+      const MAX_WAIT_MS = 10 * 60 * 1000; // 10 minutes absolute ceiling
+      const pollStart = Date.now();
+
+      const reviewPackage = await new Promise<any>((resolve, reject) => {
+        const poll = async () => {
+          if (Date.now() - pollStart > MAX_WAIT_MS) {
+            reject(new Error('Processing timed out after 10 minutes.'));
+            return;
+          }
+
+          try {
+            const statusRes = await fetch(`/api/session/status/${sessionId}`);
+            const statusBody = await statusRes.json() as {
+              status: string;
+              reviewPackage?: any;
+              error?: string;
+              currentNode?: string;
+            };
+
+            if (statusBody.status === 'complete') {
+              resolve(statusBody.reviewPackage);
+              return;
+            }
+
+            if (statusBody.status === 'error') {
+              // Check for low quality transcript error specifically
+              if (statusBody.error?.startsWith('LOW_QUALITY_TRANSCRIPT')) {
+                reject(Object.assign(new Error('low_quality_transcript'), {
+                  isLowQuality: true,
+                  rawError: statusBody.error,
+                }));
+              } else {
+                reject(new Error(statusBody.error ?? 'Processing failed.'));
+              }
+              return;
+            }
+
+            // Still processing — wait and try again
+            setTimeout(poll, POLL_INTERVAL_MS);
+          } catch (pollErr) {
+            reject(pollErr);
+          }
+        };
+
+        setTimeout(poll, POLL_INTERVAL_MS);
+      });
+
       setReviewPackage(reviewPackage);
       setSessionId(sessionId);
 
@@ -340,14 +379,22 @@ export default function NewSessionPage() {
           });
         }
       } catch (saveErr) {
-        console.error('Failed to save session to Firestore natively:', saveErr);
-        // We can continue to the review page even if this fails, as Redis has the data
+        console.error('Failed to save session to Firestore:', saveErr);
       }
 
       router.push(`/session/${sessionId}/review`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Processing failed';
-      setError(msg);
+    } catch (err: any) {
+      if (err?.isLowQuality) {
+        const rawMsg: string = err.rawError ?? '';
+        setLowQualityError({
+          message: rawMsg.replace('LOW_QUALITY_TRANSCRIPT: ', '') || 'Transcript quality too low to process.',
+          score: 0,
+        });
+        setProcessingStatus('idle');
+      } else {
+        const msg = err instanceof Error ? err.message : 'Processing failed';
+        setError(msg);
+      }
       setIsSubmitting(false);
       setProcessingSessionId(null);
     }

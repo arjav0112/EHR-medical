@@ -141,13 +141,6 @@ export async function planNode(state: GraphState): Promise<Partial<GraphState>> 
             .join('\n---\n')
         : 'No prior notes available — this may be an intake session.';
 
-    const diagnosisSummary = state.diagnosisSuggestions
-      .map(
-        (d, i) =>
-          `${i === 0 ? '[PRIMARY]' : '[DIFFERENTIAL]'} ${d.dsm5Code} — ${d.label} (confidence: ${(d.confidence * 100).toFixed(0)}%)`,
-      )
-      .join('\n');
-
     const riskSummary =
       state.riskFlags.length === 0
         ? 'No active risk flags.'
@@ -162,14 +155,11 @@ export async function planNode(state: GraphState): Promise<Partial<GraphState>> 
         content: `SOAP PLAN SECTION (clinician-extracted):
 ${state.soapNote.plan?.content ?? 'Not available'}
 
-SOAP ASSESSMENT SECTION:
+SOAP ASSESSMENT SECTION (contains diagnosis):
 ${state.soapNote.assessment?.content ?? 'Not available'}
 
 SOAP SUBJECTIVE SECTION:
 ${state.soapNote.subjective?.content ?? 'Not available'}
-
-ACTIVE DIAGNOSES (ranked):
-${diagnosisSummary || 'None confirmed yet'}
 
 RISK FLAGS:
 ${riskSummary}

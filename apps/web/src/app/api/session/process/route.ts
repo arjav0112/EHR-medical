@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SessionInputSchema, type SessionInput } from 'agents';
-import { ehrGraph } from 'agents';
-import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
-import type { ReviewPackage } from 'agents';
+import { SessionInputSchema } from 'agents';
+import { inngest } from '@/lib/inngest';
+import { setSessionStatus } from '@/lib/redis';
 
-export const maxDuration = 60; // Prevent 15s Hobby timeout for LLM generation
+export const maxDuration = 15; // This route just validates + fires an event — very fast
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
@@ -18,8 +17,6 @@ function containsPII(text: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const startTime = Date.now();
-
   let body: unknown;
   try {
     body = await req.json();
@@ -36,11 +33,6 @@ export async function POST(req: NextRequest) {
   }
 
   const input = parsed.data;
-  // clinicianId: sent from client when logged in, falls back to 'default'
-  const clinicianId: string =
-    (typeof body === 'object' && body !== null && 'clinicianId' in body)
-      ? String((body as Record<string, unknown>).clinicianId)
-      : 'default';
 
   // PII guard
   if (containsPII(input.session.transcript)) {
@@ -53,74 +45,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Subscription quota check has been moved to the client side.
-
   const sessionId = `session-${input.patient.id}-${input.session.sessionNumber}-${Date.now()}`;
+
+  // Mark session as processing in Redis immediately
   await setSessionStatus(sessionId, {
     status: 'processing',
     currentNode: 'transcriptQualityNode',
     percentComplete: 5,
   });
 
-  try {
-    const result = await (ehrGraph as any).invoke({ input });
+  // Fire Inngest event — returns instantly, Inngest orchestrates the background job
+  await inngest.send({
+    name: 'session/process.requested',
+    data: { sessionId, input },
+  });
 
-    if (result.error?.startsWith('LOW_QUALITY_TRANSCRIPT')) {
-      await setSessionStatus(sessionId, {
-        status: 'error',
-        currentNode: 'transcriptQualityNode',
-        percentComplete: 15,
-        error: result.error,
-      });
-      return NextResponse.json(
-        {
-          error: 'low_quality_transcript',
-          message: result.error.replace('LOW_QUALITY_TRANSCRIPT: ', ''),
-          qualityScore: result.transcriptQualityScore,
-        },
-        {
-          status: 422,
-          headers: { 'X-Processing-Time': `${Date.now() - startTime}ms` },
-        },
-      );
-    }
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    await Promise.all([
-      setSessionStatus(sessionId, {
-        status: 'complete',
-        currentNode: 'reviewBundlerNode',
-        percentComplete: 100,
-      }),
-      setReviewPackage(sessionId, result.reviewPackage),
-      setSessionInput(sessionId, input),
-    ]);
-
-    // Note: session is saved to Firestore strictly by the client.
-
-    return NextResponse.json(
-      {
-        ...result.reviewPackage,
-        sessionId, // Explicitly include in body for easier frontend capture
-      },
-      {
-        status: 200,
-        headers: {
-          'X-Processing-Time': `${Date.now() - startTime}ms`,
-          'X-Session-Id': sessionId,
-        },
-      },
-    );
-  } catch (err) {
-    console.error('[Process API Error]:', err);
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    await setSessionStatus(sessionId, { status: 'error', currentNode: '', percentComplete: 0, error: message });
-    return NextResponse.json(
-      { error: 'processing_error', message },
-      { status: 500, headers: { 'X-Processing-Time': `${Date.now() - startTime}ms` } },
-    );
-  }
+  // Return sessionId to client — frontend will poll /api/session/status/[sessionId]
+  return NextResponse.json({ sessionId, status: 'processing' }, { status: 202 });
 }
