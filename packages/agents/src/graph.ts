@@ -62,37 +62,64 @@ export type GraphState = typeof GraphStateAnnotation.State;
 
 // ─── Routing ──────────────────────────────────────────────────────────────────
 
-function routeAfterQuality(state: GraphState): string[] | typeof END {
+function routeAfterQuality(state: GraphState): string | typeof END {
   if (state.error || state.transcriptQualityScore < 0.4) {
     return END;
   }
-  return ['soapNode', 'riskNode'];
+  return 'soapNode';
+}
+
+function routeAfterSoap(state: GraphState): string | typeof END {
+  if (state.error) return END;
+  return 'parallelAnalysis';
 }
 
 // ─── Graph Definition ─────────────────────────────────────────────────────────
+// Execution order (fixes the state-dependency bug and reduces critical path):
+//
+//  transcriptQualityNode
+//       ↓
+//    soapNode  (33s — must complete first; riskNode needs soapNote.objective)
+//       ↓
+//   [riskNode, dsmNode, hallucinationGuardNode]  ← parallel fan-out (max ~18s)
+//       ↓
+//    planNode  (needs riskFlags from riskNode)
+//       ↓
+//  reviewBundlerNode
 
 const workflow = new StateGraph(GraphStateAnnotation)
   .addNode('transcriptQualityNode', transcriptQualityNode)
   .addNode('soapNode', soapNode)
+  // Post-SOAP parallel nodes — all can run concurrently using soapNote
   .addNode('riskNode', riskNode)
   .addNode('dsmNode', dsmNode)
-  .addNode('planNode', planNode)
   .addNode('hallucinationGuardNode', hallucinationGuardNode)
+  .addNode('planNode', planNode)
   .addNode('reviewBundlerNode', reviewBundlerNode)
+
   // Entry
   .addEdge('__start__', 'transcriptQualityNode')
-  // Quality gate fan-out
-  .addConditionalEdges('transcriptQualityNode', routeAfterQuality)
-  // Run DSM and Guard immediately after SOAP
+
+  // Quality gate → soap (sequential, soap needs clean transcript)
+  .addConditionalEdges('transcriptQualityNode', routeAfterQuality, {
+    soapNode: 'soapNode',
+    [END]: END,
+  })
+
+  // After SOAP is complete: fan-out to risk, dsm, hallucination checks (all parallel)
+  // These all have soapNote available now — fixes the riskNode state-dependency bug
+  .addEdge('soapNode', 'riskNode')
   .addEdge('soapNode', 'dsmNode')
   .addEdge('soapNode', 'hallucinationGuardNode')
-  // Run Plan after both SOAP and Risk are complete
-  .addEdge('soapNode', 'planNode')
+
+  // planNode waits for riskNode (needs riskFlags for risk-aware plan)
   .addEdge('riskNode', 'planNode')
-  // Fan-in all parallel branches to the final bundler
+
+  // Fan-in: reviewBundler runs after all analysis is done
   .addEdge('dsmNode', 'reviewBundlerNode')
   .addEdge('planNode', 'reviewBundlerNode')
   .addEdge('hallucinationGuardNode', 'reviewBundlerNode')
+
   .addEdge('reviewBundlerNode', END);
 
 export const ehrGraph = workflow.compile();

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionInputSchema } from 'agents';
-import { ehrGraph } from 'agents';
-import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
+import { inngest } from '@/lib/inngest';
+import { setSessionStatus } from '@/lib/redis';
 
-export const maxDuration = 60;
+export const maxDuration = 15; // This route just validates + fires an event — very fast
 
 // ─── PII Anonymization Guard ──────────────────────────────────────────────────
 const PII_PATTERNS = [
@@ -14,46 +14,6 @@ const PII_PATTERNS = [
 
 function containsPII(text: string): boolean {
   return PII_PATTERNS.some((re) => re.test(text));
-}
-
-// ─── Background worker — runs detached from the HTTP response lifecycle ───────
-async function runAgentInBackground(sessionId: string, input: any) {
-  try {
-    const result = await (ehrGraph as any).invoke({ input });
-
-    if (result.error?.startsWith('LOW_QUALITY_TRANSCRIPT')) {
-      await setSessionStatus(sessionId, {
-        status: 'error',
-        currentNode: 'transcriptQualityNode',
-        percentComplete: 15,
-        error: result.error,
-      });
-      return;
-    }
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    await Promise.all([
-      setSessionStatus(sessionId, {
-        status: 'complete',
-        currentNode: 'reviewBundlerNode',
-        percentComplete: 100,
-      }),
-      setReviewPackage(sessionId, result.reviewPackage),
-      setSessionInput(sessionId, input),
-    ]);
-  } catch (err) {
-    console.error('[Background Agent Error]:', err);
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    await setSessionStatus(sessionId, {
-      status: 'error',
-      currentNode: '',
-      percentComplete: 0,
-      error: message,
-    });
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -87,23 +47,19 @@ export async function POST(req: NextRequest) {
 
   const sessionId = `session-${input.patient.id}-${input.session.sessionNumber}-${Date.now()}`;
 
-  // Mark as processing in Redis immediately
+  // Mark session as processing in Redis immediately
   await setSessionStatus(sessionId, {
     status: 'processing',
     currentNode: 'transcriptQualityNode',
     percentComplete: 5,
   });
 
-  // Fire-and-forget: use waitUntil to run the agent beyond the HTTP response
-  // This keeps the Vercel function alive for background work even after responding
-  const ctx = (req as any)[Symbol.for('__next_request_context__')] as { waitUntil?: (p: Promise<any>) => void } | undefined;
-  if (ctx?.waitUntil) {
-    ctx.waitUntil(runAgentInBackground(sessionId, input));
-  } else {
-    // Fallback for local dev or environments without waitUntil — still async, response is immediate
-    runAgentInBackground(sessionId, input).catch(console.error);
-  }
+  // Fire Inngest event — returns instantly, Inngest orchestrates the background job
+  await inngest.send({
+    name: 'session/process.requested',
+    data: { sessionId, input },
+  });
 
-  // Return sessionId immediately — frontend will poll /api/session/status/[sessionId]
+  // Return sessionId to client — frontend will poll /api/session/status/[sessionId]
   return NextResponse.json({ sessionId, status: 'processing' }, { status: 202 });
 }
