@@ -93,21 +93,21 @@ export async function hallucinationGuardNode(
       {
         role: 'user',
         content: `=== ORIGINAL TRANSCRIPT ===
-${transcript}
+${transcript.slice(0, 6000)}${transcript.length > 6000 ? '\n[transcript truncated for evaluation]' : ''}
 
 === GENERATED SOAP NOTE (to audit) ===
 
 [SUBJECTIVE]
-${soap.subjective?.content ?? '(empty)'}
+${(soap.subjective?.content ?? '(empty)').slice(0, 800)}
 
 [OBJECTIVE]
-${soap.objective?.content ?? '(empty)'}
+${(soap.objective?.content ?? '(empty)').slice(0, 800)}
 
 [ASSESSMENT]
-${soap.assessment?.content ?? '(empty)'}
+${(soap.assessment?.content ?? '(empty)').slice(0, 800)}
 
 [PLAN]
-${soap.plan?.content ?? '(empty)'}
+${(soap.plan?.content ?? '(empty)').slice(0, 800)}
 
 Evaluate each section against the transcript. Identify any hallucinated or ungrounded clinical details.`,
       },
