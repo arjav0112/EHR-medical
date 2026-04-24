@@ -2,6 +2,7 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
 import type { RiskFlag } from '../types/index';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 const RiskOutputSchema = z.object({
   flags: z.array(
@@ -108,11 +109,12 @@ FLAGS & SEVERITY RULES
 
 Return structured JSON only.`;
 
-export async function riskNode(state: GraphState): Promise<Partial<GraphState>> {
+export async function riskNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
       temperature: 0,
+      maxRetries: 6,
     }).withStructuredOutput(RiskOutputSchema);
 
     const result = await model.invoke([
@@ -130,7 +132,7 @@ ${state.soapNote?.objective?.content ?? 'Not yet available'}
 FULL TRANSCRIPT:
 ${state.input.session.transcript}`,
       },
-    ]);
+    ], config);
 
     // Enforce: requiresImmediateAction only for critical/high SI or HI
     const flags: RiskFlag[] = result.flags.map((f) => ({

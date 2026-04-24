@@ -77,6 +77,7 @@ export async function* reviseSection(input: RevisionInput): AsyncGenerator<
     model: 'gemini-2.5-flash',
     temperature: 0.2,
     streaming: true,
+    maxRetries: 6,
   });
 
   const sectionStandards = SECTION_CLINICAL_STANDARDS[input.section] ?? '';
@@ -104,8 +105,8 @@ ${input.transcript.slice(0, 4000)}
 APPROVED SECTIONS (context only — do not modify):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${Object.entries(input.approvedSections)
-  .map(([k, v]) => `[${k.toUpperCase()}]: ${v.slice(0, 400)}`)
-  .join('\n---\n')}
+      .map(([k, v]) => `[${k.toUpperCase()}]: ${v.slice(0, 400)}`)
+      .join('\n---\n')}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PATIENT CONTEXT:

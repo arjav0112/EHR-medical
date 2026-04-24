@@ -58,7 +58,7 @@ export async function saveSession(
 ): Promise<void> {
   const ref = doc(collection(db, SESSIONS_COL), session.sessionId);
 
-  const primaryDx = session.reviewPackage.diagnosisSuggestions?.[0];
+  const primaryDx = session.reviewPackage?.diagnosisSuggestions?.[0];
 
   await setDoc(ref, {
     ...session,

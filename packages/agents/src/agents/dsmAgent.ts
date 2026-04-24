@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 const DSMOutputSchema = z.object({
   diagnosisSuggestions: z
@@ -57,7 +58,7 @@ CLINICAL DIAGNOSTIC STANDARDS:
 
 Return structured JSON only.`;
 
-export async function dsmNode(state: GraphState): Promise<Partial<GraphState>> {
+export async function dsmNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const { patient, session } = state.input;
     const soapNote = state.soapNote;
@@ -65,6 +66,7 @@ export async function dsmNode(state: GraphState): Promise<Partial<GraphState>> {
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
       temperature: 0.1,
+      maxRetries: 6,
     }).withStructuredOutput(DSMOutputSchema);
 
     const result = await model.invoke([
@@ -89,7 +91,7 @@ ${soapNote.objective?.content ?? 'Not yet generated'}
 FULL TRANSCRIPT (for direct criterion mapping):
 ${session.transcript.slice(0, 3500)}`,
       },
-    ]);
+    ], config);
 
     return {
       diagnosisSuggestions: result.diagnosisSuggestions,
