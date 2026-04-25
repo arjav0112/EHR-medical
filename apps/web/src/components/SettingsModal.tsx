@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db, app } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { syncMonthlySessionUsageForUser, type SubscriptionTier } from '@/lib/firebase/users';
 
 const auth = getAuth(app);
 
@@ -387,7 +388,7 @@ function BillingTab() {
   const { user } = useAuth();
 
   // Live data from Firestore
-  const [tier, setTier] = useState<string>('free');
+  const [tier, setTier] = useState<SubscriptionTier>('free');
   const [sessionsUsed, setSessions] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
@@ -403,28 +404,19 @@ function BillingTab() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const uid = user.uid;
-
-    // 1. Read tier from Firestore
-    getDoc(doc(db, 'users', uid)).then(snap => {
-      if (snap.exists()) setTier(snap.data()?.tier ?? 'free');
-    });
-
-    // 2. Count sessions this calendar month
-    const monthStart = new Date();
-    monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-
-    import('firebase/firestore').then(({ getDocs, collection, query, where, Timestamp }) => {
-      const q = query(
-        collection(db, 'sessions'),
-        where('clinicianId', '==', uid),
-        where('completedAt', '>=', Timestamp.fromDate(monthStart)),
-      );
-      getDocs(q).then(snap => {
-        setSessions(snap.size);
-        setLoading(false);
-      }).catch(() => setLoading(false));
-    });
+    setLoading(true);
+    syncMonthlySessionUsageForUser(user.uid)
+      .then(({ tier: nextTier, used }) => {
+        setTier(nextTier);
+        setSessions(used);
+      })
+      .catch(() => {
+        // Fallback to user tier if the usage scan is temporarily unavailable.
+        getDoc(doc(db, 'users', user.uid)).then(snap => {
+          if (snap.exists()) setTier((snap.data()?.tier as SubscriptionTier) ?? 'free');
+        });
+      })
+      .finally(() => setLoading(false));
   }, [user?.uid]);
 
   const meta = PLAN_META[tier] ?? PLAN_META.free;

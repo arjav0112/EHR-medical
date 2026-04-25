@@ -41,6 +41,13 @@ export const TIER_MONTHLY_SESSION_LIMITS: Record<SubscriptionTier, number | null
   enterprise: null,   // unlimited
 };
 
+export interface MonthlySessionUsage {
+  tier: SubscriptionTier;
+  used: number;
+  limit: number | null;
+  monthKey: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -105,6 +112,39 @@ export async function countMonthlySessionsForUser(uid: string): Promise<number> 
   return count;
 }
 
+function currentMonthKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Recomputes monthly usage from the canonical `sessions` collection and stores
+ * a denormalized snapshot on `users/{uid}` for billing/settings display.
+ */
+export async function syncMonthlySessionUsageForUser(uid: string): Promise<MonthlySessionUsage> {
+  const record = await getUserRecord(uid);
+  const tier = record?.tier ?? 'free';
+  const limit = TIER_MONTHLY_SESSION_LIMITS[tier];
+  const used = await countMonthlySessionsForUser(uid);
+  const monthKey = currentMonthKey();
+
+  await setDoc(
+    doc(db, 'users', uid),
+    {
+      tier,
+      usage: {
+        billingMonth: monthKey,
+        sessionsProcessed: used,
+        monthlySessionLimit: limit,
+        updatedAt: serverTimestamp(),
+      },
+    },
+    { merge: true },
+  );
+
+  return { tier, used, limit, monthKey };
+}
+
 /**
  * Checks whether a user is allowed to create a new session given their tier.
  * Returns { allowed: true } or { allowed: false, reason, tier, used, limit }.
@@ -120,7 +160,7 @@ export async function checkSessionQuota(uid: string): Promise<
 
   if (limit === null) return { allowed: true };   // unlimited tier
 
-  const used = await countMonthlySessionsForUser(uid);
+  const { used } = await syncMonthlySessionUsageForUser(uid);
   if (used >= limit) {
     return {
       allowed: false,
