@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { AgentProgress } from '@/components/processing/AgentProgress';
 import { useAuth } from '@/contexts/AuthContext';
-import { checkSessionQuota } from '@/lib/firebase/users';
+import { checkSessionQuota, syncMonthlySessionUsageForUser } from '@/lib/firebase/users';
 import { saveSession } from '@/lib/firebase/sessions';
 import type { SessionInput } from 'agents';
 
@@ -394,6 +394,7 @@ export default function NewSessionPage() {
             sessionInput,
             createdAt: new Date(),
           });
+          await syncMonthlySessionUsageForUser(user.uid);
         }
       } catch (saveErr) {
         console.error('Failed to save session to Firestore:', saveErr);
