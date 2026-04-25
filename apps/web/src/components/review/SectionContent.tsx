@@ -1,12 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSessionStore, type SectionKey } from '@/lib/store/sessionStore';
 import { RiskFlagsSection } from './sections/RiskFlagsSection';
 import { SOAPSection } from './sections/SOAPSection';
 import { SectionSkeleton } from '@/components/ui/Skeleton';
 import type { SessionInput, ReviewPackage } from 'agents';
-import { getSessionRecord } from '@/lib/firebase/sessions';
+import { getSessionRecord, updateSessionReviewPackage, type SessionRecord } from '@/lib/firebase/sessions';
+
+type SOAPKey = 'subjective' | 'objective' | 'assessment' | 'plan';
+type SOAPSectionPatch = Partial<ReviewPackage['soapNote'][SOAPKey]>;
+
+function buildLegacyTranscriptContext(reviewPackage: ReviewPackage): string {
+  const soap = reviewPackage.soapNote;
+  return [
+    'Original transcript was not stored for this legacy session. Use the existing clinical draft and approved sections as context.',
+    soap?.subjective?.content ? `Subjective draft:\n${soap.subjective.content}` : '',
+    soap?.objective?.content ? `Objective draft:\n${soap.objective.content}` : '',
+    soap?.assessment?.content ? `Assessment draft:\n${soap.assessment.content}` : '',
+    soap?.plan?.content ? `Plan draft:\n${soap.plan.content}` : '',
+  ].filter(Boolean).join('\n\n');
+}
+
+function buildInputFromSessionRecord(record: SessionRecord): SessionInput {
+  if (record.sessionInput?.session?.transcript?.trim()) {
+    return record.sessionInput;
+  }
+
+  return {
+    session: {
+      transcript: buildLegacyTranscriptContext(record.reviewPackage),
+      sessionType: record.sessionType as SessionInput['session']['sessionType'],
+      sessionNumber: record.sessionNumber,
+      durationMinutes: record.durationMinutes,
+      modality: record.modality as SessionInput['session']['modality'],
+    },
+    patient: {
+      id: record.patientId,
+      age: record.patientAge,
+      gender: record.patientGender,
+      knownDiagnoses: record.knownDiagnoses,
+      currentMedications: record.currentMedications,
+    },
+    priorNotes: [],
+    clinicianPreferences: { noteVerbosity: 'standard', alwaysIncludeRiskSection: true },
+  };
+}
 
 // function StickyPatientHeader({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
 //   // if (!input \&\& !reviewPackage) return null;
@@ -127,7 +166,6 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
     approveSection,
     editSection,
     markRevised,
-    updateSectionContent,
     invalidateDownstreamSections,
     setReviewPackage,
     setSessionId,
@@ -136,6 +174,55 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
 
   const [hydrating, setHydrating] = useState(false);
   const [hydrationFailed, setHydrationFailed] = useState(false);
+
+  const persistReviewPackage = useCallback(
+    async (pkg: ReviewPackage) => {
+      if (sessionId === 'demo') return;
+
+      const sessionInput = useSessionStore.getState().input;
+      const redisWrite = fetch(`/api/session/${sessionId}/review`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewPackage: pkg, sessionInput }),
+      }).then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Redis review update failed with HTTP ${res.status}`);
+        }
+      });
+      const firestoreWrite = updateSessionReviewPackage(sessionId, pkg);
+
+      const results = await Promise.allSettled([redisWrite, firestoreWrite]);
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          console.error('Failed to persist review package update:', result.reason);
+        }
+      });
+    },
+    [sessionId],
+  );
+
+  const patchSOAPSection = useCallback(
+    (section: SOAPKey, patch: SOAPSectionPatch): ReviewPackage | null => {
+      const currentPackage = useSessionStore.getState().reviewPackage;
+      if (!currentPackage?.soapNote?.[section]) return null;
+
+      const nextPackage: ReviewPackage = {
+        ...currentPackage,
+        soapNote: {
+          ...currentPackage.soapNote,
+          [section]: {
+            ...currentPackage.soapNote[section],
+            ...patch,
+          },
+        },
+      };
+
+      setReviewPackage(nextPackage);
+      void persistReviewPackage(nextPackage);
+      return nextPackage;
+    },
+    [persistReviewPackage, setReviewPackage],
+  );
 
   // â”€â”€ Hydrate from Redis on page refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
@@ -162,27 +249,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
             if (record && record.reviewPackage) {
               setReviewPackage(record.reviewPackage);
               setSessionId(sessionId);
-              
-              const rehydratedInput = {
-                session: {
-                  transcript:      '',
-                  sessionType:     record.sessionType,
-                  sessionNumber:   record.sessionNumber,
-                  durationMinutes: record.durationMinutes,
-                  modality:        record.modality,
-                },
-                patient: {
-                  id:                 record.patientId,
-                  age:                record.patientAge,
-                  gender:             record.patientGender,
-                  knownDiagnoses:     record.knownDiagnoses,
-                  currentMedications: record.currentMedications,
-                },
-                priorNotes:           [],
-                clinicianPreferences: { noteVerbosity: 'standard', alwaysIncludeRiskSection: true },
-              } as any;
-              
-              setInput(rehydratedInput);
+              setInput(buildInputFromSessionRecord(record));
               setHydrating(false);
               return;
             }
@@ -279,14 +346,29 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
           soapSection={soapSection}
           transcript={input?.session?.transcript ?? ''}
           approvedSections={approvedSections}
-          onApprove={() => approveSection(soapKey)}
+          onApprove={() => {
+            patchSOAPSection(soapKey, { status: 'approved', provenanceTag: 'approved' });
+            approveSection(soapKey);
+          }}
           onEdit={(content) => {
-            updateSectionContent(soapKey, content);
+            patchSOAPSection(soapKey, {
+              content,
+              status: 'edited',
+              provenanceTag: 'clinician_edited',
+            });
             editSection(soapKey);
             invalidateDownstreamSections(soapKey);
           }}
-          onRevisionComplete={(content) => {
-            updateSectionContent(soapKey, content);
+          onRevisionComplete={(result) => {
+            const currentPackage = useSessionStore.getState().reviewPackage;
+            const currentRounds = currentPackage?.soapNote?.[soapKey]?.revisionRounds ?? soapSection.revisionRounds ?? 0;
+            patchSOAPSection(soapKey, {
+              content: result.content,
+              confidence: result.confidence,
+              provenanceTag: 'ai_revised',
+              status: 'revised',
+              revisionRounds: currentRounds + 1,
+            });
             markRevised(soapKey);
           }}
         />

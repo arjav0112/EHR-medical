@@ -1,5 +1,6 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import type { GraphState } from '../graph';
 import type { SOAPNote, AssessmentCriteriaRow } from '../types/index';
 
@@ -197,13 +198,14 @@ Return structured JSON only.`;
 
 // ─── Node ─────────────────────────────────────────────────────────────────────
 
-export async function soapNode(state: GraphState): Promise<Partial<GraphState>> {
+export async function soapNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const { session, patient, clinicianPreferences } = state.input;
 
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
       temperature: 0.2,
+      maxRetries: 6,
     }).withStructuredOutput(SOAPOutputSchema);
 
     const priorContext =
@@ -230,7 +232,7 @@ ${priorContext}
 TRANSCRIPT:
 ${session.transcript}`,
       },
-    ]);
+    ], config);
 
     const lowConfidenceSections: string[] = [];
 

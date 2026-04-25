@@ -42,14 +42,18 @@ export async function setReviewPackage(id: string, pkg: ReviewPackage): Promise<
 }
 
 export async function getReviewPackage(id: string): Promise<ReviewPackage | null> {
-  const raw = await redis.get<string>(`review:${id}`);
+  // Upstash REST client auto-deserializes JSON, returning an object — not a string.
+  // Using <ReviewPackage | string> handles both cases gracefully.
+  const raw = await redis.get<ReviewPackage | string>(`review:${id}`);
   if (!raw) {
     console.warn(`[REDIS] No review package found for key: review:${id}`);
     return null;
   }
+  if (typeof raw === 'object') return raw as ReviewPackage;
   try {
-    return JSON.parse(raw) as ReviewPackage;
+    return JSON.parse(raw as string) as ReviewPackage;
   } catch {
+    console.error('[REDIS] Failed to parse reviewPackage JSON');
     return null;
   }
 }
@@ -61,10 +65,11 @@ export async function setSessionInput(id: string, input: SessionInput): Promise<
 }
 
 export async function getSessionInput(id: string): Promise<SessionInput | null> {
-  const raw = await redis.get<string>(`input:${id}`);
+  const raw = await redis.get<SessionInput | string>(`input:${id}`);
   if (!raw) return null;
+  if (typeof raw === 'object') return raw as SessionInput;
   try {
-    return JSON.parse(raw) as SessionInput;
+    return JSON.parse(raw as string) as SessionInput;
   } catch {
     return null;
   }

@@ -23,7 +23,7 @@ interface SOAPSectionProps {
   approvedSections: Record<string, unknown>;
   onApprove: () => void;
   onEdit: (content: string) => void;
-  onRevisionComplete?: (content: string) => void;
+  onRevisionComplete?: (result: { content: string; confidence: number; provenanceTag: string }) => void;
 }
 
 const SECTION_LABELS: Record<SectionKey, string> = {
@@ -174,13 +174,17 @@ export function SOAPSection({
     const newContent = streamedContent || currentContent;
     setCurrentContent(newContent);
     setCurrentSection((prev) => ({ ...prev, content: newContent, status: 'revised', provenanceTag: 'ai_revised' }));
-    onRevisionComplete?.(newContent);
+    onRevisionComplete?.({
+      content: newContent,
+      confidence: currentSection.confidence,
+      provenanceTag: currentSection.provenanceTag,
+    });
     setFeedback('');
     setStreamDone(false);
     setStreamedContent('');
     clearInvalidated(section as any);
     setUiState('draft');
-  }, [streamedContent, currentContent, onRevisionComplete, clearInvalidated, section]);
+  }, [streamedContent, currentContent, currentSection.confidence, currentSection.provenanceTag, onRevisionComplete, clearInvalidated, section]);
 
   const handleReviseAgain = useCallback(() => {
     setStreamDone(false);

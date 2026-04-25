@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 const TreatmentPlanOutputSchema = z.object({
   currentGoalsProgress: z.array(
@@ -106,7 +107,7 @@ BLOCKED PLAN (when immediate risk exists):
 
 Return structured JSON only.`;
 
-export async function planNode(state: GraphState): Promise<Partial<GraphState>> {
+export async function planNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const hasImmediateRisk = state.riskFlags.some((f) => f.requiresImmediateAction);
 
@@ -132,21 +133,22 @@ export async function planNode(state: GraphState): Promise<Partial<GraphState>> 
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
       temperature: 0.3,
+      maxRetries: 6,
     }).withStructuredOutput(TreatmentPlanOutputSchema);
 
     const priorGoals =
       state.input.priorNotes.length > 0
         ? state.input.priorNotes
-            .map((n) => `Session ${n.session}:\n${n.soapNote.slice(0, 600)}`)
-            .join('\n---\n')
+          .map((n) => `Session ${n.session}:\n${n.soapNote.slice(0, 600)}`)
+          .join('\n---\n')
         : 'No prior notes available — this may be an intake session.';
 
     const riskSummary =
       state.riskFlags.length === 0
         ? 'No active risk flags.'
         : state.riskFlags
-            .map((f) => `• ${f.type} / ${f.severity} — ${f.protocolTriggered}`)
-            .join('\n');
+          .map((f) => `• ${f.type} / ${f.severity} — ${f.protocolTriggered}`)
+          .join('\n');
 
     const result = await model.invoke([
       { role: 'system', content: SYSTEM_PROMPT },
@@ -173,7 +175,7 @@ Current medications: ${state.input.patient.currentMedications.join(', ') || 'Non
 Session type: ${state.input.session.sessionType} | Session #${state.input.session.sessionNumber}
 Clinician preference: verbosity=${state.input.clinicianPreferences.noteVerbosity}`,
       },
-    ]);
+    ], config);
 
     return {
       treatmentPlan: {

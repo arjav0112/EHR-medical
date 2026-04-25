@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 const QualityOutputSchema = z.object({
   score: z.number().min(0).max(1),
@@ -24,11 +25,19 @@ Return structured JSON only.`;
 
 export async function transcriptQualityNode(
   state: GraphState,
+  config: RunnableConfig
 ): Promise<Partial<GraphState>> {
   try {
+    console.log('>>> [transcriptQualityNode] Config received:', JSON.stringify({
+      tags: config?.tags,
+      metadata: config?.metadata,
+      callbacksLength: (config?.callbacks as any[])?.length,
+    }));
+
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
       temperature: 0,
+      maxRetries: 6,
     }).withStructuredOutput(QualityOutputSchema);
 
     const result = await model.invoke([
@@ -37,7 +46,7 @@ export async function transcriptQualityNode(
         role: 'user',
         content: `Assess this transcript:\n\n${state.input.session.transcript}`,
       },
-    ]);
+    ], config);
 
     const score =
       (result.clarity +

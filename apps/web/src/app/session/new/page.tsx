@@ -8,6 +8,7 @@ import { AgentProgress } from '@/components/processing/AgentProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSessionQuota } from '@/lib/firebase/users';
 import { saveSession } from '@/lib/firebase/sessions';
+import type { SessionInput } from 'agents';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SessionType = 'intake' | 'follow_up' | 'crisis';
@@ -258,7 +259,7 @@ export default function NewSessionPage() {
 
     setProcessingStatus('processing');
 
-    const sessionInput = {
+    const sessionInput: SessionInput = {
       session: {
         transcript: form.transcript,
         sessionNumber: parseInt(form.sessionNumber),
@@ -280,7 +281,7 @@ export default function NewSessionPage() {
       },
     };
 
-    setInput(sessionInput as any);
+    setInput(sessionInput);
 
     try {
       // ── Step 1: Fire the job — returns sessionId in <1s ──
@@ -306,7 +307,8 @@ export default function NewSessionPage() {
       setProcessingSessionId(sessionId);
 
       // ── Step 2: Poll /api/session/status/[sessionId] until done ──
-      const POLL_INTERVAL_MS = 3000;
+      // Increased to 10 seconds to reduce terminal spam during debugging
+      const POLL_INTERVAL_MS = 10000;
       const MAX_WAIT_MS = 10 * 60 * 1000; // 10 minutes absolute ceiling
       const pollStart = Date.now();
 
@@ -327,7 +329,21 @@ export default function NewSessionPage() {
             };
 
             if (statusBody.status === 'complete') {
-              resolve(statusBody.reviewPackage);
+              let pkg = statusBody.reviewPackage;
+              // If Inngest wrote status but Redis dropped the package (large payload),
+              // fetch it directly from the /review endpoint as a fallback.
+              if (!pkg) {
+                try {
+                  const reviewRes = await fetch(`/api/session/${sessionId}/review`);
+                  if (reviewRes.ok) {
+                    const reviewBody = await reviewRes.json();
+                    pkg = reviewBody.reviewPackage;
+                  }
+                } catch (_) {
+                  // will resolve null and let the review page Firebase fallback handle it
+                }
+              }
+              resolve(pkg);
               return;
             }
 
@@ -373,8 +389,9 @@ export default function NewSessionPage() {
             modality: sessionInput.session.modality,
             durationMinutes: sessionInput.session.durationMinutes,
             status: 'complete',
-            overallRiskLevel: reviewPackage.overallRiskLevel,
+            overallRiskLevel: reviewPackage?.overallRiskLevel || 'unknown',
             reviewPackage,
+            sessionInput,
             createdAt: new Date(),
           });
         }

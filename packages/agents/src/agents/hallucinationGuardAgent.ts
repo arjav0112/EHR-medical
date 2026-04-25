@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import type { HallucinationReport, SectionGuardResult } from '../types/index';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ Return structured JSON only. Be rigorous and adversarial — patient safety depe
 
 export async function hallucinationGuardNode(
   state: GraphState,
+  config: RunnableConfig
 ): Promise<Partial<GraphState>> {
   try {
     const soap = state.soapNote as Required<typeof state.soapNote>;
@@ -85,7 +87,8 @@ export async function hallucinationGuardNode(
 
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-2.5-flash',
-      temperature: 0,  // Deterministic for auditing
+      temperature: 0,
+      maxRetries: 6,
     }).withStructuredOutput(GuardOutputSchema);
 
     const result = await model.invoke([
@@ -93,25 +96,25 @@ export async function hallucinationGuardNode(
       {
         role: 'user',
         content: `=== ORIGINAL TRANSCRIPT ===
-${transcript}
+${transcript.slice(0, 6000)}${transcript.length > 6000 ? '\n[transcript truncated for evaluation]' : ''}
 
 === GENERATED SOAP NOTE (to audit) ===
 
 [SUBJECTIVE]
-${soap.subjective?.content ?? '(empty)'}
+${(soap.subjective?.content ?? '(empty)').slice(0, 800)}
 
 [OBJECTIVE]
-${soap.objective?.content ?? '(empty)'}
+${(soap.objective?.content ?? '(empty)').slice(0, 800)}
 
 [ASSESSMENT]
-${soap.assessment?.content ?? '(empty)'}
+${(soap.assessment?.content ?? '(empty)').slice(0, 800)}
 
 [PLAN]
-${soap.plan?.content ?? '(empty)'}
+${(soap.plan?.content ?? '(empty)').slice(0, 800)}
 
 Evaluate each section against the transcript. Identify any hallucinated or ungrounded clinical details.`,
       },
-    ]);
+    ], config);
 
     // Build per-section guard results and override confidence scores in soapNote
     const SECTIONS = ['subjective', 'objective', 'assessment', 'plan'] as const;
