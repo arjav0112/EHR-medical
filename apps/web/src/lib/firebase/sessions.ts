@@ -19,7 +19,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ReviewPackage } from 'agents';
+import type { ReviewPackage, SessionInput } from 'agents';
 
 // ─── Collection name ──────────────────────────────────────────────────────────
 const SESSIONS_COL = 'sessions';
@@ -45,6 +45,7 @@ export interface SessionRecord {
   primaryDiagnosis?:  { dsm5Code: string; label: string; confidence: number };
   // Full data blob
   reviewPackage:      ReviewPackage;
+  sessionInput?:      SessionInput | null;
   // Timestamps (stored as Firestore Timestamp, returned as Date)
   createdAt:          Date | null;
   completedAt:        Date | null;
@@ -68,6 +69,29 @@ export async function saveSession(
     createdAt:   session.createdAt ? Timestamp.fromDate(session.createdAt) : serverTimestamp(),
     completedAt: serverTimestamp(),
   });
+}
+
+/** Persist the latest review package after clinician edits or AI refinement. */
+export async function updateSessionReviewPackage(
+  sessionId: string,
+  reviewPackage: ReviewPackage,
+): Promise<void> {
+  const ref = doc(collection(db, SESSIONS_COL), sessionId);
+  const primaryDx = reviewPackage?.diagnosisSuggestions?.[0];
+
+  await setDoc(
+    ref,
+    {
+      reviewPackage,
+      primaryDiagnosis: primaryDx
+        ? { dsm5Code: primaryDx.dsm5Code, label: primaryDx.label, confidence: primaryDx.confidence }
+        : null,
+      overallRiskLevel: reviewPackage?.overallRiskLevel ?? 'unknown',
+      status: reviewPackage?.reviewStatus === 'complete' ? 'complete' : 'processing',
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 /** Fetch a single session by its ID. */
@@ -136,6 +160,7 @@ function fromDoc(id: string, data: DocumentData): SessionRecord {
     overallRiskLevel:   data.overallRiskLevel ?? 'low',
     primaryDiagnosis:   data.primaryDiagnosis ?? undefined,
     reviewPackage:      data.reviewPackage as ReviewPackage,
+    sessionInput:        (data.sessionInput as SessionInput | undefined) ?? null,
     createdAt:          (data.createdAt as Timestamp)?.toDate() ?? null,
     completedAt:        (data.completedAt as Timestamp)?.toDate() ?? null,
   };
