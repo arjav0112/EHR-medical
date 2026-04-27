@@ -21,7 +21,7 @@ function verifySignature(orderId: string, paymentId: string, signature: string):
 
 const PLAN_NAMES: Record<string, string> = {
   pro:    'Pro',
-  clinic: 'Clinic',
+  clinic: 'Team',
 };
 
 export async function POST(req: NextRequest) {

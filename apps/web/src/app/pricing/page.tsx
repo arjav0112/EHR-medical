@@ -47,7 +47,7 @@ const plans = [
     id:        'pro',
     name:      'Pro',
     tagline:   'For busy clinicians in practice',
-    price:     { monthly: 2999, annual: 2399 },
+    price:     { monthly: 2999, annual: 1800 },
     cta:       'Start 14-day Free Trial',
     ctaHref:   null,
     paid:      true,
@@ -68,9 +68,9 @@ const plans = [
   },
   {
     id:        'clinic',
-    name:      'Clinic',
+    name:      'Team',
     tagline:   'For teams and multi-clinician practices',
-    price:     { monthly: 7499, annual: 5999 },
+    price:     { monthly: 7499, annual: 4999 },
     cta:       'Start 14-day Free Trial',
     ctaHref:   null,
     paid:      true,
@@ -139,7 +139,7 @@ const comparisonFeatures = [
 const faqs = [
   {
     q: 'Is my patient data safe?',
-    a: 'Yes. EHR Copilot is HIPAA-compliant. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never train our models on your clinical data. A BAA is available to Pro and Clinic subscribers.',
+    a: 'Yes. EHR Copilot is HIPAA-compliant. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never train our models on your clinical data. A BAA is available to Pro and Team subscribers.',
   },
   {
     q: 'Can I cancel anytime?',
@@ -196,9 +196,9 @@ function Footer() {
   ];
   return (
     <footer className="relative overflow-hidden bg-white border-t border-gray-100 mt-auto">
-      <div className="relative z-10 max-w-[1200px] mx-auto px-8 pt-10 pb-0">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-10 pb-12">
-          <div className="md:col-span-2">
+      <div className="relative z-10 mx-auto max-w-[1200px] px-4 pt-10 pb-0 sm:px-6 lg:px-8">
+        <div className="grid gap-10 pb-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-14">
+          <div className="max-w-[300px]">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <span className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,22 +211,24 @@ function Footer() {
               AI-driven clinical documentation platform that helps clinicians document accurately and efficiently.
             </p>
           </div>
-          {cols.map(({ title, links }) => (
-            <div key={title}>
-              <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
-              <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200 cursor-pointer">{link}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-10 lg:grid-cols-4">
+            {cols.map(({ title, links }) => (
+              <div key={title}>
+                <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
+                <ul className="space-y-2.5">
+                  {links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200 cursor-pointer">{link}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="py-5 border-t border-gray-100 flex items-center justify-between">
+        <div className="flex flex-col gap-3 border-t border-gray-100 py-5 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
-          <div className="flex items-center gap-5 text-[12px] text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[12px] text-gray-400 sm:justify-end sm:gap-5">
             <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">Privacy</a>
             <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">Terms</a>
             <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">HIPAA</a>
@@ -324,6 +326,11 @@ export default function PricingPage() {
 
   const { user } = useAuth();
   const router   = useRouter();
+  const maxAnnualSavings = Math.max(
+    ...plans
+      .filter((plan) => plan.price.monthly > 0)
+      .map((plan) => Math.round(((plan.price.monthly - plan.price.annual) / plan.price.monthly) * 100)),
+  );
 
   // Load Razorpay checkout script once
   useEffect(() => {
@@ -368,7 +375,7 @@ export default function PricingPage() {
         amount:      data.amount,
         currency:    data.currency,
         name:        'EHR Copilot',
-        description: `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan — ${billing}`,
+        description: `${plans.find((plan) => plan.id === planId)?.name ?? planId} Plan - ${billing}`,
         image:       '/ehr-icon.png',
         prefill: {
           name:  user.displayName  ?? '',
@@ -463,18 +470,20 @@ export default function PricingPage() {
             ))}
           </div>
           {billing === 'annual' && (
-            <p className="text-[12px] text-green-600 font-semibold mb-0">Save up to 20% with annual billing</p>
+            <p className="text-[12px] text-green-600 font-semibold mb-0">Save up to {maxAnnualSavings}% with annual billing</p>
           )}
         </div>
       </section>
 
       {/* ── Pricing cards ─────────────────────────────────────────────────── */}
-      <section className="relative px-8 pt-8 pb-4 overflow-hidden">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+      <section className="relative overflow-hidden px-4 pt-8 pb-4 sm:px-8">
+        <div className="mx-auto max-w-[1100px]">
+          <p className="mb-3 px-1 text-[12px] font-medium text-gray-400 md:hidden">Swipe to compare plans</p>
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative flex flex-col rounded-3xl border transition-all duration-200 overflow-hidden ${plan.highlight
+              className={`relative min-w-[86%] snap-center overflow-hidden rounded-3xl border transition-all duration-200 md:min-w-0 ${plan.highlight
                   ? 'border-gray-900 shadow-[0_8px_40px_rgba(0,0,0,0.15)] bg-gray-900 md:-mt-3 md:mb-3'
                   : 'border-gray-200 shadow-sm bg-white hover:shadow-md'
                 }`}
@@ -559,6 +568,7 @@ export default function PricingPage() {
               </div>
             </div>
           ))}
+          </div>
         </div>
 
         {/* Enterprise callout */}
@@ -624,13 +634,13 @@ export default function PricingPage() {
           <div className="rounded-3xl border border-gray-200 overflow-hidden bg-white shadow-sm">
             <div className="grid grid-cols-4 border-b border-gray-100">
               <div className="p-5" />
-              {['Starter', 'Pro', 'Clinic'].map((name, i) => (
+              {['Starter', 'Pro', 'Team'].map((name, i) => (
                 <div key={name} className={`p-5 text-center border-l border-gray-100 ${i === 1 ? 'bg-gray-900' : ''}`}>
                   <p className={`text-[14px] font-bold ${i === 1 ? 'text-white' : 'text-gray-900'}`}>{name}</p>
                   <p className={`text-[12px] mt-0.5 ${i === 1 ? 'text-gray-400' : 'text-gray-400'}`}>
                     {i === 0 ? 'Free' : i === 1
-                      ? `₹${billing === 'annual' ? '2,399' : '2,999'}/mo`
-                      : `₹${billing === 'annual' ? '5,999' : '7,499'}/mo`}
+                      ? `₹${billing === 'annual' ? '1,800' : '2,999'}/mo`
+                      : `₹${billing === 'annual' ? '4,999' : '7,499'}/mo`}
                   </p>
                 </div>
               ))}

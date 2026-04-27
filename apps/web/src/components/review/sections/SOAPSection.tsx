@@ -60,14 +60,14 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-8">
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-[28px] font-bold text-gray-900 tracking-tight leading-tight">
+          <h2 className="text-[24px] font-bold tracking-tight leading-tight text-gray-900 sm:text-[28px]">
             {SECTION_LABELS[section]}
           </h2>
           <p className="text-[13px] text-gray-500 mt-1">{SECTION_DESCRIPTIONS[section]}</p>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0 pt-1">
+        <div className="flex flex-shrink-0 items-center gap-3 pt-1">
           {customStatus || <ProvenanceTag soapSection={currentSection} />}
         </div>
       </div>
@@ -251,8 +251,8 @@ export function SOAPSection({
           />
         )}
 
-        {/* Horizontal split: card left, actions right */}
-        <div className="flex gap-5 flex-1 min-h-0">
+        {/* Standard-width card with actions below */}
+        <div className="flex flex-1 min-h-0 flex-col gap-5">
 
           {/* Content card (scrollable) */}
           <div className="group flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0 relative">
@@ -310,10 +310,10 @@ export function SOAPSection({
           </div>
 
           {/* ── Stacked action buttons (right column) */}
-          <div className="flex flex-col gap-3 w-52 flex-shrink-0 pt-1">
+          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               onClick={() => { setEditBuffer(currentContent); setUiState('editing'); }}
-              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:text-gray-900 transition-all"
+              className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -323,7 +323,7 @@ export function SOAPSection({
 
             <button
               onClick={() => setUiState('revising')}
-              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-2xl hover:bg-purple-100 transition-all"
+              className="flex w-full flex-col items-center gap-2 rounded-2xl border border-purple-200 bg-purple-50 py-5 text-[13px] font-semibold text-purple-600 transition-all hover:bg-purple-100"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -334,7 +334,7 @@ export function SOAPSection({
             <button
               onClick={handleApprove}
               disabled={!canApproveDirectly}
-              className={`flex flex-col items-center gap-2 w-full py-6 text-[13px] font-bold rounded-2xl transition-all duration-300 ${
+              className={`flex w-full flex-col items-center gap-2 rounded-2xl py-5 text-[13px] font-bold transition-all duration-300 ${
                 canApproveDirectly
                   ? 'bg-gray-900 text-white hover:bg-green-700'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -379,15 +379,15 @@ export function SOAPSection({
         )}
 
         {/* Two-column layout */}
-        <div className="flex gap-5 flex-1 min-h-0">
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
 
           {/* Left: original preview (dimmed) + feedback input stacked */}
-          <div className={`flex flex-col gap-4 min-h-0 ${isStreaming || streamDone ? 'flex-1' : 'flex-1'}`}>
+          <div className="flex flex-col gap-4 min-h-0">
 
             {/* Dimmed original */}
-            <div className="flex-1 min-h-0 opacity-40 pointer-events-none">
-              <div className="h-full bg-white border border-gray-100 rounded-2xl overflow-hidden">
-                <div className="h-full overflow-y-auto px-8 py-7 scrollbar-hide">
+            <div className="max-h-52 overflow-hidden opacity-55 pointer-events-none">
+              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                <div className="max-h-52 overflow-y-auto px-6 py-5 scrollbar-hide">
                   <MarkdownContent content={currentContent} className="opacity-60" />
                 </div>
               </div>
@@ -439,7 +439,7 @@ export function SOAPSection({
               </div>
 
               {streamDone && !isStreaming && (
-                <div className="flex items-center justify-end gap-3 flex-shrink-0 pt-1">
+                <div className="flex flex-col gap-3 flex-shrink-0 pt-1 sm:flex-row sm:items-center sm:justify-end">
                   <button
                     onClick={handleReviseAgain}
                     className="text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all"
@@ -448,7 +448,7 @@ export function SOAPSection({
                   </button>
                   <button
                     onClick={handleApproveStreamedVersion}
-                    className="flex items-center gap-2 px-7 py-2.5 bg-gray-900 text-white rounded-xl text-[12px] font-bold hover:bg-green-700 transition-all duration-300"
+                    className="flex items-center justify-center gap-2 px-7 py-2.5 bg-gray-900 text-white rounded-xl text-[12px] font-bold hover:bg-green-700 transition-all duration-300"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -522,8 +522,8 @@ export function SOAPSection({
           </div>
         )}
 
-        {/* Two-column: textarea left, action buttons right */}
-        <div className="flex gap-5 flex-1 min-h-0">
+        {/* Standard-width textarea with actions below */}
+        <div className="flex flex-1 min-h-0 flex-col gap-5">
 
           {/* Textarea card */}
           <div className="group flex-1 min-h-0 bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden flex flex-col ring-1 ring-green-200 relative">
@@ -551,10 +551,10 @@ export function SOAPSection({
           </div>
 
           {/* Right action column */}
-          <div className="flex flex-col gap-3 w-52 flex-shrink-0 pt-1">
+          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               onClick={() => setUiState('draft')}
-              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:text-gray-900 transition-all"
+              className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -565,7 +565,7 @@ export function SOAPSection({
             <button
               onClick={handleSaveEdit}
               disabled={!editBuffer.trim()}
-              className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-bold bg-gray-900 text-white rounded-2xl hover:bg-green-700 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex w-full flex-col items-center gap-2 rounded-2xl bg-gray-900 py-5 text-[13px] font-bold text-white transition-all duration-300 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -597,8 +597,8 @@ export function SOAPSection({
         }
       />
 
-      {/* Horizontal split */}
-      <div className="flex gap-5 flex-1 min-h-0">
+      {/* Standard-width content with actions below */}
+      <div className="flex flex-1 min-h-0 flex-col gap-5">
 
         {/* ── Content card */}
         <div className="flex-1 bg-white border-l-4 border-l-green-500 border border-green-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0">
@@ -632,10 +632,10 @@ export function SOAPSection({
         </div>
 
         {/* ── Stacked action buttons */}
-        <div className="flex flex-col gap-3 w-52 flex-shrink-0 pt-1">
+        <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             onClick={() => { setEditBuffer(currentContent); setUiState('editing'); invalidateDownstream(section as any); }}
-            className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:text-gray-900 transition-all"
+            className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -645,7 +645,7 @@ export function SOAPSection({
 
           <button
             onClick={() => { setFeedback(''); setStreamDone(false); setStreamedContent(''); setIsStreaming(false); setUiState('revising'); }}
-            className="flex flex-col items-center gap-2 w-full py-6 text-[13px] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-2xl hover:bg-purple-100 transition-all"
+            className="flex w-full flex-col items-center gap-2 rounded-2xl border border-purple-200 bg-purple-50 py-5 text-[13px] font-semibold text-purple-600 transition-all hover:bg-purple-100"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

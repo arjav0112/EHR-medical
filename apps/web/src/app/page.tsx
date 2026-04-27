@@ -10,7 +10,7 @@ import AuthModal from '@/components/AuthModal';
 // ─── Hero ──────────────────────────────────────────────────────────────────────
 function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
   return (
-    <section className="relative pt-28 pb-16 px-8 overflow-hidden bg-white">
+    <section className="relative overflow-hidden bg-white px-4 pt-24 pb-14 sm:px-6 sm:pt-28 sm:pb-16 lg:px-8">
       {/* Green radial glow — behind the right card area */}
       <div
         className="absolute -top-20 -right-20 w-[650px] h-[650px] rounded-full pointer-events-none"
@@ -19,7 +19,7 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
 
       {/* Large mint-green wash — bottom half, covers dot area like reference */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none hidden md:block"
         style={{
           bottom: 0,
           left: 0,
@@ -46,7 +46,7 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
         }}
       />
 
-      <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
+      <div className="relative z-10 mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
         {/* Left */}
         <div>
           {/* Badge — dark outlined pill */}
@@ -56,7 +56,7 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
           </div>
 
           {/* Headline — 58px bold, not extra-black */}
-          <h1 className="text-[58px] font-bold text-gray-900 leading-[1.08] tracking-[-0.025em] mb-6">
+          <h1 className="mb-6 text-[40px] font-bold text-gray-900 leading-[1.08] tracking-[-0.025em] sm:text-[50px] lg:text-[58px]">
             AI-Powered
             <br />
             {/* Green bar + highlighted green text — Talynx style */}
@@ -81,21 +81,21 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
             Clinicians
           </h1>
 
-          <p className="text-[16px] text-gray-500 leading-[1.65] mb-9 max-w-[440px]">
+          <p className="mb-9 max-w-[440px] text-[15px] leading-[1.65] text-gray-500 sm:text-[16px]">
             Transform session transcripts into structured SOAP notes, DSM assessments, and risk documentation — in seconds, not hours.
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-row items-center gap-4 mb-10">
+          <div className="mb-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
             <button
               onClick={onGetStartedClick}
-              className="bg-gray-900 text-white text-[14px] font-semibold px-7 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200 shadow-sm"
+              className="rounded-full bg-gray-900 px-7 py-3.5 text-[14px] font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-gray-800"
             >
               Get Started Free
             </button>
             <Link
               href="#how-it-works"
-              className="bg-white text-gray-900 text-[14px] font-semibold px-7 py-3.5 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm"
+              className="rounded-full border border-gray-200 bg-white px-7 py-3.5 text-center text-[14px] font-semibold text-gray-900 shadow-sm transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50"
             >
               Book a Demo
             </Link>
@@ -115,10 +115,10 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
         </div>
 
         {/* Right — App mockup (Talynx style) */}
-        <div className="relative flex justify-center lg:justify-end" style={{ minHeight: '420px' }}>
+        <div className="relative flex min-h-[320px] flex-col items-center justify-center lg:min-h-[420px] lg:items-end lg:justify-end">
 
           {/* Main white card */}
-          <div className="relative w-full max-w-[420px] bg-white rounded-3xl border border-gray-100 shadow-[0_4px_30px_rgba(0,0,0,0.09)] overflow-hidden self-start">
+          <div className="relative w-full max-w-[420px] self-center overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_30px_rgba(0,0,0,0.09)] lg:self-start">
 
             {/* Card header row */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -174,7 +174,7 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
 
 
           {/* Floating accuracy card — bottom-left of main card */}
-          <div className="absolute bottom-4 -left-8 w-[210px] bg-white rounded-2xl border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-4 z-20">
+          <div className="z-20 mt-4 w-full max-w-[210px] self-center rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)] sm:absolute sm:bottom-4 sm:-left-8 sm:mt-0 sm:self-start">
             <div className="flex items-center gap-1.5 mb-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
               <span className="text-[10px] font-semibold text-green-600 uppercase tracking-[0.1em]">AI Accuracy</span>
@@ -212,12 +212,12 @@ function TrustedBy() {
   const track = [...logos, ...logos];
 
   return (
-    <section className="py-12 border-b border-gray-100 bg-white overflow-hidden">
-      <div className="max-w-[1200px] mx-auto px-8">
-        <div className="flex items-center gap-8">
+    <section className="overflow-hidden border-b border-gray-100 bg-white py-12">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
 
           {/* Left: title + description */}
-          <div className="flex-shrink-0 w-[200px]">
+          <div className="w-full max-w-[260px] flex-shrink-0">
             <p className="text-[15px] font-bold text-gray-900 mb-2">Trusted Worldwide</p>
             <p className="text-[12px] text-gray-500 leading-snug">
               From solo practices to global enterprise health systems.
@@ -225,7 +225,7 @@ function TrustedBy() {
           </div>
 
           {/* Vertical divider */}
-          <div className="w-px self-stretch bg-gray-200 flex-shrink-0" style={{ minHeight: '72px' }} />
+          <div className="hidden w-px flex-shrink-0 self-stretch bg-gray-200 md:block" style={{ minHeight: '72px' }} />
 
           {/* Marquee track */}
           <div className="flex-1 overflow-hidden relative">
@@ -279,11 +279,11 @@ function TrustedBy() {
 // ─── Features / Problem Section ────────────────────────────────────────────────
 function FeaturesSection() {
   return (
-    <section id="how-it-works" className="py-24 px-8 bg-white">
-      <div className="max-w-[1200px] mx-auto">
+    <section id="how-it-works" className="bg-white px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
         {/* Header */}
-        <div className="text-center mb-14">
-          <h2 className="text-[40px] font-bold text-gray-900 tracking-[-0.025em] mb-4">
+        <div className="mb-12 text-center sm:mb-14">
+          <h2 className="mb-4 text-[32px] font-bold text-gray-900 tracking-[-0.025em] sm:text-[40px]">
             Everything You Need to Document Smarter
           </h2>
           <p className="text-[16px] text-gray-500 max-w-xl mx-auto leading-relaxed">
@@ -292,7 +292,7 @@ function FeaturesSection() {
         </div>
 
         {/* Top row — 3 columns */}
-        <div className="grid grid-cols-3 gap-5 mb-5">
+        <div className="mb-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 
           {/* Card 1 — SOAP Generation (green gradient bg, visual on top) */}
           <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm flex flex-col">
@@ -379,7 +379,7 @@ function FeaturesSection() {
           </div>
 
           {/* Card 3 — Workflow Automation (plain white, text only + icon grid) */}
-          <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-white p-6 flex flex-col">
+          <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-100 bg-white p-6 shadow-sm">
             <h3 className="text-[20px] font-bold text-gray-900 mb-3">Workflow Automation</h3>
             <p className="text-[13px] text-gray-500 leading-relaxed mb-6">
               Save hours by automating repetitive documentation tasks—from SOAP note generation to PDF export and FHIR-ready data.
@@ -404,12 +404,12 @@ function FeaturesSection() {
         </div>
 
         {/* Bottom row — wide risk card + green card */}
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
           {/* Card 4 — Smart Risk Assessment (spans 2 cols) */}
-          <div className="col-span-2 rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden flex">
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:col-span-2 lg:flex">
             {/* Left: title */}
-            <div className="w-[220px] flex-shrink-0 p-6 flex flex-col justify-center border-r border-gray-100">
+            <div className="flex w-full flex-shrink-0 flex-col justify-center border-b border-gray-100 p-6 lg:w-[220px] lg:border-r lg:border-b-0">
               <h3 className="text-[20px] font-bold text-gray-900 mb-3">Smart Risk Assessment</h3>
               <p className="text-[13px] text-gray-500 leading-relaxed">
                 Receive instant risk scores based on clinical indicators, with clear breakdowns your team can act on.
@@ -432,7 +432,7 @@ function FeaturesSection() {
                 { label: 'Protective Factors', pct: 72, color: 'bg-green-500' },
               ].map(({ label, pct, color }) => (
                 <div key={label} className="flex items-center gap-3 mb-3">
-                  <span className="text-[12px] text-gray-600 w-36 flex-shrink-0">{label}</span>
+                  <span className="w-28 flex-shrink-0 text-[12px] text-gray-600 sm:w-36">{label}</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
                   </div>
@@ -501,9 +501,9 @@ function HowItWorks() {
   ];
 
   return (
-    <section className="py-24 px-8 bg-gray-100/70">
-      <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-8 items-center">
+    <section className="bg-gray-100/70 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="grid grid-cols-1 gap-6 lg:gap-8 xl:grid-cols-[0.9fr_1.2fr_0.9fr] xl:items-center">
 
           {/* ── Left: Title + CTA ── */}
           <div>
@@ -521,10 +521,9 @@ function HowItWorks() {
 
           {/* ── Center: Clinical dashboard card ── */}
           <div
-            className="relative rounded-3xl overflow-hidden shadow-xl"
+            className="relative min-h-[340px] overflow-hidden rounded-3xl shadow-xl sm:min-h-[420px]"
             style={{
               background: 'linear-gradient(145deg, #15803d 0%, #22c55e 40%, #86efac 75%, #dcfce7 100%)',
-              minHeight: '420px',
             }}
           >
             {/* Inner white card — live session mockup */}
@@ -536,7 +535,7 @@ function HowItWorks() {
                     <div key={c} className={`w-2.5 h-2.5 rounded-full ${c}`} />
                   ))}
                 </div>
-                <span className="text-[10px] text-gray-400 font-mono">app.ehrcopilot.com/session</span>
+                <span className="hidden text-[10px] font-mono text-gray-400 sm:block">app.ehrcopilot.com/session</span>
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-[10px] text-green-600 font-semibold">Live</span>
@@ -555,7 +554,7 @@ function HowItWorks() {
 
                 {/* SOAP grid */}
                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-2">SOAP Note — AI Generated</p>
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {[
                     { k: 'S', v: 'Insomnia, anxiety peaks. Reports avoidance behavior...' },
                     { k: 'O', v: 'Appears fatigued. Affect flat. Maintained eye contact.' },
@@ -579,7 +578,7 @@ function HowItWorks() {
             </div>
 
             {/* Stat overlay — bottom-left of gradient card */}
-            <div className="absolute bottom-6 left-6 bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-4 py-3">
+            <div className="absolute bottom-4 left-4 rounded-2xl border border-white/30 bg-white/15 px-3 py-2.5 backdrop-blur-sm sm:bottom-6 sm:left-6 sm:px-4 sm:py-3">
               <p className="text-white font-black text-[28px] leading-none">3×</p>
               <p className="text-white/80 text-[10px] leading-snug mt-0.5">Faster documentation<br />than manual notes.</p>
             </div>
@@ -614,16 +613,16 @@ function HowItWorks() {
 // ─── Specialities / How It Works ───────────────────────────────────────────────
 function Specialities() {
   return (
-    <section id="for-clinicians" className="py-24 px-8 bg-white">
-      <div className="max-w-[1200px] mx-auto text-center">
-        <h2 className="text-[38px] font-bold text-gray-900 tracking-[-0.025em] mb-4">
+    <section id="for-clinicians" className="bg-white px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <div className="mx-auto max-w-[1200px] text-center">
+        <h2 className="mb-4 text-[32px] font-bold text-gray-900 tracking-[-0.025em] sm:text-[38px]">
           Making Documentation a Breeze with EHR Copilot
         </h2>
         <p className="text-[15px] text-gray-500 mb-14 max-w-lg mx-auto leading-relaxed">
           From session start to final note, our AI handles the heavy lifting — letting you focus on your patients.
         </p>
 
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 
           {/* Step 1 — Upload Transcript */}
           <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm text-left">
@@ -747,7 +746,7 @@ function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
   return (
     <section className="relative overflow-hidden">
       <div
-        className="relative min-h-[540px] flex flex-col items-center justify-center px-8 pt-24 pb-56"
+        className="relative flex min-h-[500px] flex-col items-center justify-center px-4 pt-20 pb-40 sm:px-6 sm:pt-24 sm:pb-56 lg:px-8"
         style={{
           /* Warm white-to-muted-sage base — matches Talynx's near-white top */
           background: 'linear-gradient(180deg, #ffffff 0%, #f4f7f0 30%, #e8ede0 60%, #d6e0cc 100%)',
@@ -773,8 +772,8 @@ function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
         />
 
         {/* Content — sits above both layers */}
-        <div className="max-w-[680px] mx-auto relative z-10 text-center">
-          <h2 className="text-[52px] md:text-[64px] font-bold text-gray-900 tracking-[-0.03em] leading-[1.1] mb-5">
+        <div className="relative z-10 mx-auto max-w-[680px] text-center">
+          <h2 className="mb-5 text-[38px] font-bold text-gray-900 leading-[1.1] tracking-[-0.03em] sm:text-[52px] md:text-[64px]">
             Start Documenting Smarter Today
           </h2>
           <p className="text-[16px] text-gray-500 mb-10 max-w-[360px] mx-auto leading-relaxed">
@@ -847,35 +846,34 @@ function Footer() {
         }}
       />
 
-      <div className="relative z-10 max-w-[1200px] mx-auto px-8 pt-10 pb-0">
-        {/* Links grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-10 pb-12">
+      <div className="relative z-10 mx-auto max-w-[1200px] px-4 pt-12 pb-0 sm:px-6 lg:px-8">
+        <div className="grid gap-12 border-t border-gray-100 pt-10 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.45fr)] lg:gap-16">
           {/* Brand — 2 cols */}
-          <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <span className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="max-w-[320px]">
+            <Link href="/" className="mb-5 flex items-center gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-600">
+                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </span>
               <span className="text-[17px] font-bold text-gray-900">EHR Copilot</span>
             </Link>
-            <p className="text-[13px] leading-relaxed max-w-[260px] mb-7" style={{ color: '#6b7280' }}>
+            <p className="mb-7 max-w-[280px] text-[13px] leading-[1.75] text-gray-500 sm:text-[14px]">
               Discover an AI-driven clinical documentation platform that helps teams document accurately and efficiently. This innovative solution uses artificial intelligence to simplify clinical workflows.
             </p>
             {/* Social icons */}
-            <div className="flex gap-2.5">
+            <div className="flex flex-wrap gap-2.5">
               {socials.map(({ label, icon, green }) => (
                 <a
                   key={label}
                   href="#"
                   aria-label={label}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${green
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 ${green
                     ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'border border-gray-200 text-gray-500 hover:text-white hover:bg-green-600 hover:border-green-600'
+                    : 'border border-gray-200 text-gray-500 hover:border-green-600 hover:bg-green-600 hover:text-white'
                     }`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d={icon} />
                   </svg>
                 </a>
@@ -883,44 +881,28 @@ function Footer() {
             </div>
           </div>
 
-          {/* 4 link columns */}
-          {cols.map(({ title, links }) => (
-            <div key={title}>
-              <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
-              <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200">
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Newsletter card */}
-        <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-5 mb-8">
-          <div>
-            <h4 className="text-[18px] font-bold text-gray-900 leading-tight">Subscribe<br />Newsletter</h4>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <input
-              type="email"
-              placeholder="Enter Your Email"
-              className="flex-1 md:w-64 px-4 py-3 border border-gray-200 rounded-full text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 bg-white transition-colors"
-            />
-            <button className="bg-gray-900 text-white text-[13px] font-semibold px-6 py-3 rounded-full hover:bg-gray-800 transition-colors whitespace-nowrap">
-              Subscribe Now
-            </button>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-10 lg:grid-cols-4">
+            {cols.map(({ title, links }) => (
+              <div key={title}>
+                <h4 className="mb-4 text-[15px] font-semibold text-gray-900">{title}</h4>
+                <ul className="space-y-3.5">
+                  {links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-[13px] text-gray-400 transition-colors duration-200 hover:text-gray-700 sm:text-[14px]">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="py-5 border-t border-gray-100 flex items-center justify-between">
+        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-gray-100 py-5 sm:flex-row sm:items-center">
           <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-gray-300 transition-colors">
+          <div className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] text-gray-500 transition-colors hover:border-gray-300">
             <span>🇺🇸</span>
             <span>Prices in:</span>
             <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

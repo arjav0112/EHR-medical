@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useRef, useEffect } from 'react';
+import SettingsModal from '@/components/SettingsModal';
 
 export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void }) {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -27,8 +29,8 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
     : user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[860px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+    <header className="fixed top-3 left-0 right-0 z-50 flex justify-center px-4 sm:top-4">
+      <div className="flex min-h-[58px] w-full max-w-[860px] items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_20px_rgba(0,0,0,0.10)] sm:h-[58px] sm:rounded-full sm:px-5 sm:py-0">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -36,7 +38,7 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </span>
-          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
+          <span className="text-[15px] font-bold tracking-tight text-gray-900 sm:text-[16px]">EHR Copilot</span>
         </Link>
 
         {/* Nav Links — swap "How it Works" for "Dashboard" when logged in */}
@@ -51,7 +53,7 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
         </nav>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!loading && !user && (
             <button
               onClick={onLoginClick}
@@ -102,6 +104,15 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
                       </svg>
                       New Session
                     </Link>
+                    <button
+                      onClick={() => { setMenuOpen(false); setShowSettings(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Settings
+                    </button>
                     <div className="h-px bg-gray-100 my-1" />
                     <button
                       onClick={async () => { setMenuOpen(false); await signOut(); router.push('/'); }}
@@ -120,12 +131,14 @@ export default function HomeNavbar({ onLoginClick }: { onLoginClick?: () => void
 
           <Link
             href="/session/new"
-            className="bg-gray-900 text-white text-[13px] font-semibold px-5 py-2.5 rounded-full hover:bg-gray-800 transition-colors duration-200"
+            className="rounded-full bg-gray-900 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors duration-200 hover:bg-gray-800 sm:px-5 sm:py-2.5 sm:text-[13px]"
           >
-            Get Started Free
+            <span className="sm:hidden">Get Started</span>
+            <span className="hidden sm:inline">Get Started Free</span>
           </Link>
         </div>
       </div>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} initialTab="profile" />}
     </header>
   );
 }
