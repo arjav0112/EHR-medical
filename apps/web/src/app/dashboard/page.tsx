@@ -102,7 +102,7 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
             <div className="relative pl-1 border-l border-gray-100" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[12px] font-bold hover:ring-2 hover:ring-green-300 transition-all flex-shrink-0 focus:outline-none"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-600 text-[12px] font-bold text-white transition-all hover:scale-[1.02] hover:ring-2 hover:ring-green-300 focus:outline-none"
                 aria-label="Account menu"
               >
                 {userPhoto
@@ -111,18 +111,18 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-11 w-60 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.14)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+                <div className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.18)] backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-150">
                   {/* User info */}
-                  <div className="px-4 py-3.5 border-b border-gray-100">
+                  <div className="border-b border-gray-100 bg-gradient-to-b from-gray-50 to-white px-4 py-3.5">
                     <p className="text-[13px] font-bold text-gray-900 truncate">{userName || 'Clinician'}</p>
                     <p className="text-[11px] text-gray-400 truncate mt-0.5">{userEmail}</p>
                   </div>
 
-                  <div className="py-1.5">
+                  <div className="p-1.5">
                     {/* Account */}
                     <button
                       onClick={() => { setMenuOpen(false); setSettingsTab('account'); setShowSettings(true); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-[13px] text-gray-700 transition-colors hover:bg-gray-50"
                     >
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -133,7 +133,7 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
                     {/* Settings */}
                     <button
                       onClick={() => { setMenuOpen(false); setSettingsTab('profile'); setShowSettings(true); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-[13px] text-gray-700 transition-colors hover:bg-gray-50"
                     >
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -142,12 +142,12 @@ function Navbar({ sessionCount, userInitials, userPhoto, userName, userEmail }: 
                       Settings
                     </button>
 
-                    <div className="h-px bg-gray-100 my-1" />
+                    <div className="my-1 h-px bg-gray-100" />
 
                     {/* Sign out */}
                     <button
                       onClick={async () => { setMenuOpen(false); await signOut(); router.push('/'); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors text-left"
+                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-[13px] text-red-500 transition-colors hover:bg-red-50"
                     >
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -203,6 +203,92 @@ function StatCard({ label, value, sub, icon, color }: {
 }
 
 // ─── Session row ──────────────────────────────────────────────────────────────
+function FilterSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <div ref={rootRef} className="relative min-w-0 sm:min-w-[180px]">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left text-[12px] font-semibold transition-all ${
+          open
+            ? 'border-green-400 bg-white text-gray-900 shadow-[0_10px_28px_rgba(34,197,94,0.12)] ring-2 ring-green-500/10'
+            : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-white'
+        }`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate">{selected.label}</span>
+        <svg
+          className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.16)]">
+          <div className="max-h-64 overflow-y-auto p-1.5">
+            {options.map((option) => {
+              const isActive = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-[13px] transition-colors ${
+                    isActive
+                      ? 'bg-green-50 font-semibold text-green-700'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  role="option"
+                  aria-selected={isActive}
+                >
+                  <span>{option.label}</span>
+                  {isActive && (
+                    <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SessionRow({ session, onClick }: { session: SessionRecord; onClick: () => void }) {
   const risk = RISK_CONFIG[session.overallRiskLevel] ?? RISK_CONFIG.low;
   const diagLabel = session.primaryDiagnosis?.label ?? '—';
@@ -518,7 +604,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="bg-white border border-gray-100 rounded-2xl px-5 py-3.5 mb-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shadow-sm">
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:px-5 sm:py-3.5">
           {/* Search */}
           <div className="relative flex-1">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -534,32 +620,32 @@ export default function DashboardPage() {
           </div>
 
           {/* Risk filter */}
-          <select
+          <FilterSelect
             value={filterRisk}
-            onChange={(e) => setFilterRisk(e.target.value)}
-            className="px-3 py-2 text-[12px] font-semibold bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-green-400 cursor-pointer"
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="low">Low Risk</option>
-            <option value="moderate">Moderate</option>
-            <option value="high">High Risk</option>
-            <option value="critical">Critical</option>
-          </select>
+            onChange={setFilterRisk}
+            options={[
+              { value: 'all', label: 'All Risk Levels' },
+              { value: 'low', label: 'Low Risk' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'high', label: 'High Risk' },
+              { value: 'critical', label: 'Critical' },
+            ]}
+          />
 
           {/* Type filter */}
-          <select
+          <FilterSelect
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 text-[12px] font-semibold bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-green-400 cursor-pointer"
-          >
-            <option value="all">All Types</option>
-            <option value="intake">Intake</option>
-            <option value="follow_up">Follow-up</option>
-            <option value="crisis">Crisis</option>
-          </select>
+            onChange={setFilterType}
+            options={[
+              { value: 'all', label: 'All Types' },
+              { value: 'intake', label: 'Intake' },
+              { value: 'follow_up', label: 'Follow-up' },
+              { value: 'crisis', label: 'Crisis' },
+            ]}
+          />
 
           {/* Result count */}
-          <span className="text-[12px] font-semibold text-gray-400 flex-shrink-0 self-center">
+          <span className="self-center text-[12px] font-semibold text-gray-400 sm:ml-auto">
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>

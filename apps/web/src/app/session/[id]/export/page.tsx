@@ -279,26 +279,29 @@ function confidenceColor(v: number) {
 
 function PillNav() {
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[900px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+    <header className="fixed top-3 left-0 right-0 z-50 flex justify-center px-3 sm:top-4 sm:px-4">
+      <div className="flex min-h-[58px] w-full max-w-[900px] items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 shadow-[0_2px_20px_rgba(0,0,0,0.10)] sm:h-[58px] sm:rounded-full sm:px-5">
+        <Link href="/" className="flex min-w-0 flex-shrink items-center gap-2 sm:flex-shrink-0">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-green-600">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </span>
-          <span className="text-[16px] font-bold text-gray-900 tracking-tight">EHR Copilot</span>
+          <span className="truncate text-[15px] font-bold tracking-tight text-gray-900 sm:text-[16px]">EHR Copilot</span>
         </Link>
-        <div className="flex items-center gap-2 text-[13px]">
-          <span className="text-gray-400 font-medium">New Session</span>
+        <div className="hidden items-center gap-2 text-[13px] sm:flex">
+          <span className="font-medium text-gray-400">New Session</span>
           <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          <span className="text-gray-400 font-medium">Review</span>
+          <span className="font-medium text-gray-400">Review</span>
           <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           <span className="font-semibold text-green-600">Export</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session</span>
-          <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full truncate max-w-[160px]">{MOCK_ID}</span>
+          <span className="inline-flex rounded-full bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-600 sm:hidden">Export</span>
+          <div className="hidden items-center gap-2 sm:flex">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session</span>
+            <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full truncate max-w-[160px]">{MOCK_ID}</span>
+          </div>
         </div>
       </div>
     </header>
@@ -881,10 +884,10 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
           }}
         />
 
-        <div className="relative z-10 max-w-[1200px] mx-auto px-8 pt-10 pb-0">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-10 pb-12">
+        <div className="relative z-10 mx-auto max-w-[1200px] px-4 pt-10 pb-0 sm:px-6 lg:px-8">
+          <div className="grid gap-10 pb-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-14">
             {/* Brand */}
-            <div className="md:col-span-2">
+            <div className="max-w-[300px]">
               <Link href="/" className="flex items-center gap-2.5 mb-4">
                 <span className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -896,7 +899,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
               <p className="text-[13px] leading-relaxed max-w-[260px] mb-7" style={{ color: '#6b7280' }}>
                 Discover an AI-driven clinical documentation platform that helps teams document accurately and efficiently. This innovative solution uses artificial intelligence to simplify clinical workflows.
               </p>
-              <div className="flex gap-2.5">
+              <div className="flex flex-wrap gap-2.5">
                 {[
                   { label: 'Facebook', icon: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z', green: false },
                   { label: 'X', icon: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z', green: true },
@@ -920,32 +923,33 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
 
-            {/* Link columns */}
-            {[
-              { title: 'Product', links: ['Features', 'Pricing', 'Integrations', 'Changelog', 'Roadmap'] },
-              { title: 'Company', links: ['About Us', 'Careers', 'Blog', 'Partners', 'Contact Us'] },
-              { title: 'Resources', links: ['Help Center', 'Documentation', 'Video Tutorials', 'Community Forum', 'FAQs'] },
-              { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'GDPR Compliance', 'Security'] },
-            ].map(({ title, links }) => (
-              <div key={title}>
-                <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
-                <ul className="space-y-2.5">
-                  {links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-10 lg:grid-cols-4">
+              {[
+                { title: 'Product', links: ['Features', 'Pricing', 'Integrations', 'Changelog', 'Roadmap'] },
+                { title: 'Company', links: ['About Us', 'Careers', 'Blog', 'Partners', 'Contact Us'] },
+                { title: 'Resources', links: ['Help Center', 'Documentation', 'Video Tutorials', 'Community Forum', 'FAQs'] },
+                { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'GDPR Compliance', 'Security'] },
+              ].map(({ title, links }) => (
+                <div key={title}>
+                  <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
+                  <ul className="space-y-2.5">
+                    {links.map((link) => (
+                      <li key={link}>
+                        <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200">
+                          {link}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Bottom bar */}
-          <div className="py-5 border-t border-gray-100 flex items-center justify-between">
+          <div className="py-5 border-t border-gray-100 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
-            <div className="flex items-center gap-4 text-[12px] text-gray-400">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[12px] text-gray-400 sm:justify-end sm:gap-4">
               <span>HIPAA Compliant</span>
               <span>·</span>
               <span>SOC 2 Type II</span>

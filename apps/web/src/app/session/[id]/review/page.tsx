@@ -4,8 +4,8 @@ import SectionContent from '@/components/review/SectionContent';
 
 function Navbar({ sessionId }: { sessionId: string }) {
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[900px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+    <header className="fixed top-3 left-0 right-0 z-50 flex justify-center px-4 sm:top-4">
+      <div className="flex min-h-[58px] w-full max-w-[900px] items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_20px_rgba(0,0,0,0.10)] sm:h-[58px] sm:rounded-full sm:px-5 sm:py-0">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -17,16 +17,16 @@ function Navbar({ sessionId }: { sessionId: string }) {
         </Link>
 
         {/* Center — breadcrumb */}
-        <div className="flex items-center gap-2 text-[12px]">
-          <span className="text-gray-400 font-medium">New Session</span>
-          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 text-[11px] sm:text-[12px]">
+          <span className="hidden text-gray-400 font-medium sm:inline">New Session</span>
+          <svg className="hidden w-3.5 h-3.5 text-gray-300 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <span className="font-semibold text-green-600">Clinical Review</span>
         </div>
 
         {/* Right — session ID */}
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 sm:flex">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session</span>
           <span className="text-[11px] font-mono font-bold text-gray-600 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full truncate max-w-[160px]">
             {sessionId}
@@ -45,11 +45,11 @@ export default async function ReviewPage({
   const { id: sessionId } = await params;
 
   return (
-    <div className="flex flex-col h-screen relative">
+    <div className="relative flex min-h-screen flex-col lg:h-screen">
       <Navbar sessionId={sessionId} />
 
       {/* Two-panel layout — pushed down by navbar */}
-      <div className="flex flex-1 overflow-hidden pt-[78px] pb-4 pr-4 relative z-10">
+      <div className="relative z-10 flex flex-1 flex-col overflow-visible pt-[74px] pb-4 lg:flex-row lg:overflow-hidden lg:pt-[78px] lg:pr-4">
         <SectionNav sessionId={sessionId} />
         <SectionContent sessionId={sessionId} />
       </div>

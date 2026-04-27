@@ -58,13 +58,13 @@ export function RiskFlagCard({ flag, onAction }: RiskFlagCardProps) {
   const isDismissed = flag.status === 'dismissed';
 
   return (
-    <div className={`flex gap-4 transition-opacity duration-300 ${isDismissed ? 'opacity-50' : ''}`}>
+    <div className={`flex flex-col gap-4 transition-opacity duration-300 lg:flex-row ${isDismissed ? 'opacity-50' : ''}`}>
 
       {/* ── Evidence card */}
-      <div className={`flex-1 bg-white border border-gray-100 border-l-4 ${cfg.border} rounded-2xl shadow-sm overflow-hidden`}>
+      <div className={`flex-1 overflow-hidden rounded-2xl border border-gray-100 border-l-4 bg-white shadow-sm ${cfg.border}`}>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-4 pb-3">
+        <div className="flex flex-col gap-3 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:px-5">
           <div className="flex items-center flex-wrap gap-2">
             <span className="text-[14px] font-semibold text-gray-900">
               {FLAG_TYPE_LABELS[flag.type]}
@@ -113,38 +113,38 @@ export function RiskFlagCard({ flag, onAction }: RiskFlagCardProps) {
       </div>
 
       {/* ── Actions panel */}
-      <div className="w-48 flex-shrink-0 sticky top-4 self-start">
+      <div className="w-full flex-shrink-0 self-start lg:sticky lg:top-4 lg:w-48">
         {isPending ? (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full">
+          <div className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             {/* Label */}
             <div className="px-4 pt-3 pb-2 border-b border-gray-100">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">Actions</span>
             </div>
 
-            {/* Dismiss */}
-            <button
-              onClick={() => onAction('dismiss')}
-              className="w-full flex items-center justify-center gap-2 px-4 py-4 text-[13px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors border-b border-gray-100"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Dismiss
-            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2">
+              <button
+                onClick={() => onAction('dismiss')}
+                className="flex w-full items-center justify-center gap-2 border-b border-gray-100 px-4 py-4 text-[13px] font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800 sm:border-b-0 sm:border-r lg:border-r-0 lg:border-b"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Dismiss
+              </button>
 
-            {/* Confirm */}
-            <button
-              onClick={() => onAction('confirm')}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-4 text-[13px] font-bold transition-colors ${cfg.confirm}`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              Confirm & Log
-            </button>
+              <button
+                onClick={() => onAction('confirm')}
+                className={`flex w-full items-center justify-center gap-2 px-4 py-4 text-[13px] font-bold transition-colors ${cfg.confirm}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                Confirm & Log
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="w-48" />
+          <div className="hidden lg:block lg:w-48" />
         )}
       </div>
     </div>

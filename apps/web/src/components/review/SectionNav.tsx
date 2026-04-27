@@ -28,8 +28,8 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
   const qualityScore = reviewPackage?.agentMetadata?.transcriptQualityScore;
 
   return (
-    <aside className="w-[284px] flex-shrink-0">
-      <div className="h-full m-4 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.09)] border border-gray-100/80 flex flex-col overflow-y-auto">
+    <aside className="w-full flex-shrink-0 lg:w-[284px]">
+      <div className="mx-4 mb-0 mt-4 flex max-h-none flex-col overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.09)] lg:m-4 lg:h-full lg:overflow-y-auto">
         {/* Sidebar header */}
         <div className="px-6 pt-6 pb-5 border-b border-gray-100">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">Documentation Review</p>
@@ -50,14 +50,14 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
                 key={key}
                 onClick={() => { if (!isLocked) setActiveSection(key); }}
                 title={isLocked && isDep ? isDep : undefined}
-                className={`w-full text-left flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-200 border group ${isActive
+                className={`w-full text-left flex items-center justify-between rounded-xl px-3.5 py-3 transition-all duration-200 border group sm:px-4 sm:py-3.5 ${isActive
                   ? 'bg-green-50 border-green-200 shadow-sm'
                   : isLocked
                     ? 'border-transparent opacity-40 cursor-not-allowed'
                     : 'border-transparent hover:bg-gray-50 hover:border-gray-200 cursor-pointer'
                   }`}
               >
-                <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                   {/* Icon */}
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? 'bg-green-100' : isApproved ? 'bg-green-50' : 'bg-gray-100'
                     }`}>
@@ -77,7 +77,7 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
                   </div>
 
                   {/* Label */}
-                  <div>
+                  <div className="min-w-0">
                     <span className={`text-[13px] font-semibold block leading-tight ${isActive ? 'text-green-800' : isLocked ? 'text-gray-400' : 'text-gray-700'
                       }`}>
                       {label}
@@ -117,7 +117,7 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
         </nav>
 
         {/* Progress + export CTA */}
-        <div className="p-5 border-t border-gray-100 space-y-4">
+        <div className="space-y-4 border-t border-gray-100 p-5">
           {allApproved ? (
             <button
               onClick={() => router.push(`/session/${sessionId}/export`)}

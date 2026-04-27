@@ -69,8 +69,8 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
   const sessionType = input?.session?.sessionType?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) ?? '';
 
   return (
-    <div className="flex-shrink-0 mx-0 mt-3">
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-4 flex items-center gap-6 flex-wrap">
+    <div className="mx-0 mt-3 flex-shrink-0">
+      <div className="flex flex-wrap items-start gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:items-center sm:gap-6 sm:px-6">
         {/* Patient */}
         {input && (
           <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
 
         {meds.length > 0 && (
           <>
-            <div className="w-px h-8 bg-gray-100 flex-shrink-0" />
+            <div className="hidden h-8 w-px flex-shrink-0 bg-gray-100 sm:block" />
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Medications</p>
-                <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[200px]">{meds.join(', ')}</p>
+                <p className="max-w-[220px] truncate text-[13px] font-semibold text-gray-800">{meds.join(', ')}</p>
               </div>
             </div>
           </>
@@ -105,7 +105,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
 
         {dx && (
           <>
-            <div className="w-px h-8 bg-gray-100 flex-shrink-0" />
+            <div className="hidden h-8 w-px flex-shrink-0 bg-gray-100 sm:block" />
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   <span className="font-mono text-purple-500">{dx.dsm5Code}</span>{' · '}{Math.round(dx.confidence * 100)}% confidence
                 </p>
-                <p className="text-[13px] font-semibold text-gray-800 truncate max-w-[240px]">{dx.label.split(',')[0]}</p>
+                <p className="max-w-[240px] truncate text-[13px] font-semibold text-gray-800">{dx.label.split(',')[0]}</p>
               </div>
             </div>
           </>
@@ -124,7 +124,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
 
         {/* Session modality */}
         {input && (
-          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:ml-auto">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Session #{input.session.sessionNumber}</span>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
             <span className="text-[10px] font-semibold text-gray-500 capitalize">{input.session.modality.replace('_', ' ')}</span>
@@ -267,7 +267,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // Loading skeleton during hydration or active processing
   if (!reviewPackage && (processingStatus !== 'idle' || hydrating)) {
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
+      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
         <SectionSkeleton />
       </main>
     );
@@ -276,7 +276,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // No data even after hydration attempt
   if (!reviewPackage) {
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
+      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 font-mono text-xl">!</div>
           <p className="text-[15px] font-medium text-navy-300 max-w-sm leading-relaxed">
@@ -293,7 +293,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // Locked gate
   if (status === 'locked') {
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-y-auto px-12 py-10 relative z-10">
+      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
         <LockedSection section={activeSection} />
       </main>
     );
@@ -303,7 +303,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="flex-1 overflow-hidden px-10 py-8 pb-4 grid grid-rows-[1fr_auto] gap-3">
+      <main className="grid flex-1 grid-rows-[1fr_auto] gap-3 overflow-hidden px-4 py-6 pb-4 sm:px-6 sm:py-8 lg:px-10">
         <div className="overflow-y-auto">
           <RiskFlagsSection
             flags={flags}
@@ -322,7 +322,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
 
   if (!soapSection) {
     return (
-      <main className="flex-1 bg-gray-50/60 overflow-hidden px-10 py-8 relative z-10">
+      <main className="relative z-10 flex-1 overflow-hidden bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <SectionSkeleton />
       </main>
     );
@@ -338,7 +338,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 overflow-hidden px-10 py-8 pb-4 grid grid-rows-[1fr_auto] gap-3">
+    <main className="grid flex-1 grid-rows-[1fr_auto] gap-3 overflow-hidden px-4 py-6 pb-4 sm:px-6 sm:py-8 lg:px-10">
       <div className="overflow-y-auto">
         <SOAPSection
           key={soapKey}

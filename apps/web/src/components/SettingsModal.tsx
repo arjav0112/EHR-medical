@@ -225,7 +225,7 @@ function ProfileTab({ user }: { user: { displayName?: string | null; email?: str
   return (
     <div>
       {/* Avatar row */}
-      <div className="flex items-center gap-5 py-5 border-b border-gray-100">
+      <div className="flex flex-col items-start gap-4 border-b border-gray-100 py-5 sm:flex-row sm:items-center sm:gap-5">
         {/* Avatar circle */}
         <div className="relative group flex-shrink-0">
           <div className="w-16 h-16 rounded-2xl bg-green-600 flex items-center justify-center text-white text-[20px] font-black overflow-hidden">
@@ -264,9 +264,9 @@ function ProfileTab({ user }: { user: { displayName?: string | null; email?: str
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <p className="text-[14px] font-bold text-gray-900">{displayName || 'Clinician'}</p>
-          <p className="text-[12px] text-gray-400 mb-2">{user.email}</p>
+          <p className="mb-2 break-all text-[12px] text-gray-400">{user.email}</p>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={photoStatus === 'uploading'}
@@ -302,11 +302,11 @@ function ProfileTab({ user }: { user: { displayName?: string | null; email?: str
         <p className="text-[12px] text-red-500 mt-2">Failed to save. Please try again.</p>
       )}
 
-      <div className="pt-4 flex justify-end">
+      <div className="flex justify-stretch pt-4 sm:justify-end">
         <button
           onClick={handleSave}
           disabled={status === 'saving'}
-          className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+          className={`w-full rounded-xl px-5 py-2.5 text-[13px] font-semibold transition-all duration-200 sm:w-auto ${
             status === 'ok'     ? 'bg-green-100 text-green-700 border border-green-200' :
             status === 'saving' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' :
             'bg-gray-900 text-white hover:bg-gray-800'
@@ -349,8 +349,8 @@ function DashboardTab() {
           <option>20</option><option>50</option><option>100</option>
         </select>
       </FieldRow>
-      <div className="pt-4 flex justify-end">
-        <button className="px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all">Save Changes</button>
+      <div className="flex justify-stretch pt-4 sm:justify-end">
+        <button className="w-full rounded-xl px-5 py-2.5 text-[13px] font-semibold bg-gray-900 text-white transition-all hover:bg-gray-800 sm:w-auto">Save Changes</button>
       </div>
     </div>
   );
@@ -432,13 +432,13 @@ function BillingTab() {
   return (
     <div className="space-y-5">
       {/* Current plan banner */}
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-5 flex items-center justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-green-200 bg-green-50 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-bold text-green-600 uppercase tracking-widest mb-1">Current Plan</p>
           <p className="text-[18px] font-black text-gray-900">{meta.label}</p>
           <p className="text-[12px] text-gray-500 mt-0.5">{meta.desc}</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col gap-2 sm:items-end">
           <span className="bg-green-600 text-white text-[11px] font-bold px-3 py-1 rounded-full">Active</span>
           {/* Currency picker */}
           <select
@@ -482,12 +482,12 @@ function BillingTab() {
         {tier === 'free' ? (
           <p className="text-[13px] text-gray-400 italic">No payment method — you are on the free plan.</p>
         ) : (
-          <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 border border-gray-200 rounded-xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="w-8 h-5 bg-blue-600 rounded text-white text-[9px] font-black flex items-center justify-center">VISA</div>
               <span className="text-[13px] text-gray-700">•••• •••• •••• 4242</span>
             </div>
-            <button className="text-[12px] font-semibold text-green-600 hover:text-green-700 transition-colors">Update</button>
+            <button className="text-left text-[12px] font-semibold text-green-600 transition-colors hover:text-green-700 sm:text-right">Update</button>
           </div>
         )}
       </div>
@@ -498,7 +498,7 @@ function BillingTab() {
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Available Plans</p>
           <span className="text-[11px] text-gray-400">Prices in {cur.code}</span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 
           {availablePlans.map(({ id, label, usd, desc }) => {
             const isCurrent = id === tier;
@@ -527,11 +527,11 @@ function BillingTab() {
         </div>
       </div>
 
-      <div className="flex justify-between pt-2">
-        <button className="text-[13px] text-gray-400 hover:text-red-500 transition-colors">
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+        <button className="text-left text-[13px] text-gray-400 transition-colors hover:text-red-500">
           {tier !== 'free' ? 'Cancel Subscription' : ''}
         </button>
-        <button className="px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all">
+        <button className="w-full rounded-xl px-5 py-2.5 text-[13px] font-semibold bg-gray-900 text-white transition-all hover:bg-gray-800 sm:w-auto">
           Download Invoice
         </button>
       </div>
@@ -650,7 +650,7 @@ function AccountTab() {
     <div>
       {/* ── Account info ── */}
       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Account Info</p>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {[
           { label: 'Email', value: user?.email ?? '—' },
           { label: 'UID', value: user?.uid ? `${user.uid.slice(0, 12)}…` : '—' },
@@ -678,11 +678,11 @@ function AccountTab() {
       {pwdStatus === 'error' && (
         <p className="text-[12px] text-red-500 mt-1 mb-1">{pwdError}</p>
       )}
-      <div className="pt-4 flex justify-end mb-6">
+      <div className="mb-6 flex justify-stretch pt-4 sm:justify-end">
         <button
           onClick={handlePasswordChange}
           disabled={pwdStatus === 'saving'}
-          className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${pwdStatus === 'ok' ? 'bg-green-100 text-green-700 border border-green-200' :
+          className={`w-full rounded-xl px-5 py-2.5 text-[13px] font-semibold transition-all sm:w-auto ${pwdStatus === 'ok' ? 'bg-green-100 text-green-700 border border-green-200' :
               pwdStatus === 'saving' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' :
                 'bg-gray-900 text-white hover:bg-gray-800'
             }`}
@@ -701,8 +701,8 @@ function AccountTab() {
         ) : sessions.map((s, i) => {
           const isCurrent = s.id === currentSessionId.current || i === 0;
           return (
-            <div key={s.id} className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-3">
+            <div key={s.id} className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3.5 transition-colors hover:bg-gray-50 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3 sm:items-center">
                 {/* Icon */}
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isCurrent ? 'bg-green-100' : 'bg-gray-100'}`}>
                   <svg className={`w-4 h-4 ${isCurrent ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -712,12 +712,12 @@ function AccountTab() {
                         : 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'} />
                   </svg>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-gray-800">
                     {s.browser} · {s.os}
                     {isCurrent && <span className="ml-2 text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">This device</span>}
                   </p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
+                  <p className="mt-0.5 break-words text-[11px] text-gray-400">
                     First seen: {fmt(s.createdAt)} · Last active: {fmt(s.lastSeen)}
                   </p>
                 </div>
@@ -725,7 +725,7 @@ function AccountTab() {
               {!isCurrent && (
                 <button
                   onClick={() => revokeSession(s.id)}
-                  className="text-[12px] font-semibold text-red-500 hover:text-red-600 border border-red-100 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
+                  className="w-full rounded-lg border border-red-100 px-3 py-1.5 text-[12px] font-semibold text-red-500 transition-all hover:bg-red-50 hover:text-red-600 sm:w-auto"
                 >
                   Revoke
                 </button>
@@ -739,7 +739,7 @@ function AccountTab() {
       <div className="p-5 border border-red-100 bg-red-50 rounded-2xl">
         <p className="text-[13px] font-bold text-red-700 mb-1">Danger Zone</p>
         <p className="text-[12px] text-red-500 mb-4">Permanently delete your account and all associated data. This cannot be undone.</p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
             value={deleteConfirm}
             onChange={(e) => setDeleteConfirm(e.target.value)}
@@ -749,7 +749,7 @@ function AccountTab() {
           <button
             onClick={handleDeleteAccount}
             disabled={deleteConfirm !== 'DELETE' || deleting}
-            className="px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="w-full rounded-xl bg-red-500 px-4 py-2 text-[13px] font-semibold text-white transition-all hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
             {deleting ? 'Deleting…' : 'Delete Account'}
           </button>
@@ -773,15 +773,15 @@ function IntegrationsTab() {
   return (
     <div className="space-y-3">
       {integrations.map(({ name, desc, logo, connected }) => (
-        <div key={name} className="flex items-center justify-between border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
-          <div className="flex items-center gap-3">
+        <div key={name} className="flex flex-col gap-3 border border-gray-100 rounded-xl px-4 py-3 transition-colors hover:border-gray-200 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 sm:items-center">
             <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-[20px] border border-gray-100">{logo}</div>
             <div>
               <p className="text-[13px] font-semibold text-gray-800">{name}</p>
               <p className="text-[11px] text-gray-400">{desc}</p>
             </div>
           </div>
-          <button className={`text-[12px] font-semibold px-3.5 py-1.5 rounded-lg transition-all ${connected
+          <button className={`w-full rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-all sm:w-auto ${connected
               ? 'bg-green-50 text-green-600 border border-green-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'
               : 'bg-gray-900 text-white hover:bg-gray-800'
             }`}>
@@ -867,43 +867,43 @@ export default function SettingsModal({ onClose, initialTab = 'profile' }: { onC
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center px-3 py-3"
+      className="fixed inset-0 z-[999] flex items-end justify-center px-0 py-0 sm:items-center sm:px-3 sm:py-3"
       style={{ background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative w-full max-w-[95vw] h-[96vh] bg-white rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.22)] border border-gray-100 flex overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
+        className="relative flex h-[100dvh] w-full flex-col overflow-hidden border border-gray-100 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.22)] animate-in fade-in slide-in-from-bottom-4 duration-300 sm:h-[96vh] sm:max-w-[95vw] sm:rounded-3xl md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}
-        <aside className="w-60 flex-shrink-0 bg-gray-50 border-r border-gray-100 flex flex-col">
-          <div className="px-5 pt-6 pb-4 border-b border-gray-100">
+        <aside className="flex w-full flex-shrink-0 flex-col border-b border-gray-100 bg-gray-50 md:w-60 md:border-r md:border-b-0">
+          <div className="border-b border-gray-100 px-4 pt-5 pb-3 sm:px-5 sm:pt-6 sm:pb-4">
             <p className="text-[15px] font-black text-gray-900 tracking-tight">Settings</p>
             <p className="text-[11px] text-gray-400 mt-0.5">Manage your workspace</p>
           </div>
-          <nav className="flex-1 py-3 px-2 space-y-0.5">
+          <nav className="grid grid-cols-3 gap-2 px-3 py-3 md:flex-1 md:block md:space-y-0.5 md:px-2">
             {TABS.map(({ id, label, icon }) => (
               <button key={id} onClick={() => setActiveTab(id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-150 text-left ${activeTab === id ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'
+                className={`flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-center text-[11px] font-semibold leading-tight transition-all duration-150 md:min-h-0 md:flex md:w-full md:flex-row md:justify-start md:gap-2.5 md:px-3 md:py-2.5 md:text-left md:text-[13px] ${activeTab === id ? 'border-gray-100 bg-white text-gray-900 shadow-sm' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-white/60'
                   }`}>
                 <svg className={`w-4 h-4 flex-shrink-0 ${activeTab === id ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={icon} />
                 </svg>
-                {label}
+                <span className="md:inline">{label}</span>
               </button>
             ))}
           </nav>
-          <div className="px-5 py-4 border-t border-gray-100">
+          <div className="hidden border-t border-gray-100 px-5 py-4 md:block">
             <p className="text-[10px] text-gray-400">EHR Copilot v2.4.1</p>
           </div>
         </aside>
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
-            <div>
+          <div className="flex flex-shrink-0 items-start justify-between gap-3 border-b border-gray-100 px-4 pt-5 pb-4 sm:px-6 sm:pt-6 lg:px-7">
+            <div className="min-w-0">
               <h2 className="text-[17px] font-black text-gray-900">{TABS.find(t => t.id === activeTab)?.label}</h2>
-              <p className="text-[12px] text-gray-400 mt-0.5">
+              <p className="mt-0.5 text-[12px] leading-relaxed text-gray-400">
                 {activeTab === 'profile' && 'Update your personal and clinical information'}
                 {activeTab === 'dashboard' && 'Customize your dashboard experience'}
                 {activeTab === 'billing' && 'Manage subscription and payment methods'}
@@ -920,7 +920,7 @@ export default function SettingsModal({ onClose, initialTab = 'profile' }: { onC
               </svg>
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-7 py-5">{renderTab()}</div>
+          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-7">{renderTab()}</div>
         </div>
       </div>
     </div>

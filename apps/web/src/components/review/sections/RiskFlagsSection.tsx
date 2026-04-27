@@ -48,12 +48,12 @@ export function RiskFlagsSection({ flags, onFlagAction, onAllConfirmed }: RiskFl
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       {/* Section header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-[28px] font-bold text-gray-900 tracking-tight leading-tight">Risk Flags</h2>
+          <h2 className="text-[24px] font-bold leading-tight tracking-tight text-gray-900 sm:text-[28px]">Risk Flags</h2>
           <p className="text-[13px] text-gray-500 mt-1">Review and action all detected clinical risk signals</p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 pt-1">
+        <div className="flex flex-shrink-0 items-center gap-2 pt-1">
           <span className={`text-[11px] font-bold px-3 py-1.5 rounded-lg ${
             pendingCount > 0
               ? 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -68,7 +68,7 @@ export function RiskFlagsSection({ flags, onFlagAction, onAllConfirmed }: RiskFl
       <div className="relative flex-1 min-h-0">
         <div
           ref={scrollRef}
-          className="h-full overflow-y-auto space-y-4 scrollbar-hide pr-1"
+          className="h-full space-y-4 overflow-y-auto pr-1 scrollbar-hide"
         >
         {localFlags.map((flag, i) => (
           <RiskFlagCard
@@ -81,13 +81,13 @@ export function RiskFlagsSection({ flags, onFlagAction, onAllConfirmed }: RiskFl
 
         {/* Proceed button */}
         {!allDone ? (
-          <div className="pt-2 pb-4 flex items-center justify-end gap-3">
+          <div className="flex flex-col gap-3 pb-4 pt-2 sm:flex-row sm:items-center sm:justify-end">
             <button
               onClick={() => {
                 setLocalFlags(flags.map(f => ({ ...f, status: 'pending' } as RiskFlag)));
                 setAllDone(false);
               }}
-              className="flex items-center gap-2 text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-4 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all"
+              className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-4 text-[12px] font-semibold text-gray-500 transition-all hover:border-gray-300 hover:text-gray-700"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -97,7 +97,7 @@ export function RiskFlagsSection({ flags, onFlagAction, onAllConfirmed }: RiskFl
             <button
               onClick={handleConfirmAll}
               disabled={!allActioned}
-              className={`flex items-center gap-2 px-7 py-4 rounded-xl text-[12px] font-bold transition-all duration-300 ${
+              className={`flex items-center justify-center gap-2 rounded-xl px-7 py-4 text-[12px] font-bold transition-all duration-300 ${
                 allActioned
                   ? 'bg-gray-900 text-white hover:bg-green-700 shadow-sm'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'

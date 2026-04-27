@@ -51,8 +51,8 @@ const INITIAL_FORM: FormState = {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 function Navbar() {
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[860px] bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.10)] border border-gray-100 px-5 h-[58px] flex items-center justify-between">
+    <header className="fixed top-3 left-0 right-0 z-50 flex justify-center px-4 sm:top-4">
+      <div className="flex min-h-[58px] w-full max-w-[860px] items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_2px_20px_rgba(0,0,0,0.10)] sm:h-[58px] sm:rounded-full sm:px-5 sm:py-0">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <span className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -64,9 +64,9 @@ function Navbar() {
         </Link>
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-[12px]">
-          <Link href="/dashboard" className="text-gray-400 font-medium hover:text-gray-700 transition-colors">Clinical Dashboard</Link>
-          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 text-[11px] sm:text-[12px]">
+          <Link href="/dashboard" className="hidden font-medium text-gray-400 transition-colors hover:text-gray-700 sm:inline">Clinical Dashboard</Link>
+          <svg className="hidden h-3.5 w-3.5 text-gray-300 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <span className="font-semibold text-green-600">New Session</span>
@@ -127,13 +127,13 @@ function TogglePills<T extends string>({
   return (
     <div className="space-y-1.5">
       <label className="field-label">{label}</label>
-      <div className="flex gap-1.5 p-1 bg-gray-50 border border-gray-200 rounded-xl w-fit">
+      <div className="flex w-full flex-wrap gap-1.5 rounded-xl border border-gray-200 bg-gray-50 p-1 sm:w-fit">
         {options.map((o) => (
           <button
             key={o.value}
             type="button"
             onClick={() => onChange(o.value)}
-            className={`px-4 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 cursor-pointer ${
+            className={`flex-1 rounded-lg px-4 py-2 text-[12px] font-semibold transition-all duration-200 cursor-pointer sm:flex-none ${
               value === o.value
                 ? 'bg-green-600 text-white shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -432,20 +432,20 @@ export default function NewSessionPage() {
       <Navbar />
 
       {/* ── Form Body — Bento Grid ───────────────────────────────────────────────────── */}
-      <div className="px-6 pt-20 pb-28 max-w-[1440px] mx-auto">
-        <div className="grid grid-cols-5 gap-5 items-stretch">
+      <div className="mx-auto max-w-[1440px] px-4 pt-20 pb-44 sm:px-6 sm:pb-32">
+        <div className="grid grid-cols-1 gap-5 items-stretch lg:grid-cols-5">
 
           {/* ══ LEFT: Transcript ─────────────────────────────────────────── */}
-          <div className="col-span-3">
+          <div className="lg:col-span-3">
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden h-full flex flex-col">
 
               {/* Dark header */}
-              <div className="bg-gray-900 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex flex-col gap-3 bg-gray-900 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <h2 className="text-[14px] font-bold text-white flex items-center gap-2.5">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                   Session Transcript
                 </h2>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
                   <div className="text-[11px] font-bold px-3 py-1 rounded-full"
                     style={{ color: qualityColor, background: `${qualityColor}20`, border: `1px solid ${qualityColor}40` }}>
                     {wordCount} Words
@@ -460,7 +460,7 @@ export default function NewSessionPage() {
 
               {/* Upload zone with green ambient glow */}
               <div className="flex-shrink-0" style={{ background: 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 60%)' }}>
-                <div className="px-7 pt-6 pb-2">
+                <div className="px-4 pt-5 pb-2 sm:px-7 sm:pt-6">
                   <div
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
@@ -482,8 +482,8 @@ export default function NewSessionPage() {
                 </div>
 
                 {/* Divider */}
-                <div className="relative my-4 px-7">
-                  <div className="absolute inset-x-7 top-1/2 border-t border-gray-100" />
+                <div className="relative my-4 px-4 sm:px-7">
+                  <div className="absolute inset-x-4 top-1/2 border-t border-gray-100 sm:inset-x-7" />
                   <div className="relative flex justify-center">
                     <span className="px-4 bg-white text-[10px] font-bold text-gray-400 uppercase tracking-widest">Or paste manually</span>
                   </div>
@@ -491,7 +491,7 @@ export default function NewSessionPage() {
               </div>
 
               {/* Textarea + quality in white zone */}
-              <div className="flex-1 flex flex-col px-7 pb-6 min-h-0">
+              <div className="flex min-h-0 flex-1 flex-col px-4 pb-5 sm:px-7 sm:pb-6">
                 <textarea
                   id="transcript"
                   value={form.transcript}
@@ -522,11 +522,11 @@ export default function NewSessionPage() {
                 )}
 
                 {/* Quality bar */}
-                <div className="mt-4 flex items-center gap-3">
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${qualityPct}%`, backgroundColor: qualityColor }} />
                   </div>
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest sm:text-[11px] sm:whitespace-nowrap">
                     {wordCount === 0 ? 'Start typing…' : wordCount >= 200 ? '✓ Quality OK' : `${wordCount} / 500 words`}
                   </span>
                 </div>
@@ -535,7 +535,7 @@ export default function NewSessionPage() {
           </div>
 
           {/* ══ RIGHT: Bento Stack ────────────────────────────────────────── */}
-          <div className="col-span-2 flex flex-col gap-5">
+          <div className="flex flex-col gap-5 lg:col-span-2">
 
             {/* ── BENTO CARD 1: Session Config ─────────────────────────── */}
             <div className="flex-none bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
@@ -553,7 +553,7 @@ export default function NewSessionPage() {
                 {/* Visual Session Type Tile Picker */}
                 <div>
                   <label className="field-label">Session Type</label>
-                  <div className="grid grid-cols-3 gap-2 mt-1.5">
+                  <div className="mt-1.5 grid grid-cols-3 gap-2">
                     {([
                       { value: 'intake', label: 'Intake', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z', color: 'blue' },
                       { value: 'follow_up', label: 'Follow-up', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'green' },
@@ -571,12 +571,12 @@ export default function NewSessionPage() {
                           key={value}
                           type="button"
                           onClick={() => set('sessionType', value)}
-                          className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer ${p.border} ${p.bg}`}
+                          className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 transition-all duration-200 cursor-pointer ${p.border} ${p.bg}`}
                         >
                           <svg className={`w-5 h-5 ${p.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={icon} />
                           </svg>
-                          <span className={`text-[11px] font-bold ${p.text}`}>{label}</span>
+                          <span className={`text-center text-[10px] font-bold sm:text-[11px] ${p.text}`}>{label}</span>
                         </button>
                       );
                     })}
@@ -584,8 +584,8 @@ export default function NewSessionPage() {
                 </div>
 
                 {/* Session # and Duration inline */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="min-w-0">
                     <label className="field-label">Session #</label>
                     <input
                       type="number" min={1}
@@ -595,7 +595,7 @@ export default function NewSessionPage() {
                     />
                     {errors.sessionNumber && <p className="text-red-500 text-[10px] mt-1">{errors.sessionNumber}</p>}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="field-label">Duration (min)</label>
                     <input type="number" min={5} max={180}
                       value={form.durationMinutes}
@@ -633,7 +633,7 @@ export default function NewSessionPage() {
               <div className="p-5">
                 <div className="space-y-4">
                   {/* Patient ID + Age inline */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label className="field-label">Patient ID</label>
                       <input type="text" value={form.patientId}
@@ -690,7 +690,7 @@ export default function NewSessionPage() {
       {/* ── Floating Action Bar ────────────────────────────────────────────── */}
       <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4">
         <div
-          className="w-full max-w-[860px] rounded-full border border-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.12)] px-6 h-[60px] flex items-center justify-between"
+          className="flex w-full max-w-[860px] flex-col gap-3 rounded-2xl border border-white/60 px-4 py-4 shadow-[0_4px_30px_rgba(0,0,0,0.12)] sm:h-[60px] sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:px-6 sm:py-0"
           style={{
             background: 'rgba(255,255,255,0.88)',
             backdropFilter: 'blur(16px)',
@@ -701,12 +701,12 @@ export default function NewSessionPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors duration-200 group cursor-pointer"
+            className="group flex items-center gap-2 text-[12px] font-medium text-gray-400 transition-colors duration-200 hover:text-gray-700 cursor-pointer sm:text-[13px]"
           >
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Discard & Go Back
+            <span className="truncate">Discard & Go Back</span>
           </button>
 
           {/* Center — readiness chips */}
@@ -732,7 +732,7 @@ export default function NewSessionPage() {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={`relative group px-7 py-2.5 rounded-full font-bold text-[13px] transition-all duration-300 cursor-pointer overflow-hidden flex items-center gap-2.5 ${
+            className={`relative group flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-full px-6 py-3 text-[13px] font-bold transition-all duration-300 cursor-pointer sm:w-auto sm:px-7 sm:py-2.5 ${
               isSubmitting
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-900 text-white hover:bg-green-700 hover:shadow-[0_4px_16px_rgba(22,163,74,0.40)] active:scale-[0.97]'
