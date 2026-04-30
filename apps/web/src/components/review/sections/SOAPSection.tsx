@@ -252,7 +252,7 @@ export function SOAPSection({
         )}
 
         {/* Standard-width card with actions below */}
-        <div className="flex flex-1 min-h-0 flex-col gap-5">
+        <div className="flex flex-1 min-h-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
 
           {/* Content card (scrollable) */}
           <div className="group flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0 relative">
@@ -310,7 +310,7 @@ export function SOAPSection({
           </div>
 
           {/* ── Stacked action buttons (right column) */}
-          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-3 lg:sticky lg:top-0 lg:grid-cols-1">
             <button
               onClick={() => { setEditBuffer(currentContent); setUiState('editing'); }}
               className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
@@ -523,7 +523,7 @@ export function SOAPSection({
         )}
 
         {/* Standard-width textarea with actions below */}
-        <div className="flex flex-1 min-h-0 flex-col gap-5">
+        <div className="flex flex-1 min-h-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
 
           {/* Textarea card */}
           <div className="group flex-1 min-h-0 bg-white border border-green-300 rounded-2xl shadow-sm overflow-hidden flex flex-col ring-1 ring-green-200 relative">
@@ -551,7 +551,7 @@ export function SOAPSection({
           </div>
 
           {/* Right action column */}
-          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:sticky lg:top-0 lg:grid-cols-1">
             <button
               onClick={() => setUiState('draft')}
               className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
@@ -598,7 +598,7 @@ export function SOAPSection({
       />
 
       {/* Standard-width content with actions below */}
-      <div className="flex flex-1 min-h-0 flex-col gap-5">
+      <div className="flex flex-1 min-h-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
 
         {/* ── Content card */}
         <div className="flex-1 bg-white border-l-4 border-l-green-500 border border-green-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0">
@@ -632,7 +632,7 @@ export function SOAPSection({
         </div>
 
         {/* ── Stacked action buttons */}
-        <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:sticky lg:top-0 lg:grid-cols-1">
           <button
             onClick={() => { setEditBuffer(currentContent); setUiState('editing'); invalidateDownstream(section as any); }}
             className="flex w-full flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white py-5 text-[13px] font-semibold text-gray-600 transition-all hover:border-gray-300 hover:text-gray-900"
