@@ -20,7 +20,7 @@ dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '.env') });
 
 import { Document } from '@langchain/core/documents';
 import { getEmbeddings } from '../src/embeddings.js';
-import { VECTOR_BACKEND } from '../src/vectorstore.js';
+import { detectBackend } from '../src/vectorstore.js';
 
 const PROCESSED = path.join(__dirname, '../data/processed');
 
@@ -75,9 +75,10 @@ async function ingestChroma(name: string, docs: Document[], embeddings: ReturnTy
 
 async function ingestCollection(name: string, docs: Document[], embeddings: ReturnType<typeof getEmbeddings>) {
   console.log(`\n📥 Ingesting "${name}" — ${docs.length} documents`);
-  if (VECTOR_BACKEND === 'upstash') {
+  const backend = detectBackend();
+  if (backend === 'upstash') {
     await ingestUpstash(name, docs, embeddings);
-  } else if (VECTOR_BACKEND === 'chroma') {
+  } else if (backend === 'chroma') {
     await ingestChroma(name, docs, embeddings);
   } else {
     throw new Error(
@@ -92,10 +93,11 @@ async function ingestCollection(name: string, docs: Document[], embeddings: Retu
 
 async function main() {
   console.log('\n📚 EHR Copilot — Local Dataset → Vector Store Ingestion\n');
-  console.log(`  Backend  : ${VECTOR_BACKEND.toUpperCase()}`);
-  if (VECTOR_BACKEND === 'upstash') {
+  const backend = detectBackend();
+  console.log(`  Backend  : ${backend.toUpperCase()}`);
+  if (backend === 'upstash') {
     console.log(`  Index URL: ${process.env.UPSTASH_VECTOR_REST_URL}`);
-  } else if (VECTOR_BACKEND === 'chroma') {
+  } else if (backend === 'chroma') {
     console.log(`  Chroma   : ${process.env.CHROMA_URL ?? 'http://localhost:8000'}`);
   }
   console.log();

@@ -26,9 +26,10 @@ export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
 
 // ─── Backend detection ────────────────────────────────────────────────────────
 
-type VectorBackend = 'upstash' | 'chroma' | 'none';
+export type VectorBackend = 'upstash' | 'chroma' | 'none';
 
-function detectBackend(): VectorBackend {
+/** Called at runtime so dotenv has already loaded env vars. */
+export function detectBackend(): VectorBackend {
   if (
     process.env.UPSTASH_VECTOR_REST_URL &&
     process.env.UPSTASH_VECTOR_REST_TOKEN
@@ -41,7 +42,8 @@ function detectBackend(): VectorBackend {
   return 'none';
 }
 
-export const VECTOR_BACKEND = detectBackend();
+// Convenience re-export — only use in code that runs AFTER dotenv.config()
+export const VECTOR_BACKEND = detectBackend;
 
 // ─── Upstash VectorStore factory ──────────────────────────────────────────────
 
@@ -84,7 +86,8 @@ async function getChromaStore(collection: CollectionName) {
  * Throws if no vector backend is configured (handle at call site).
  */
 export async function getVectorStore(collection: CollectionName) {
-  switch (VECTOR_BACKEND) {
+  const backend = detectBackend();
+  switch (backend) {
     case 'upstash':
       return getUpstashStore(collection);
     case 'chroma':
