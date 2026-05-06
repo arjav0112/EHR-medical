@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SOAPSection as SOAPSectionType } from '@/lib/types';
@@ -11,7 +11,7 @@ import { DependencyWarning } from './DependencyWarning';
 import { MarkdownContent } from '@/components/ui/MarkdownContent';
 import { ObjectiveBarometerPanel } from './ObjectiveBarometerPanel';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type SectionKey = 'subjective' | 'objective' | 'assessment' | 'plan';
 type UIState = 'draft' | 'revising' | 'editing' | 'approved';
@@ -47,7 +47,7 @@ const UPSTREAM: Record<SectionKey, SectionKey[]> = {
   plan: ['assessment'],
 };
 
-// ─── Shared Section Header ────────────────────────────────────────────────────
+// â”€â”€â”€ Shared Section Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionHeader({
   section,
@@ -78,7 +78,7 @@ function SectionHeader({
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function SOAPSection({
   section,
@@ -142,7 +142,7 @@ export function SOAPSection({
     setUiState('revising');
   }, []);
 
-  // Used by DependencyWarning — auto-fills feedback for synchronization
+  // Used by DependencyWarning â€” auto-fills feedback for synchronization
   const handleSyncRevision = useCallback(() => {
     clearInvalidated(section as any);
     setFeedback(`Re-synchronize the ${SECTION_LABELS[section]} section with the latest approved upstream context.`);
@@ -195,7 +195,7 @@ export function SOAPSection({
   const isLowConfidence = currentSection.confidence < 0.75;
   const canApproveDirectly = !isLowConfidence || revisionRounds > 0;
 
-  // Fullscreen modal — classic popup with blurred backdrop
+  // Fullscreen modal â€” classic popup with blurred backdrop
   const FullscreenModal = fullscreen ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-200"
@@ -230,13 +230,13 @@ export function SOAPSection({
     </div>
   ) : null;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE A — Draft
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // STATE A â€” Draft
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (uiState === 'draft') {
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500">
-        {/* Fullscreen modal — rendered at layout root so fixed positioning isn't clipped */}
+        {/* Fullscreen modal â€” rendered at layout root so fixed positioning isn't clipped */}
         {FullscreenModal}
 
         {/* Header */}
@@ -256,7 +256,7 @@ export function SOAPSection({
 
           {/* Content card (scrollable) */}
           <div className="group flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0 relative">
-            {/* Fullscreen icon — appears on hover */}
+            {/* Fullscreen icon â€” appears on hover */}
             <button
               onClick={() => setFullscreen(true)}
               className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:border-gray-300 shadow-sm"
@@ -273,7 +273,7 @@ export function SOAPSection({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span className="text-[12px] font-semibold text-amber-700">
-                  Low confidence — review carefully or refine with AI before approving
+                  Low confidence â€” review carefully or refine with AI before approving
                 </span>
               </div>
             )}
@@ -309,7 +309,7 @@ export function SOAPSection({
             )}
           </div>
 
-          {/* ── Stacked action buttons (right column) */}
+          {/* â”€â”€ Stacked action buttons (right column) */}
           <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-3 lg:sticky lg:top-0 lg:grid-cols-1">
             <button
               onClick={() => { setEditBuffer(currentContent); setUiState('editing'); }}
@@ -348,7 +348,7 @@ export function SOAPSection({
           </div>
         </div>
 
-        {/* Barometer panel — Objective section only */}
+        {/* Barometer panel â€” Objective section only */}
         {section === 'objective' && soapSection.barometers && (
           <ObjectiveBarometerPanel barometers={soapSection.barometers} />
         )}
@@ -356,9 +356,9 @@ export function SOAPSection({
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE B — Revision mode
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // STATE B â€” Revision mode
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (uiState === 'revising') {
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500">
@@ -378,8 +378,8 @@ export function SOAPSection({
           <DependencyWarning sectionName={section} upstreamSection={upstreamForWarning} onRegenerate={() => {}} onKeep={() => clearInvalidated(section as any)} />
         )}
 
-        {/* Two-column layout */}
-        <div className="flex flex-col gap-4 flex-1 min-h-0">
+        {/* Two-column layout â€” same grid as draft/editing/approved */}
+        <div className="flex flex-1 min-h-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
 
           {/* Left: original preview (dimmed) + feedback input stacked */}
           <div className="flex flex-col gap-4 min-h-0">
@@ -393,7 +393,7 @@ export function SOAPSection({
               </div>
             </div>
 
-            {/* Feedback input — hidden while streaming or done */}
+            {/* Feedback input â€” hidden while streaming or done */}
             {!isStreaming && !streamDone && (
               <div className="flex-shrink-0">
                 <FeedbackInput value={feedback} onChange={setFeedback} onSubmit={handleStartRevision} isStreaming={isStreaming} />
@@ -412,61 +412,36 @@ export function SOAPSection({
             )}
           </div>
 
-          {/* Right: streaming output — always visible once triggered */}
-          {(isStreaming || streamDone) && (
-            <div className="flex-1 min-h-0 flex flex-col gap-3">
-              <div className="flex-1 min-h-0">
-                <StreamingRevision
-                  requestBody={{
-                    section,
-                    currentDraft: currentContent,
-                    feedback,
-                    approvedSections,
-                    transcript,
-                    patientContext: {
-                      age: sessionInput?.patient.age ?? 0,
-                      gender: sessionInput?.patient.gender ?? '',
-                      knownDiagnoses: sessionInput?.patient.knownDiagnoses ?? [],
-                      sessionType: sessionInput?.session.sessionType ?? 'follow_up',
-                      currentMedications: sessionInput?.patient.currentMedications ?? [],
-                    },
-                    currentRevisionRounds: revisionRounds,
-                  }}
-                  onComplete={handleStreamComplete}
-                  onStop={() => setIsStreaming(false)}
-                  isActive={isStreaming}
-                />
+          {/* Right col: streaming output */}
+          <div className="flex flex-col gap-3 min-h-0 lg:sticky lg:top-0">
+            {!isStreaming && !streamDone && (
+              <div className="flex flex-col items-center justify-center h-48 rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 text-purple-400 text-[12px] font-medium gap-2">
+                <svg className="w-6 h-6 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                Refined version will appear here
               </div>
-
-              {streamDone && !isStreaming && (
-                <div className="flex flex-col gap-3 flex-shrink-0 pt-1 sm:flex-row sm:items-center sm:justify-end">
-                  <button
-                    onClick={handleReviseAgain}
-                    className="text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all"
-                  >
-                    Discard &amp; Try Again
-                  </button>
-                  <button
-                    onClick={handleApproveStreamedVersion}
-                    className="flex items-center justify-center gap-2 px-7 py-2.5 bg-gray-900 text-white rounded-xl text-[12px] font-bold hover:bg-green-700 transition-all duration-300"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Accept Revision
-                  </button>
+            )}
+            {(isStreaming || streamDone) && (
+              <>
+                <div className="flex-1 min-h-0">
+                  <StreamingRevision requestBody={{ section, currentDraft: currentContent, feedback, approvedSections, transcript, patientContext: { age: sessionInput?.patient.age ?? 0, gender: sessionInput?.patient.gender ?? '', knownDiagnoses: sessionInput?.patient.knownDiagnoses ?? [], sessionType: sessionInput?.session.sessionType ?? 'follow_up', currentMedications: sessionInput?.patient.currentMedications ?? [] }, currentRevisionRounds: revisionRounds }} onComplete={handleStreamComplete} onStop={() => setIsStreaming(false)} isActive={isStreaming} />
                 </div>
-              )}
-            </div>
-          )}
+                {streamDone && !isStreaming && (
+                  <div className="flex flex-col gap-3 flex-shrink-0 pt-1 sm:flex-row sm:items-center sm:justify-end">
+                    <button onClick={handleReviseAgain} className="text-[12px] font-semibold text-gray-500 border border-gray-200 bg-white px-5 py-2.5 rounded-xl hover:border-gray-300 hover:text-gray-700 transition-all">Discard &amp; Try Again</button>
+                    <button onClick={handleApproveStreamedVersion} className="flex items-center justify-center gap-2 px-7 py-2.5 bg-gray-900 text-white rounded-xl text-[12px] font-bold hover:bg-green-700 transition-all duration-300"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Accept Revision</button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE C — Direct edit
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // STATE C â€” Direct edit
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (uiState === 'editing') {
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500">
@@ -492,7 +467,7 @@ export function SOAPSection({
               {/* Modal header */}
               <div className="flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-gray-100">
                 <div>
-                  <h2 className="text-[18px] font-bold text-gray-900">{SECTION_LABELS[section]} — Editing</h2>
+                  <h2 className="text-[18px] font-bold text-gray-900">{SECTION_LABELS[section]} â€” Editing</h2>
                   <p className="text-[11px] text-gray-400 mt-0.5">{SECTION_DESCRIPTIONS[section]}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -578,9 +553,9 @@ export function SOAPSection({
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE D — Approved
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // STATE D â€” Approved
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       {/* Header */}
@@ -600,7 +575,7 @@ export function SOAPSection({
       {/* Standard-width content with actions below */}
       <div className="flex flex-1 min-h-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
 
-        {/* ── Content card */}
+        {/* â”€â”€ Content card */}
         <div className="flex-1 bg-white border-l-4 border-l-green-500 border border-green-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-8 py-7 scrollbar-hide">
             <MarkdownContent content={currentContent} />
@@ -631,7 +606,7 @@ export function SOAPSection({
           )}
         </div>
 
-        {/* ── Stacked action buttons */}
+        {/* â”€â”€ Stacked action buttons */}
         <div className="grid flex-shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:sticky lg:top-0 lg:grid-cols-1">
           <button
             onClick={() => { setEditBuffer(currentContent); setUiState('editing'); invalidateDownstream(section as any); }}
@@ -654,7 +629,7 @@ export function SOAPSection({
           </button>
         </div>
 
-        {/* Barometer panel — Objective section only */}
+        {/* Barometer panel â€” Objective section only */}
       </div>
 
       {section === 'objective' && currentSection.barometers && (
