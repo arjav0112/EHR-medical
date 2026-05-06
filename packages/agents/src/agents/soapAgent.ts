@@ -3,6 +3,11 @@ import { z } from 'zod';
 import type { RunnableConfig } from '@langchain/core/runnables';
 import type { GraphState } from '../graph';
 import type { SOAPNote, AssessmentCriteriaRow } from '../types/index';
+import {
+  dsm5LookupTool,
+  guidelinesRAGTool,
+  priorNotesSearchTool,
+} from '../tools';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 // Each helper is a FACTORY (called with ()) so Zod emits inline schemas,
@@ -105,6 +110,68 @@ function criteriaTableToMarkdown(rows: AssessmentCriteriaRow[]): string {
   return `\n\n---\n\n**DSM-5 Criteria Evaluation**\n\n${header}\n${body}`;
 }
 
+// ─── Tool context pre-gatherer ───────────────────────────────────────────────
+// Gemini withStructuredOutput() and bindTools() are mutually exclusive.
+// Pattern: run tools BEFORE the structured-output call, inject results as context.
+
+async function gatherSoapToolContext(
+  patientId: string,
+  knownDiagnoses: string[],
+  transcript: string,
+): Promise<string> {
+  const parts: string[] = [];
+
+  try {
+    // 1. Guidelines for primary diagnosis
+    if (knownDiagnoses.length > 0) {
+      const guidelineResult = await guidelinesRAGTool.invoke({
+        query: `evidence-based treatment ${knownDiagnoses[0]}`,
+        top_k: 3,
+      });
+      const g = JSON.parse(guidelineResult);
+      if (g.chunks?.length) {
+        parts.push(
+          `CLINICAL GUIDELINES (for assessment & plan):\n${g.chunks
+            .map((c: { source: string; text: string }) => `[${c.source}]: ${c.text}`)
+            .join('\n')}`,
+        );
+      }
+    }
+  } catch { /* non-critical — continue without */ }
+
+  try {
+    // 2. Prior notes longitudinal context
+    const priorResult = await priorNotesSearchTool.invoke({
+      patient_id: patientId,
+      query: 'mood sleep appetite functioning social withdrawal treatment goals',
+      top_k: 3,
+    });
+    const p = JSON.parse(priorResult);
+    if (p.passages?.length) {
+      parts.push(
+        `PRIOR SESSION PASSAGES (longitudinal context):\n${p.passages
+          .map((x: { session_number: number; text: string }) => `Session ${x.session_number}: ${x.text}`)
+          .join('\n---\n')}`,
+      );
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 3. DSM-5 criteria for each known diagnosis
+    for (const code of knownDiagnoses.slice(0, 2)) {
+      const dsm = await dsm5LookupTool.invoke({ code });
+      const d = JSON.parse(dsm);
+      if (!d.error) {
+        parts.push(`DSM-5 CRITERIA [${code}]: ${d.content?.slice(0, 400) ?? JSON.stringify(d).slice(0, 400)}`);
+      }
+    }
+  } catch { /* non-critical */ }
+
+  return parts.length
+    ? `\n\n--- TOOL CONTEXT (pre-gathered for accuracy) ---\n${parts.join('\n\n')}`
+    : '';
+}
+
 // ─── System Prompt ─────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(sessionType: string, verbosity: string): string {
@@ -190,8 +257,14 @@ GLOBAL RULES (apply to all sections)
 2. NEVER fabricate clinical details not present in the transcript. If data is absent, document as "not reported" or "not observed."
 3. NEVER place subjective patient reports in the Objective section, and vice versa.
 4. Use formal clinical language.
-5. Confidence (0–1): Mark ≥0.75 only when transcript clearly and directly supports the claim.
+5. Confidence (0–1): Mark ≥0.75 only when transcript clearly and directly supports the claim. Set < 0.75 for any claim without direct transcript evidence.
 6. For ${sessionType === 'intake' ? 'intake sessions: document full past medical history, social history, family psychiatric history, and medication history.' : 'follow-up sessions: focus on interval changes, treatment response, and goal progress.'}
+7. TOOL CONTEXT RULES: When "TOOL CONTEXT" block is present in the user message:
+   - Use DSM-5 CRITERIA to populate the criteriaTable rows with correct criterion names.
+   - Use CLINICAL GUIDELINES to cite guideline sources in plan section (e.g. "Per APA guidelines:").
+   - Use PRIOR SESSION PASSAGES for barometer trend comparison and interval history.
+   - Cite transcript lines as "transcript:lines:X-Y" for every factual claim.
+   - If a claim cannot be found in the transcript, omit it or mark confidence < 0.75.
 
 Return structured JSON only.`;
 }
@@ -207,6 +280,13 @@ export async function soapNode(state: GraphState, config: RunnableConfig): Promi
       temperature: 0.2,
       maxRetries: 6,
     }).withStructuredOutput(SOAPOutputSchema);
+
+    // Pre-gather tool context (non-blocking — failures are silently ignored)
+    const toolContext = await gatherSoapToolContext(
+      patient.id,
+      patient.knownDiagnoses,
+      session.transcript,
+    );
 
     const priorContext =
       state.input.priorNotes.length > 0
@@ -227,7 +307,7 @@ Patient ID: ${patient.id} | Age: ${patient.age} | Gender: ${patient.gender}
 Known DSM-5 diagnoses: ${patient.knownDiagnoses.join(', ') || 'None on record'}
 Current medications: ${patient.currentMedications.join(', ') || 'None on record'}
 Session #${session.sessionNumber} | Duration: ${session.durationMinutes} min | Modality: ${session.modality} | Type: ${session.sessionType}
-${priorContext}
+${priorContext}${toolContext}
 
 TRANSCRIPT:
 ${session.transcript}`,

@@ -1,0 +1,102 @@
+[
+  {
+    "id": "drug-ssri-sertraline",
+    "domain": "drug_labels",
+    "generic": "sertraline hydrochloride",
+    "brand": "Zoloft",
+    "class": "SSRI",
+    "indications": ["Major Depressive Disorder", "OCD", "Panic Disorder", "PTSD", "Social Anxiety Disorder", "Premenstrual Dysphoric Disorder"],
+    "content": "Sertraline: SSRI antidepressant. Adult MDD dosing: start 50 mg/day, titrate by 50 mg at ≥1-week intervals, max 200 mg/day. Panic/PTSD: start 25 mg/day. OCD: 50-200 mg/day. SIDE EFFECTS: GI (nausea, diarrhea), sexual dysfunction, insomnia, tremor, sweating, dry mouth. WARNINGS: Black box — increased suicidality in pediatric/young adult patients (monitor closely weeks 1-4). Serotonin syndrome risk with MAOIs (washout 14 days), triptans, tramadol. QTc prolongation at high doses. MONITORING: Liver function in hepatic impairment. Taper over ≥2 weeks to discontinue — avoid discontinuation syndrome.",
+    "tags": ["sertraline", "Zoloft", "SSRI", "MDD", "PTSD", "OCD"]
+  },
+  {
+    "id": "drug-ssri-escitalopram",
+    "domain": "drug_labels",
+    "generic": "escitalopram oxalate",
+    "brand": "Lexapro",
+    "class": "SSRI",
+    "indications": ["Major Depressive Disorder", "Generalized Anxiety Disorder"],
+    "content": "Escitalopram: FDA-approved for MDD and GAD. Dosing: 10 mg/day start; may increase to 20 mg after ≥1 week. Elderly/hepatic impairment: 10 mg/day (max). ADVANTAGES: Fewer drug interactions than other SSRIs (minimal CYP450 inhibition). Good tolerability profile. SIDE EFFECTS: Nausea, insomnia, sexual dysfunction, diarrhea. QTc prolongation dose-related — avoid doses >20 mg. DRUG INTERACTIONS: Avoid concurrent MAOIs (14-day washout). Caution with other QTc-prolonging drugs. DISCONTINUATION: Taper gradually; discontinuation syndrome risk (FINISH symptoms: Flu-like, Insomnia, Nausea, Imbalance, Sensory disturbances, Hyperarousal).",
+    "tags": ["escitalopram", "Lexapro", "SSRI", "MDD", "GAD"]
+  },
+  {
+    "id": "drug-snri-venlafaxine",
+    "domain": "drug_labels",
+    "generic": "venlafaxine hydrochloride",
+    "brand": "Effexor XR",
+    "class": "SNRI",
+    "indications": ["Major Depressive Disorder", "GAD", "Social Anxiety Disorder", "Panic Disorder"],
+    "content": "Venlafaxine XR: SNRI. MDD dosing: 75 mg/day start, titrate to 225 mg/day (severe: up to 375 mg/day). GAD/SAD/Panic: 75-225 mg/day. SIDE EFFECTS: Nausea, headache, insomnia, dizziness, sexual dysfunction, diaphoresis. BLOOD PRESSURE: Dose-dependent diastolic BP increase — monitor BP at each visit, especially above 225 mg. DISCONTINUATION: High discontinuation syndrome risk — taper very slowly (4+ weeks). CONTRAINDICATIONS: MAOIs within 14 days. DRUG INTERACTIONS: CYP2D6 inhibitors increase exposure. Monitor with linezolid, methylene blue.",
+    "tags": ["venlafaxine", "Effexor", "SNRI", "MDD", "GAD", "blood-pressure"]
+  },
+  {
+    "id": "drug-mood-lithium",
+    "domain": "drug_labels",
+    "generic": "lithium carbonate",
+    "brand": "Lithobid, Eskalith",
+    "class": "Mood Stabilizer",
+    "indications": ["Bipolar I Disorder — acute mania", "Bipolar disorder maintenance", "Suicide risk reduction"],
+    "content": "Lithium: Gold standard mood stabilizer; only medication shown to reduce suicide risk. Acute mania: target serum level 0.8-1.2 mEq/L. Maintenance: 0.6-0.8 mEq/L. DOSING: Start 300 mg TID, titrate based on levels. Check serum level 5 days after each dose change (draw 12h post-dose). MONITORING (mandatory): Serum lithium level, SCr/eGFR (renal function), TSH — at baseline then every 6 months. TOXICITY signs: coarse tremor, ataxia, confusion, drowsiness, vomiting at levels >1.5. Severe toxicity at >2.0 — seizures, coma. DRUG INTERACTIONS: NSAIDs and thiazide diuretics increase lithium levels (toxicity risk). ACE inhibitors increase lithium. High sodium intake decreases lithium levels. RENAL: Dose adjust for renal impairment; avoid in severe renal failure.",
+    "tags": ["lithium", "bipolar", "mania", "mood-stabilizer", "suicide-reduction", "monitoring"]
+  },
+  {
+    "id": "drug-mood-lamotrigine",
+    "domain": "drug_labels",
+    "generic": "lamotrigine",
+    "brand": "Lamictal",
+    "class": "Mood Stabilizer / Anticonvulsant",
+    "indications": ["Bipolar I Disorder maintenance", "Epilepsy"],
+    "content": "Lamotrigine: Effective for bipolar depression prevention. NOT effective for acute mania. TITRATION (mandatory — must follow): weeks 1-2: 25 mg/day; weeks 3-4: 50 mg/day; weeks 5+: 100 mg/day; target 200-400 mg/day. Titrate slowly to minimize Stevens-Johnson syndrome (SJS) risk. WITH valproate (inhibits metabolism): start 12.5 mg QOD, titrate half as fast — valproate doubles lamotrigine levels. WITH enzyme inducers (carbamazepine, phenytoin): titrate faster, higher target doses needed. WARNINGS: Serious rashes including SJS (0.08% adults) — discontinue immediately if rash develops. Aseptic meningitis. MONITORING: No routine serum levels needed clinically. Assess for rash at every visit during titration.",
+    "tags": ["lamotrigine", "Lamictal", "bipolar", "SJS", "bipolar-depression", "slow-titration"]
+  },
+  {
+    "id": "drug-atypical-quetiapine",
+    "domain": "drug_labels",
+    "generic": "quetiapine fumarate",
+    "brand": "Seroquel, Seroquel XR",
+    "class": "Atypical Antipsychotic",
+    "indications": ["Schizophrenia", "Bipolar I mania", "Bipolar depression", "MDD adjunct"],
+    "content": "Quetiapine: Atypical antipsychotic with broad psychiatric indications. BIPOLAR DEPRESSION: 300-600 mg/day (FDA-approved). SCHIZOPHRENIA: 400-800 mg/day. MANIA: 400-800 mg/day. MDD adjunct: 50-300 mg/day XR formulation. SIDE EFFECTS: Sedation (significant, especially at low doses), orthostatic hypotension, weight gain, metabolic syndrome, dry mouth, constipation. METABOLIC MONITORING (mandatory): fasting glucose, lipid panel, weight/BMI at baseline, 12 weeks, then annually. QTc prolongation. CONTRAINDICATIONS: Avoid with strong CYP3A4 inhibitors (ketoconazole) — significant increase in quetiapine exposure. TARDIVE DYSKINESIA: Risk with long-term use — assess at each visit.",
+    "tags": ["quetiapine", "Seroquel", "bipolar-depression", "schizophrenia", "metabolic-monitoring"]
+  },
+  {
+    "id": "drug-atypical-aripiprazole",
+    "domain": "drug_labels",
+    "generic": "aripiprazole",
+    "brand": "Abilify",
+    "class": "Atypical Antipsychotic / Dopamine Partial Agonist",
+    "indications": ["Schizophrenia", "Bipolar I mania", "MDD adjunct", "Irritability in autism"],
+    "content": "Aripiprazole: Dopamine D2 partial agonist. Metabolically favorable profile compared to other atypicals. SCHIZOPHRENIA: 10-30 mg/day. BIPOLAR MANIA: 15-30 mg/day. MDD adjunct (Abilify): 2-15 mg/day. SIDE EFFECTS: Akathisia (restlessness — most common complaint, can be severe), insomnia, nausea, headache, anxiety. Less weight gain, metabolic effects than olanzapine/quetiapine. MONITORING: Metabolic panel (baseline, 12 wk, annually). Assess for tardive dyskinesia. DRUG INTERACTIONS: CYP2D6 and CYP3A4 substrates — dose adjust with strong inhibitors/inducers. LONG-ACTING INJECTABLE: Abilify Maintena (400 mg IM monthly) for schizophrenia maintenance.",
+    "tags": ["aripiprazole", "Abilify", "akathisia", "MDD-adjunct", "schizophrenia"]
+  },
+  {
+    "id": "drug-benzo-lorazepam",
+    "domain": "drug_labels",
+    "generic": "lorazepam",
+    "brand": "Ativan",
+    "class": "Benzodiazepine",
+    "indications": ["Anxiety disorders — short-term", "Acute alcohol withdrawal", "Status epilepticus", "Procedural sedation"],
+    "content": "Lorazepam: Intermediate-acting benzodiazepine. SHORT-TERM use only (2-4 weeks) for anxiety. DOSING: 0.5-2 mg BID-TID for anxiety; 1-4 mg IV/IM for acute agitation/status epilepticus. RISKS: Dependence/addiction (Schedule IV controlled substance), tolerance, rebound anxiety, withdrawal syndrome. AVOID: In substance use disorder, personality disorders (especially BPD), pregnancy (neonatal withdrawal/floppy infant). ELDERLY: High fall risk, cognitive impairment (Beers criteria — avoid). WITHDRAWAL: Never abruptly discontinue after prolonged use — risk of seizures. Taper 10% per week. TAPERING: Consider switch to diazepam for gradual taper.",
+    "tags": ["lorazepam", "Ativan", "benzodiazepine", "anxiety", "withdrawal", "avoid-BPD"]
+  },
+  {
+    "id": "drug-stimulant-methylphenidate",
+    "domain": "drug_labels",
+    "generic": "methylphenidate hydrochloride",
+    "brand": "Concerta, Ritalin, Daytrana",
+    "class": "CNS Stimulant",
+    "indications": ["ADHD"],
+    "content": "Methylphenidate: First-line ADHD pharmacotherapy. Schedule II controlled substance. IR: 5-60 mg/day divided. ER (Concerta): 18-72 mg once daily. SIDE EFFECTS: Decreased appetite, insomnia, headache, irritability, elevated BP/HR, growth suppression in children. CARDIOVASCULAR: Screen for cardiac history before prescribing; obtain baseline BP and HR. Avoid in structural cardiac abnormalities. ABUSE POTENTIAL: Monitor for signs of misuse — especially in college students and adults with substance use history. Consider non-stimulant if abuse concern (atomoxetine preferred). DRUG INTERACTIONS: Avoid with MAOIs. May increase antidepressant blood levels.",
+    "tags": ["methylphenidate", "Ritalin", "Concerta", "ADHD", "stimulant", "Schedule-II"]
+  },
+  {
+    "id": "drug-nonstim-atomoxetine",
+    "domain": "drug_labels",
+    "generic": "atomoxetine hydrochloride",
+    "brand": "Strattera",
+    "class": "Non-stimulant ADHD Agent / NRI",
+    "indications": ["ADHD"],
+    "content": "Atomoxetine: FDA-approved non-stimulant for ADHD. Not scheduled — preferred when substance use disorder co-occurs. DOSING: Start 40 mg/day, increase after ≥3 days to 80 mg/day, max 100 mg/day. ONSET: 2-6 weeks for therapeutic effect (unlike stimulants). SIDE EFFECTS: Nausea, decreased appetite, fatigue, dizziness, sexual dysfunction, mood swings. WARNINGS: Black box — increased suicidal ideation in pediatric/young adult patients during initial treatment. Hepatotoxicity (rare but serious — monitor LFTs if jaundice or dark urine). DRUG INTERACTIONS: CYP2D6 inhibitors (paroxetine, fluoxetine) significantly increase exposure — reduce dose by 50%. CARDIOVASCULAR: Monitor BP and HR.",
+    "tags": ["atomoxetine", "Strattera", "ADHD", "non-stimulant", "substance-use-safe"]
+  }
+]

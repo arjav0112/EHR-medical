@@ -1,0 +1,82 @@
+[
+  {
+    "id": "dsm-mdd-001",
+    "domain": "dsm5_criteria",
+    "code": "F32/F33",
+    "disorder": "Major Depressive Disorder",
+    "content": "DSM-5 Criterion A: Five or more symptoms in same 2-week period, change from previous functioning; at least one must be (1) or (2): (1) Depressed mood most of the day, nearly every day; (2) Markedly diminished interest/pleasure (anhedonia); (3) Significant weight change >5%/month or appetite disturbance; (4) Insomnia or hypersomnia; (5) Psychomotor agitation or retardation; (6) Fatigue or loss of energy; (7) Worthlessness or excessive guilt; (8) Diminished concentration or indecisiveness; (9) Recurrent thoughts of death, suicidal ideation. Severity: mild (5 sx, minor impairment), moderate (6-7, notable impairment), severe (8-9, marked impairment). Specifiers: anxious distress, melancholic, atypical, psychotic, peripartum onset, seasonal pattern.",
+    "tags": ["MDD", "depression", "criterion-A", "DSM-5"]
+  },
+  {
+    "id": "dsm-gad-001",
+    "domain": "dsm5_criteria",
+    "code": "F41.1",
+    "disorder": "Generalized Anxiety Disorder",
+    "content": "GAD Criterion A: Excessive anxiety/worry more days than not for ≥6 months about multiple events. Criterion B: Difficulty controlling worry. Criterion C: ≥3 symptoms: restlessness/keyed up, fatigue, concentration difficulty, irritability, muscle tension, sleep disturbance. Criterion D: Significant distress or impairment. Differential: Adjustment disorder (stressor-linked <6mo), Illness Anxiety (health-focused), Social Anxiety (social situations only).",
+    "tags": ["GAD", "anxiety", "worry", "DSM-5"]
+  },
+  {
+    "id": "dsm-ptsd-001",
+    "domain": "dsm5_criteria",
+    "code": "F43.10",
+    "disorder": "Post-Traumatic Stress Disorder",
+    "content": "PTSD Criterion A: Exposure to actual/threatened death, injury, or sexual violence. Criterion B (Intrusion ≥1): intrusive memories, nightmares, flashbacks, distress at cues. Criterion C (Avoidance ≥1): avoidance of trauma-related thoughts or external reminders. Criterion D (Negative cognition/mood ≥2): amnesia, negative beliefs, distorted blame, persistent negative emotions, diminished interest, detachment, inability to feel positive. Criterion E (Arousal ≥2): irritability/aggression, reckless behavior, hypervigilance, exaggerated startle, concentration problems, sleep disturbance. Duration >1 month. Specifier: with dissociative symptoms.",
+    "tags": ["PTSD", "trauma", "intrusion", "avoidance", "DSM-5"]
+  },
+  {
+    "id": "dsm-bpd-001",
+    "domain": "dsm5_criteria",
+    "code": "F60.3",
+    "disorder": "Borderline Personality Disorder",
+    "content": "BPD: Pervasive instability of interpersonal relationships, self-image, affects, and marked impulsivity. ≥5 of: (1) Frantic efforts to avoid abandonment; (2) Unstable/intense relationships (idealization-devaluation splitting); (3) Identity disturbance; (4) Impulsivity in ≥2 self-damaging areas; (5) Recurrent suicidal behavior/self-mutilation; (6) Affective instability/reactivity; (7) Chronic emptiness; (8) Inappropriate intense anger; (9) Transient paranoid ideation or dissociation under stress.",
+    "tags": ["BPD", "borderline", "splitting", "self-harm", "DSM-5"]
+  },
+  {
+    "id": "dsm-bip1-001",
+    "domain": "dsm5_criteria",
+    "code": "F31.1",
+    "disorder": "Bipolar I Disorder — Manic Episode",
+    "content": "Manic Episode Criterion A: Abnormally elevated/expansive/irritable mood + increased energy, ≥1 week. Criterion B (≥3, or 4 if irritable only): grandiosity, decreased sleep need, pressured speech, racing thoughts/flight of ideas, distractibility, increased goal-directed activity, risky pleasurable activities. Criterion C: Marked impairment or requires hospitalization. Psychotic features may be present. Antidepressant monotherapy is contraindicated — risk of manic switch.",
+    "tags": ["bipolar-I", "mania", "grandiosity", "pressured-speech", "DSM-5"]
+  },
+  {
+    "id": "dsm-bip2-001",
+    "domain": "dsm5_criteria",
+    "code": "F31.81",
+    "disorder": "Bipolar II Disorder — Hypomanic Episode",
+    "content": "Hypomanic Episode: Same symptoms as mania but ≥4 days, no marked impairment, no hospitalization, no psychosis. Observable change from baseline. If hospitalization needed or psychotic features present: reclassify as Bipolar I. Bipolar II requires ≥1 hypomanic + ≥1 major depressive episode. Adults often present depressed; collateral history essential to identify hypomania.",
+    "tags": ["bipolar-II", "hypomania", "DSM-5"]
+  },
+  {
+    "id": "dsm-schiz-001",
+    "domain": "dsm5_criteria",
+    "code": "F20.9",
+    "disorder": "Schizophrenia",
+    "content": "Criterion A (≥2, each ≥1 month; ≥1 must be 1-3): (1) Delusions; (2) Hallucinations; (3) Disorganized speech; (4) Grossly disorganized/catatonic behavior; (5) Negative symptoms (avolition, alogia, blunted affect, anhedonia, asociality). Criterion B: Marked dysfunction. Duration ≥6 months. Differential: Brief psychotic disorder (<1mo), Schizophreniform (<6mo), Schizoaffective (concurrent major mood episode).",
+    "tags": ["schizophrenia", "psychosis", "negative-symptoms", "DSM-5"]
+  },
+  {
+    "id": "dsm-adhd-001",
+    "domain": "dsm5_criteria",
+    "code": "F90.2",
+    "disorder": "ADHD — Combined Presentation",
+    "content": "Inattention ≥5 symptoms (adults): careless mistakes, poor sustained attention, not listening, poor follow-through, disorganization, avoids sustained tasks, loses things, distractible, forgetful. Hyperactivity/Impulsivity ≥5 symptoms (adults): fidgets, leaves seat, subjective restlessness, cannot be quiet, on-the-go, excessive talking, blurts out, difficulty waiting, interrupts. Present before age 12, in ≥2 settings. Adult ADHD often inattention-predominant with emotional dysregulation.",
+    "tags": ["ADHD", "inattention", "hyperactivity", "adult-ADHD", "DSM-5"]
+  },
+  {
+    "id": "dsm-ocd-001",
+    "domain": "dsm5_criteria",
+    "code": "F42.2",
+    "disorder": "Obsessive-Compulsive Disorder",
+    "content": "OCD: Obsessions (recurrent intrusive thoughts/urges/images; attempts to suppress or neutralize) AND/OR Compulsions (repetitive behaviors/mental acts to reduce distress). Time-consuming >1 hr/day or significant impairment. Specifiers: with good/fair/poor/absent insight; with tic-related disorder. Gold standard: ERP (Exposure and Response Prevention) 13-20 sessions. High-dose SSRIs: fluvoxamine, sertraline, fluoxetine, paroxetine, clomipramine.",
+    "tags": ["OCD", "obsessions", "compulsions", "ERP", "DSM-5"]
+  },
+  {
+    "id": "dsm-sad-001",
+    "domain": "dsm5_criteria",
+    "code": "F41.10",
+    "disorder": "Social Anxiety Disorder",
+    "content": "Social Anxiety Disorder: Marked fear/anxiety about social situations where scrutiny possible. Fear of acting in ways that will be humiliating/embarrassing. Situations almost always provoke anxiety. Situations avoided or endured with intense distress. Fear is disproportionate to actual threat. ≥6 months duration. Significant distress or impairment. Performance only specifier when fear restricted to public speaking/performance. First-line: CBT (social skills training, exposure) + SSRI/SNRI. Beta-blockers for performance anxiety.",
+    "tags": ["SAD", "social-anxiety", "performance-anxiety", "CBT", "DSM-5"]
+  }
+]

@@ -1,0 +1,11 @@
+Place clinical guideline PDFs here before running pnpm ingest:guidelines.
+
+Required files:
+  apa_mdd.pdf          https://psychiatryonline.org/pb/assets/raw/sitewide/practice_guidelines/guidelines/mdd.pdf
+  apa_depression.pdf   https://www.apa.org/depression-guideline/guideline.pdf
+  who_mhgap.pdf        https://iris.who.int/server/api/core/bitstreams/93e56376-0e64-4a08-bdd0-703313be5354/content
+  va_dod_mdd_2022.pdf  https://www.healthquality.va.gov/guidelines/MH/mdd/VADODMDDCPGFinal508.pdf
+  va_dod_suicide_2024.pdf  https://www.healthquality.va.gov/guidelines/MH/srb/VADoD-CPG-Suicide-Risk-Full-CPG-2024_Final_508.pdf
+
+All files are freely available from public government and professional association sources.
+The system works without them — agents fall back to Gemini Flash clinical knowledge.

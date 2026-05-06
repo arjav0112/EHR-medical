@@ -1,4 +1,5 @@
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { getStreamingLLM } from '../llm';
+import { confidenceScorerTool } from '../tools';
 import type { SOAPSection } from '../types/index';
 
 export interface RevisionInput {
@@ -70,15 +71,10 @@ REVISION RULES
  * Returns an async generator that yields string chunks of the revised content,
  * along with final metadata after streaming completes.
  */
-export async function* reviseSection(input: RevisionInput): AsyncGenerator<
+export async function* reviseSection(input: RevisionInput & { revisionRounds?: number }): AsyncGenerator<
   { chunk: string; done: false } | { done: true; section: Partial<SOAPSection> }
 > {
-  const model = new ChatGoogleGenerativeAI({
-    model: 'gemini-2.5-flash',
-    temperature: 0.2,
-    streaming: true,
-    maxRetries: 6,
-  });
+  const model = getStreamingLLM();
 
   const sectionStandards = SECTION_CLINICAL_STANDARDS[input.section] ?? '';
 
@@ -133,14 +129,30 @@ Produce the revised ${input.section} section now — plain clinical prose only:`
     }
   }
 
+  // Post-stream: run confidence scorer on the completed content
+  let finalConfidence = 0.88; // baseline — clinician confirmed intent
+  try {
+    const scoreResult = await confidenceScorerTool.invoke({
+      section: input.section,
+      content: fullContent,
+      transcript: input.transcript,
+      citations: [],
+    });
+    const scoreStr = typeof scoreResult === 'string' ? scoreResult : JSON.stringify(scoreResult);
+    const score = JSON.parse(scoreStr);
+    finalConfidence = score.score ?? finalConfidence;
+  } catch { /* non-critical — use baseline */ }
+
+  const prevRounds = input.revisionRounds ?? 0;
+
   yield {
     done: true,
     section: {
       content: fullContent,
-      confidence: 0.88, // Post-revision confidence elevated — clinician has confirmed intent
-      sourceCitations: [],  // Frontend should re-parse citations from revised content
+      confidence: finalConfidence,
+      sourceCitations: [],  // Frontend re-parses citations from revised content
       status: 'revised',
-      revisionRounds: 1,
+      revisionRounds: prevRounds + 1,
       provenanceTag: 'ai_revised',
     },
   };

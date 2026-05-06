@@ -2,6 +2,12 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
 import type { RunnableConfig } from '@langchain/core/runnables';
+import {
+  dsm5LookupTool,
+  icd10SearchTool,
+  guidelinesRAGTool,
+  priorNotesSearchTool,
+} from '../tools';
 
 const DSMOutputSchema = z.object({
   diagnosisSuggestions: z
@@ -58,6 +64,77 @@ CLINICAL DIAGNOSTIC STANDARDS:
 
 Return structured JSON only.`;
 
+// ─── Tool context pre-gatherer ───────────────────────────────────────────────
+
+async function gatherDsmToolContext(
+  patientId: string,
+  knownDiagnoses: string[],
+  primaryDiagnosis: string,
+): Promise<string> {
+  const parts: string[] = [];
+
+  try {
+    // 1. DSM-5 criteria for all known diagnoses
+    for (const code of knownDiagnoses.slice(0, 3)) {
+      const dsm = await dsm5LookupTool.invoke({ code });
+      const d = JSON.parse(dsm);
+      if (!d.error) {
+        parts.push(
+          `DSM-5 [${code}] ${d.disorder ?? d.code}:\n${d.content?.slice(0, 500) ?? ''}`,
+        );
+      }
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 2. Confirm ICD-10 codes for known diagnoses
+    for (const code of knownDiagnoses.slice(0, 2)) {
+      const icd = await icd10SearchTool.invoke({ query: code });
+      const i = JSON.parse(icd);
+      if (Array.isArray(i) && i.length) {
+        parts.push(`ICD-10 [${code}]: ${i[0].description} — ${i[0].summary ?? ''}`);
+      }
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 3. Clinical guidelines for the primary diagnosis
+    const guidelines = await guidelinesRAGTool.invoke({
+      query: `diagnostic criteria ${primaryDiagnosis || knownDiagnoses[0] || 'depression'}`,
+      top_k: 3,
+    });
+    const g = JSON.parse(guidelines);
+    if (g.chunks?.length) {
+      parts.push(
+        `DIAGNOSTIC GUIDELINES:\n${g.chunks
+          .map((c: { source: string; text: string }) => `[${c.source}]: ${c.text}`)
+          .join('\n')}`,
+      );
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 4. Prior diagnoses history from vector store
+    const prior = await priorNotesSearchTool.invoke({
+      patient_id: patientId,
+      query: 'prior diagnoses established conditions history interval status',
+      top_k: 2,
+    });
+    const p = JSON.parse(prior);
+    if (p.passages?.length) {
+      parts.push(
+        `PRIOR DIAGNOSIS HISTORY:\n${p.passages
+          .map((x: { session_number: number; text: string }) => `Session ${x.session_number}: ${x.text}`)
+          .join('\n')}`,
+      );
+    }
+  } catch { /* non-critical */ }
+
+  return parts.length
+    ? `\n\n--- DSM TOOL CONTEXT ---\n${parts.join('\n\n')}`
+    : '';
+}
+
 export async function dsmNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const { patient, session } = state.input;
@@ -69,6 +146,14 @@ export async function dsmNode(state: GraphState, config: RunnableConfig): Promis
       maxRetries: 6,
     }).withStructuredOutput(DSMOutputSchema);
 
+    // Pre-gather DSM-5 criteria + ICD-10 codes + guidelines context
+    const primaryDiagnosis = patient.knownDiagnoses[0] ?? '';
+    const toolContext = await gatherDsmToolContext(
+      patient.id,
+      patient.knownDiagnoses,
+      primaryDiagnosis,
+    );
+
     const result = await model.invoke([
       { role: 'system', content: SYSTEM_PROMPT },
       {
@@ -78,6 +163,7 @@ Patient: Age ${patient.age}, Gender: ${patient.gender}
 Known DSM-5 diagnoses on record: ${patient.knownDiagnoses.join(', ') || 'None on record'}
 Current medications: ${patient.currentMedications.join(', ') || 'None'}
 Session type: ${session.sessionType} | Session #${session.sessionNumber}
+${toolContext}
 
 SOAP NOTE — ASSESSMENT SECTION:
 ${soapNote.assessment?.content ?? 'Not yet generated'}

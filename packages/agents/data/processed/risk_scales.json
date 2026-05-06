@@ -1,0 +1,115 @@
+{
+  "scales": {
+    "c_ssrs": {
+      "name": "Columbia Suicide Severity Rating Scale (C-SSRS)",
+      "acronym": "C-SSRS",
+      "purpose": "Assess suicidal ideation intensity and suicidal behavior. Medico-legal documentation standard.",
+      "domains": ["ideation_intensity", "behavior"],
+      "questions": [
+        { "id": 1, "domain": "ideation", "question": "Have you wished you were dead or wished you could go to sleep and not wake up?", "maps_to": "passive_ideation" },
+        { "id": 2, "domain": "ideation", "question": "Have you actually had any thoughts of killing yourself?", "maps_to": "active_ideation_without_plan" },
+        { "id": 3, "domain": "ideation", "question": "Have you been thinking about how you might do this?", "maps_to": "active_ideation_with_method" },
+        { "id": 4, "domain": "ideation", "question": "Have you had these thoughts and had some intention of acting on them?", "maps_to": "active_ideation_with_intent" },
+        { "id": 5, "domain": "ideation", "question": "Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?", "maps_to": "active_ideation_with_plan_and_intent" }
+      ],
+      "severity_mapping": {
+        "none": { "score": 0, "description": "No ideation — document explicit denial", "action": "Routine documentation — document denial explicitly" },
+        "passive": { "score": 1, "description": "Passive death wish only — no active plan or intent", "action": "Monitor at next session; document verbatim denial of active SI" },
+        "active_without_plan": { "score": 2, "description": "Active SI, no specific method or plan", "action": "Safety planning required; assess means access; increase visit frequency" },
+        "active_with_plan": { "score": 3, "description": "Active SI with specific method but no stated intent", "action": "Safety planning mandatory; means restriction counseling; consider crisis consultation" },
+        "active_with_intent": { "score": 4, "description": "Active SI with plan AND intent to act", "action": "EMERGENT: Psychiatric evaluation for inpatient hospitalization; do not leave patient alone; contact emergency services if needed" }
+      },
+      "required_documentation": [
+        "Presence or absence of suicidal ideation (both must be documented every session)",
+        "C-SSRS level classification",
+        "Presence or absence of homicidal ideation",
+        "Safety plan status (reviewed/updated/newly created/not indicated)",
+        "Means restriction discussion if applicable",
+        "Next follow-up date with contingency plan"
+      ],
+      "legal_note": "Failure to document negative findings (patient denied SI) is a major medico-legal liability. Document denial explicitly even when all screens are negative."
+    },
+    "phq9": {
+      "name": "Patient Health Questionnaire-9 (PHQ-9)",
+      "acronym": "PHQ-9",
+      "purpose": "Screen and monitor depression severity. Validated for MDD diagnosis and treatment response tracking.",
+      "instructions": "Over the last 2 weeks, how often have you been bothered by any of the following problems?",
+      "response_scale": { "0": "Not at all", "1": "Several days", "2": "More than half the days", "3": "Nearly every day" },
+      "questions": [
+        { "id": 1, "question": "Little interest or pleasure in doing things", "dsm5_criterion": "Anhedonia (Criterion A2)" },
+        { "id": 2, "question": "Feeling down, depressed, or hopeless", "dsm5_criterion": "Depressed mood (Criterion A1)" },
+        { "id": 3, "question": "Trouble falling or staying asleep, or sleeping too much", "dsm5_criterion": "Insomnia/hypersomnia (Criterion A4)" },
+        { "id": 4, "question": "Feeling tired or having little energy", "dsm5_criterion": "Fatigue (Criterion A6)" },
+        { "id": 5, "question": "Poor appetite or overeating", "dsm5_criterion": "Appetite/weight change (Criterion A3)" },
+        { "id": 6, "question": "Feeling bad about yourself — or that you are a failure or have let yourself or your family down", "dsm5_criterion": "Worthlessness/guilt (Criterion A7)" },
+        { "id": 7, "question": "Trouble concentrating on things, such as reading the newspaper or watching television", "dsm5_criterion": "Concentration (Criterion A8)" },
+        { "id": 8, "question": "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual", "dsm5_criterion": "Psychomotor (Criterion A5)" },
+        { "id": 9, "question": "Thoughts that you would be better off dead or of hurting yourself in some way", "dsm5_criterion": "Suicidal ideation (Criterion A9)" }
+      ],
+      "severity_mapping": {
+        "minimal": { "range": "0-4", "action": "Routine monitoring" },
+        "mild": { "range": "5-9", "action": "Watchful waiting; consider psychotherapy" },
+        "moderate": { "range": "10-14", "action": "Treatment plan; consider medication + psychotherapy" },
+        "moderately_severe": { "range": "15-19", "action": "Active treatment with medication + psychotherapy" },
+        "severe": { "range": "20-27", "action": "Immediate treatment; consider intensive services" }
+      },
+      "item_9_protocol": "Any score ≥1 on item 9 requires immediate C-SSRS administration and safety planning documentation."
+    },
+    "gad7": {
+      "name": "Generalized Anxiety Disorder 7-item (GAD-7)",
+      "acronym": "GAD-7",
+      "purpose": "Screen and monitor generalized anxiety disorder severity.",
+      "instructions": "Over the last 2 weeks, how often have you been bothered by the following problems?",
+      "response_scale": { "0": "Not at all", "1": "Several days", "2": "More than half the days", "3": "Nearly every day" },
+      "questions": [
+        { "id": 1, "question": "Feeling nervous, anxious, or on edge" },
+        { "id": 2, "question": "Not being able to stop or control worrying" },
+        { "id": 3, "question": "Worrying too much about different things" },
+        { "id": 4, "question": "Trouble relaxing" },
+        { "id": 5, "question": "Being so restless that it is hard to sit still" },
+        { "id": 6, "question": "Becoming easily annoyed or irritable" },
+        { "id": 7, "question": "Feeling afraid, as if something awful might happen" }
+      ],
+      "severity_mapping": {
+        "minimal": { "range": "0-4", "action": "Routine monitoring" },
+        "mild": { "range": "5-9", "action": "Monitor; psychoeducation on anxiety management" },
+        "moderate": { "range": "10-14", "action": "Consider CBT and/or SSRI/SNRI treatment" },
+        "severe": { "range": "15-21", "action": "Active pharmacological + psychological treatment; assess for panic disorder comorbidity" }
+      }
+    },
+    "pcl5": {
+      "name": "PTSD Checklist for DSM-5 (PCL-5)",
+      "acronym": "PCL-5",
+      "purpose": "Screen for PTSD and monitor treatment response. Maps directly to DSM-5 PTSD criteria.",
+      "instructions": "In the past month, how much were you bothered by the following problems?",
+      "response_scale": { "0": "Not at all", "1": "A little bit", "2": "Moderately", "3": "Quite a bit", "4": "Extremely" },
+      "questions": [
+        { "id": 1, "criterion": "B1", "question": "Repeated, disturbing, and unwanted memories of the stressful experience" },
+        { "id": 2, "criterion": "B2", "question": "Repeated, disturbing dreams of the stressful experience" },
+        { "id": 3, "criterion": "B3", "question": "Suddenly feeling or acting as if the stressful experience were actually happening again" },
+        { "id": 4, "criterion": "B4", "question": "Feeling very upset when something reminded you of the stressful experience" },
+        { "id": 5, "criterion": "B5", "question": "Having strong physical reactions when something reminded you of the stressful experience" },
+        { "id": 6, "criterion": "C1", "question": "Avoiding memories, thoughts, or feelings related to the stressful experience" },
+        { "id": 7, "criterion": "C2", "question": "Avoiding external reminders of the stressful experience" },
+        { "id": 8, "criterion": "D1", "question": "Trouble remembering important parts of the stressful experience" },
+        { "id": 9, "criterion": "D2", "question": "Having strong negative beliefs about yourself, other people, or the world" },
+        { "id": 10, "criterion": "D3", "question": "Blaming yourself or someone else for the stressful experience or what happened after it" },
+        { "id": 11, "criterion": "D4", "question": "Having strong negative feelings such as fear, horror, anger, guilt, or shame" },
+        { "id": 12, "criterion": "D5", "question": "Loss of interest in activities that you used to enjoy" },
+        { "id": 13, "criterion": "D6", "question": "Feeling distant or cut off from other people" },
+        { "id": 14, "criterion": "D7", "question": "Trouble experiencing positive feelings" },
+        { "id": 15, "criterion": "E1", "question": "Irritable behavior, angry outbursts, or acting aggressively" },
+        { "id": 16, "criterion": "E2", "question": "Taking too many risks or doing things that could cause you harm" },
+        { "id": 17, "criterion": "E3", "question": "Being 'superalert' or watchful or on guard" },
+        { "id": 18, "criterion": "E4", "question": "Feeling jumpy or easily startled" },
+        { "id": 19, "criterion": "E5", "question": "Having difficulty concentrating" },
+        { "id": 20, "criterion": "E6", "question": "Trouble falling or staying asleep" }
+      ],
+      "severity_mapping": {
+        "sub_threshold": { "range": "0-32", "action": "Monitor; assess functional impact" },
+        "probable_ptsd": { "range": "33+", "action": "Full PTSD assessment; initiate trauma-focused therapy (PE/CPT/EMDR); consider sertraline or paroxetine" }
+      },
+      "scoring_note": "Provisional PTSD diagnosis if ≥1 item in B cluster, ≥1 in C, ≥2 in D, ≥2 in E each score ≥2."
+    }
+  }
+}

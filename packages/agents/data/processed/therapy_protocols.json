@@ -1,0 +1,72 @@
+[
+  {
+    "id": "therapy-cbt-001",
+    "domain": "therapy_protocols",
+    "modality": "Cognitive Behavioral Therapy (CBT)",
+    "content": "CBT is the gold-standard psychological treatment for depression, anxiety disorders, OCD, PTSD, eating disorders, and insomnia. Core components: (1) Psychoeducation about the cognitive model (thoughts-feelings-behaviors triangle); (2) Thought monitoring and Socratic questioning to identify automatic negative thoughts (ANTs) and cognitive distortions; (3) Cognitive restructuring: challenging distortions (all-or-nothing thinking, catastrophizing, personalization, mind-reading, fortune-telling, emotional reasoning); (4) Behavioral activation for depression: scheduling pleasant activities to break avoidance cycle; (5) Homework assignments: thought records, behavioral experiments; (6) Relapse prevention planning. Duration: 12-20 sessions (depression/anxiety), 16-20 sessions (PTSD). Session structure: agenda-setting, review homework, skill practice, new homework. Common cognitive distortions: magnification/minimization, should statements, labeling, selective abstraction.",
+    "tags": ["CBT", "cognitive-restructuring", "behavioral-activation", "depression", "anxiety"]
+  },
+  {
+    "id": "therapy-dbt-001",
+    "domain": "therapy_protocols",
+    "modality": "Dialectical Behavior Therapy (DBT)",
+    "content": "DBT developed by Marsha Linehan for Borderline Personality Disorder; evidence-based for chronic suicidality, self-harm, eating disorders, substance use, and treatment-resistant depression. Standard DBT: weekly individual therapy + weekly skills group (typically 6 months minimum, 1 year optimal). Four skill modules: (1) Mindfulness (core skill — observing, describing, participating without judgment; wise mind concept); (2) Distress Tolerance (TIPP: Temperature/Intense exercise/Paced breathing/Progressive relaxation; ACCEPTS; IMPROVE; radical acceptance); (3) Emotion Regulation (identifying and labeling emotions, opposite action, reducing vulnerability with PLEASE skills); (4) Interpersonal Effectiveness (DEAR MAN for assertiveness, GIVE for relationship maintenance, FAST for self-respect). DBT Phone coaching: between-session skill coaching calls. Consultation team required for therapists.",
+    "tags": ["DBT", "BPD", "self-harm", "mindfulness", "distress-tolerance", "emotion-regulation"]
+  },
+  {
+    "id": "therapy-mi-001",
+    "domain": "therapy_protocols",
+    "modality": "Motivational Interviewing (MI)",
+    "content": "Motivational Interviewing: collaborative, person-centered approach to strengthen motivation for change. Developed by Miller and Rollnick. Core principles (RULE): Resist the righting reflex, Understand the patient's motivation, Listen to the patient, Empower the patient. Four processes: Engaging (therapeutic alliance), Focusing (agreeable agenda), Evoking (eliciting change talk), Planning (commitment to change). OARS skills: Open questions, Affirmations, Reflective listening, Summaries. Change talk (DARN-CAT): Desire, Ability, Reasons, Need (preparatory); Commitment, Activation, Taking steps (mobilizing). Spirit: partnership, acceptance, compassion, evocation. MI is evidence-based for: substance use, medication adherence, treatment engagement, lifestyle changes.",
+    "tags": ["MI", "motivational-interviewing", "substance-use", "adherence", "ambivalence"]
+  },
+  {
+    "id": "therapy-pe-001",
+    "domain": "therapy_protocols",
+    "modality": "Prolonged Exposure (PE)",
+    "content": "Prolonged Exposure: first-line treatment for PTSD (VA/DoD strongly recommended). Developed by Edna Foa. Typically 8-15 sessions (90 min each). Four components: (1) Psychoeducation about PTSD and treatment rationale; (2) Breathing retraining for anxiety management; (3) In vivo exposure: graduated approach to avoided trauma-related situations/activities; (4) Imaginal exposure: repeated recounting of trauma memory (30-45 min) with processing discussion. Rationale: emotional processing theory — avoidance maintains PTSD; confronting feared stimuli allows habituation and corrective learning. Contraindications/cautions: active suicidality requiring immediate intervention, severe dissociation (stabilization first), ongoing trauma exposure. Dissociative subtype: modified protocol with more stabilization work before trauma processing.",
+    "tags": ["PE", "PTSD", "exposure", "imaginal-exposure", "in-vivo", "Edna-Foa"]
+  },
+  {
+    "id": "therapy-cpt-001",
+    "domain": "therapy_protocols",
+    "modality": "Cognitive Processing Therapy (CPT)",
+    "content": "CPT: Cognitive therapy for PTSD, 12 sessions, individual or group format. Developed by Patricia Resick. Focuses on 'stuck points' — problematic beliefs that maintain PTSD (safety, trust, power/control, esteem, intimacy — across self and others). Components: (1) Psychoeducation about PTSD and impact of trauma; (2) Written trauma account (CPT standard) or without written account (CPT-C); (3) Socratic dialogue to challenge stuck points; (4) ABC worksheets to identify and challenge automatic thoughts; (5) Challenging Questions Worksheet and Patterns of Problematic Thinking; (6) Accommodation and assimilation of traumatic event. Particularly effective when trauma involves moral injury, shame, self-blame. Can be delivered via telehealth with equivalent outcomes.",
+    "tags": ["CPT", "PTSD", "stuck-points", "cognitive-therapy", "moral-injury"]
+  },
+  {
+    "id": "therapy-act-001",
+    "domain": "therapy_protocols",
+    "modality": "Acceptance and Commitment Therapy (ACT)",
+    "content": "ACT: Third-wave CBT based on psychological flexibility. Core processes (Hexaflex): (1) Acceptance — willingness to experience uncomfortable thoughts/feelings without struggle; (2) Defusion — creating distance from unhelpful thoughts (cognitive defusion techniques); (3) Present-moment awareness — mindfulness and contact with the present; (4) Self-as-context — observing self perspective; (5) Values clarification — identifying what truly matters; (6) Committed action — behavioral change in line with values despite discomfort. Evidence-based for: depression, anxiety, chronic pain, substance use, work stress, eating disorders. METAPHORS: passengers on a bus, Chinese finger trap, leaves on a stream. Differs from CBT: does not challenge thought content — changes relationship to thoughts instead.",
+    "tags": ["ACT", "acceptance", "defusion", "values", "mindfulness", "chronic-pain"]
+  },
+  {
+    "id": "therapy-ipt-001",
+    "domain": "therapy_protocols",
+    "modality": "Interpersonal Therapy (IPT)",
+    "content": "Interpersonal Therapy: time-limited (12-16 sessions) for depression and eating disorders. Focuses on interpersonal context of depression. Four problem areas (one chosen as focus): (1) Grief (complicated bereavement — facilitating mourning and re-engagement with life); (2) Role Disputes (conflicts with significant others — identifying impasses, renegotiating roles); (3) Role Transitions (life changes — e.g., job loss, divorce, illness); (4) Interpersonal Deficits (social isolation — building relationships). Techniques: interpersonal inventory, communication analysis, decision analysis, role-playing. Strong evidence for MDD, perinatal depression, adolescent depression. Medical model: presents depression as an illness to reduce self-blame. Focus on current relationships (not past or cognitive distortions).",
+    "tags": ["IPT", "depression", "interpersonal", "grief", "role-transitions", "perinatal"]
+  },
+  {
+    "id": "therapy-ba-001",
+    "domain": "therapy_protocols",
+    "modality": "Behavioral Activation (BA)",
+    "content": "Behavioral Activation: standalone CBT component for depression. Based on Lewinsohn's learning theory — depression maintained by reduced positive reinforcement and increased avoidance. Core technique: activity scheduling to increase contact with positive reinforcers and reduce avoidance. Steps: (1) Activity monitoring — TRAP (Trigger → Response → Avoidance Pattern); (2) Identify values and meaningful activities; (3) Graded task assignment — start with low-effort activities; (4) TRAC (Trigger → Response → Alternative Coping); (5) Problem-solving for activity barriers. Evidence: equivalent to full CBT for MDD in some trials. Particularly useful for severe/anhedonic depression where cognitive work is difficult. Simpler to train paraprofessionals — useful in resource-limited settings.",
+    "tags": ["BA", "behavioral-activation", "depression", "avoidance", "activity-scheduling"]
+  },
+  {
+    "id": "therapy-emdr-001",
+    "domain": "therapy_protocols",
+    "modality": "Eye Movement Desensitization and Reprocessing (EMDR)",
+    "content": "EMDR: First-line treatment for PTSD (WHO, VA/DoD strongly recommended). Developed by Francine Shapiro. 8-phase protocol: (1) History-taking and treatment planning; (2) Preparation (affect tolerance, safe place); (3) Assessment (target memory, negative cognition, positive cognition, VoC, emotion, SUD, body sensation); (4) Desensitization (bilateral stimulation — eye movements, taps, or tones — during trauma memory activation); (5) Installation (strengthening positive cognition); (6) Body scan; (7) Closure; (8) Reevaluation. Adaptive Information Processing (AIP) model: trauma memories stored in dysfunctional state; bilateral stimulation facilitates adaptive processing. Evidence: typically requires fewer sessions than PE/CPT (6-12). Can be effective for single-incident trauma in fewer sessions.",
+    "tags": ["EMDR", "PTSD", "bilateral-stimulation", "AIP", "trauma-processing"]
+  },
+  {
+    "id": "therapy-safety-001",
+    "domain": "therapy_protocols",
+    "modality": "Safety Planning Intervention (SPI)",
+    "content": "Safety Planning Intervention: Stanley-Brown collaborative safety plan — standard of care when suicidal ideation present. Six steps: (1) Warning signs — internal (thoughts, feelings, behaviors) that indicate crisis building; (2) Internal coping strategies — things to do alone to distract without contacting others; (3) Social contacts and settings that provide distraction; (4) People patient can ask for help — specific names and contact info; (5) Professionals and agencies to contact — clinician, crisis line (988), emergency services; (6) Making the environment safe — means restriction (remove or secure firearms, medications). Document in chart. Distinguish from 'no-suicide contracts' — contracts ineffective; collaborative safety plans have evidence. Columbia C-SSRS must be administered and documented. High-risk: consider psychiatric evaluation for hospitalization.",
+    "tags": ["safety-plan", "suicide", "C-SSRS", "means-restriction", "Stanley-Brown", "crisis"]
+  }
+]

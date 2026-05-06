@@ -655,10 +655,11 @@ export function SOAPSection({
         </div>
 
         {/* Barometer panel — Objective section only */}
-        {section === 'objective' && currentSection.barometers && (
-          <ObjectiveBarometerPanel barometers={currentSection.barometers} />
-        )}
       </div>
+
+      {section === 'objective' && currentSection.barometers && (
+        <ObjectiveBarometerPanel barometers={currentSection.barometers} />
+      )}
     </div>
   );
 }

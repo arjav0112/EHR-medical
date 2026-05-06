@@ -3,6 +3,10 @@ import { z } from 'zod';
 import type { GraphState } from '../graph';
 import type { RiskFlag } from '../types/index';
 import type { RunnableConfig } from '@langchain/core/runnables';
+import {
+  riskProtocolTool,
+  rxnormLookupTool,
+} from '../tools';
 
 const RiskOutputSchema = z.object({
   flags: z.array(
@@ -109,6 +113,47 @@ FLAGS & SEVERITY RULES
 
 Return structured JSON only.`;
 
+// ─── Tool context pre-gatherer ───────────────────────────────────────────────
+
+async function gatherRiskToolContext(
+  currentMedications: string[],
+  transcript: string,
+): Promise<string> {
+  const parts: string[] = [];
+
+  try {
+    // 1. Always load C-SSRS protocol — required for every risk assessment
+    const cssrs = await riskProtocolTool.invoke({ flag_type: 'suicidal_ideation' });
+    const c = JSON.parse(cssrs);
+    parts.push(
+      `C-SSRS PROTOCOL:\n` +
+      `Severity levels: ${JSON.stringify(c.severity_levels)}\n` +
+      `Required documentation: ${(c.required_documentation as string[]).join('; ')}`
+    );
+  } catch { /* non-critical */ }
+
+  try {
+    // 2. Check medication risk levels for noncompliance assessment
+    if (currentMedications.length > 0) {
+      const medResults: string[] = [];
+      for (const med of currentMedications.slice(0, 3)) {
+        const rx = await rxnormLookupTool.invoke({ medication_name: med });
+        const r = JSON.parse(rx);
+        if (!r.error) {
+          medResults.push(`${med}: class=${r.drug_class ?? r.class ?? 'unknown'}`);
+        }
+      }
+      if (medResults.length) {
+        parts.push(`MEDICATION CLASSES (for noncompliance severity):\n${medResults.join('\n')}`);
+      }
+    }
+  } catch { /* non-critical */ }
+
+  return parts.length
+    ? `\n\n--- RISK TOOL CONTEXT ---\n${parts.join('\n\n')}`
+    : '';
+}
+
 export async function riskNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const model = new ChatGoogleGenerativeAI({
@@ -116,6 +161,12 @@ export async function riskNode(state: GraphState, config: RunnableConfig): Promi
       temperature: 0,
       maxRetries: 6,
     }).withStructuredOutput(RiskOutputSchema);
+
+    // Pre-gather C-SSRS protocol + medication class context
+    const toolContext = await gatherRiskToolContext(
+      state.input.patient.currentMedications,
+      state.input.session.transcript,
+    );
 
     const result = await model.invoke([
       { role: 'system', content: SYSTEM_PROMPT },
@@ -125,6 +176,7 @@ export async function riskNode(state: GraphState, config: RunnableConfig): Promi
 Known diagnoses: ${state.input.patient.knownDiagnoses.join(', ') || 'None on record'}
 Current medications: ${state.input.patient.currentMedications.join(', ') || 'None'}
 Session type: ${state.input.session.sessionType} | Session #${state.input.session.sessionNumber}
+${toolContext}
 
 SOAP OBJECTIVE / MSE (for behavioral observations):
 ${state.soapNote?.objective?.content ?? 'Not yet available'}
