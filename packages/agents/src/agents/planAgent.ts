@@ -2,6 +2,11 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { z } from 'zod';
 import type { GraphState } from '../graph';
 import type { RunnableConfig } from '@langchain/core/runnables';
+import {
+  guidelinesRAGTool,
+  priorNotesSearchTool,
+  rxnormLookupTool,
+} from '../tools';
 
 const TreatmentPlanOutputSchema = z.object({
   currentGoalsProgress: z.array(
@@ -107,6 +112,70 @@ BLOCKED PLAN (when immediate risk exists):
 
 Return structured JSON only.`;
 
+// ─── Tool context pre-gatherer ───────────────────────────────────────────────
+
+async function gatherPlanToolContext(
+  patientId: string,
+  primaryDiagnosis: string,
+  currentMedications: string[],
+): Promise<string> {
+  const parts: string[] = [];
+
+  try {
+    // 1. Evidence-based treatment guidelines for primary diagnosis
+    const guidelines = await guidelinesRAGTool.invoke({
+      query: `first-line treatment ${primaryDiagnosis || 'major depressive disorder'}`,
+      top_k: 4,
+    });
+    const g = JSON.parse(guidelines);
+    if (g.chunks?.length) {
+      parts.push(
+        `EVIDENCE-BASED TREATMENT GUIDELINES:\n${g.chunks
+          .map((c: { source: string; text: string }) => `[${c.source}]: ${c.text}`)
+          .join('\n')}`,
+      );
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 2. Prior goals and treatment progress from vector store
+    const prior = await priorNotesSearchTool.invoke({
+      patient_id: patientId,
+      query: 'treatment goals homework outcomes progress stalled interventions',
+      top_k: 3,
+    });
+    const p = JSON.parse(prior);
+    if (p.passages?.length) {
+      parts.push(
+        `PRIOR TREATMENT HISTORY:\n${p.passages
+          .map((x: { session_number: number; text: string }) => `Session ${x.session_number}: ${x.text}`)
+          .join('\n---\n')}`,
+      );
+    }
+  } catch { /* non-critical */ }
+
+  try {
+    // 3. Medication class info for pharmacotherapy decisions
+    if (currentMedications.length > 0) {
+      const medInfos: string[] = [];
+      for (const med of currentMedications.slice(0, 3)) {
+        const rx = await rxnormLookupTool.invoke({ medication_name: med });
+        const r = JSON.parse(rx);
+        if (!r.error) {
+          medInfos.push(`${med}: ${r.drug_class ?? r.class ?? 'unknown class'} — ${r.clinical_notes?.slice(0, 150) ?? ''}`);
+        }
+      }
+      if (medInfos.length) {
+        parts.push(`CURRENT MEDICATION PROFILES:\n${medInfos.join('\n')}`);
+      }
+    }
+  } catch { /* non-critical */ }
+
+  return parts.length
+    ? `\n\n--- PLAN TOOL CONTEXT ---\n${parts.join('\n\n')}`
+    : '';
+}
+
 export async function planNode(state: GraphState, config: RunnableConfig): Promise<Partial<GraphState>> {
   try {
     const hasImmediateRisk = state.riskFlags.some((f) => f.requiresImmediateAction);
@@ -135,6 +204,15 @@ export async function planNode(state: GraphState, config: RunnableConfig): Promi
       temperature: 0.3,
       maxRetries: 6,
     }).withStructuredOutput(TreatmentPlanOutputSchema);
+
+    // Pre-gather treatment guidelines + prior goals + medication context
+    const primaryDiagnosis =
+      state.diagnosisSuggestions[0]?.label ?? state.input.patient.knownDiagnoses[0] ?? '';
+    const toolContext = await gatherPlanToolContext(
+      state.input.patient.id,
+      primaryDiagnosis,
+      state.input.patient.currentMedications,
+    );
 
     const priorGoals =
       state.input.priorNotes.length > 0
@@ -165,6 +243,7 @@ ${state.soapNote.subjective?.content ?? 'Not available'}
 
 RISK FLAGS:
 ${riskSummary}
+${toolContext}
 
 PRIOR SESSION NOTES (for goal progress tracking):
 ${priorGoals}

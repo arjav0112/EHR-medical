@@ -17,6 +17,16 @@ const PLAN_AMOUNTS: Record<string, number> = {
   clinic_annual: 5998800,
 };
 
+function getTestPaymentAmountPaise(): number | null {
+  const rawValue = process.env.TEST_PAYMENT_AMOUNT_INR;
+  if (!rawValue) return null;
+
+  const amountInr = Number(rawValue);
+  if (!Number.isFinite(amountInr) || amountInr <= 0) return null;
+
+  return Math.round(amountInr * 100);
+}
+
 export async function POST(req: NextRequest) {
   const start = Date.now();
 
@@ -34,20 +44,29 @@ export async function POST(req: NextRequest) {
     }
 
     const key = `${planId}_${billingCycle}`;
-    const amount = PLAN_AMOUNTS[key];
+    const baseAmount = PLAN_AMOUNTS[key];
+    const testAmount = getTestPaymentAmountPaise();
+    const amount = testAmount ?? baseAmount;
 
-    if (!amount) {
+    if (!baseAmount) {
       logger.warn('create-order: invalid plan key', { key, uid });
       return NextResponse.json({ error: `Invalid plan: ${key}` }, { status: 400 });
     }
 
-    logger.info('create-order: creating Razorpay order', { planId, billingCycle, amount, uid });
+    logger.info('create-order: creating Razorpay order', {
+      planId,
+      billingCycle,
+      amount,
+      baseAmount,
+      testMode: !!testAmount,
+      uid,
+    });
 
     const order = await razorpay.orders.create({
       amount,
       currency: 'INR',
       receipt: `rcpt_${uid.slice(0, 8)}_${Date.now()}`,
-      notes: { planId, billingCycle, uid },
+      notes: { planId, billingCycle, uid, testMode: testAmount ? 'true' : 'false' },
     });
 
     logger.info('create-order: order created', {

@@ -18,6 +18,19 @@ declare global {
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type BillingCycle = 'monthly' | 'annual';
 
+type Plan = {
+  id: string;
+  name: string;
+  tagline: string;
+  price: Record<BillingCycle, number>;
+  cta: string;
+  ctaHref: string | null;
+  paid: boolean;
+  highlight: boolean;
+  badge: string | null;
+  features: Array<{ label: string; included: boolean }>;
+};
+
 // ─── Pricing data (INR) ────────────────────────────────────────────────────────
 const plans = [
   {
@@ -186,6 +199,310 @@ function CellValue({ value }: { value: boolean | string }) {
   return <span className="text-[13px] font-medium text-gray-700">{value}</span>;
 }
 
+function formatInr(amount: number) {
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+function parseTestPaymentAmount(rawValue?: string): number | null {
+  if (!rawValue) return null;
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getEffectivePlanAmount(plan: Plan, billing: BillingCycle, testPaymentAmount: number | null) {
+  if (plan.paid && testPaymentAmount !== null) return testPaymentAmount;
+  return plan.price[billing];
+}
+
+function buildUpiUri({
+  upiId,
+  payeeName,
+  amount,
+  note,
+}: {
+  upiId: string;
+  payeeName: string;
+  amount: number;
+  note: string;
+}) {
+  const params = new URLSearchParams({
+    pa: upiId,
+    pn: payeeName,
+    am: amount.toFixed(2),
+    cu: 'INR',
+    tn: note,
+  });
+
+  return `upi://pay?${params.toString()}`;
+}
+
+function UpiPaymentModal({
+  plan,
+  billing,
+  open,
+  upiId,
+  payeeName,
+  supportEmail,
+  testPaymentAmount,
+  processing,
+  onClose,
+  onContinueWithRazorpay,
+  showToast,
+}: {
+  plan: Plan | null;
+  billing: BillingCycle;
+  open: boolean;
+  upiId: string;
+  payeeName: string;
+  supportEmail: string;
+  testPaymentAmount: number | null;
+  processing: boolean;
+  onClose: () => void;
+  onContinueWithRazorpay: () => void;
+  showToast: (type: 'success' | 'error', msg: string) => void;
+}) {
+  const [copiedField, setCopiedField] = useState<'upi' | 'note' | null>(null);
+  const [canLaunchUpiApp, setCanLaunchUpiApp] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const ua = navigator.userAgent.toLowerCase();
+    setCanLaunchUpiApp(/android|iphone|ipad|ipod/.test(ua));
+  }, [open]);
+
+  useEffect(() => {
+    if (!copiedField) return;
+
+    const timer = window.setTimeout(() => setCopiedField(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copiedField]);
+
+  if (!open || !plan) return null;
+
+  const amount = getEffectivePlanAmount(plan, billing, testPaymentAmount);
+  const planLabel = `${plan.name} ${billing === 'annual' ? 'Annual' : 'Monthly'}`;
+  const paymentNote = `EHR Copilot ${planLabel}`;
+  const upiReady = upiId.trim().length > 0;
+  const isTestMode = plan.paid && testPaymentAmount !== null;
+  const upiUri = upiReady
+    ? buildUpiUri({
+        upiId,
+        payeeName,
+        amount,
+        note: paymentNote,
+      })
+    : '';
+  const qrSrc = upiReady
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(upiUri)}`
+    : '';
+  const supportHref = `mailto:${supportEmail}?subject=${encodeURIComponent(
+    `${planLabel} UPI payment confirmation`,
+  )}&body=${encodeURIComponent(
+    `Hi EHR Copilot team,%0D%0A%0D%0AI completed the UPI payment for ${planLabel} (${formatInr(amount)}).%0D%0APlease activate it for my account.%0D%0A%0D%0AUPI reference / UTR:%0D%0ARegistered email:%0D%0A`,
+  )}`;
+
+  const copyText = async (value: string, field: 'upi' | 'note') => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+    } catch {
+      showToast('error', 'Copy failed. Please copy it manually.');
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-[1080px] overflow-hidden rounded-[30px] border border-emerald-500/20 bg-[#080b0a] text-white shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-white/20 hover:text-white"
+          aria-label="Close payment modal"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div className="grid gap-6 p-5 md:grid-cols-[1.1fr_0.9fr] md:p-7 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[26px] border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5 md:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-300">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8V6a4 4 0 10-8 0v2m-2 0h12l1 12H5L6 8z" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300/80">Scan to Pay</p>
+                <h2 className="text-[28px] font-bold tracking-[-0.03em] text-white">UPI checkout for {plan.name}</h2>
+              </div>
+            </div>
+
+            <p className="max-w-[560px] text-[14px] leading-6 text-gray-300">
+              Scan this QR code with Google Pay, PhonePe, Paytm, or any UPI app. The selected
+              plan amount and payment note are prefilled for you.
+            </p>
+
+            <div className="mt-7 grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+              <div className="mx-auto flex w-full max-w-[240px] items-center justify-center rounded-[30px] bg-white p-5 shadow-[0_18px_55px_rgba(255,255,255,0.08)]">
+                {upiReady ? (
+                  <img
+                    src={qrSrc}
+                    alt={`UPI QR for ${planLabel}`}
+                    className="h-[200px] w-[200px] rounded-2xl"
+                  />
+                ) : (
+                  <div className="flex h-[200px] w-[200px] items-center justify-center rounded-2xl bg-gray-100 px-4 text-center text-[13px] font-semibold text-gray-500">
+                    Add `NEXT_PUBLIC_UPI_ID` to show your QR code here
+                  </div>
+                )}
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 md:p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">UPI ID</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <p className="break-all text-[24px] font-bold tracking-[-0.02em] text-white">{upiReady ? upiId : 'Not configured'}</p>
+                    <span className="rounded-full border border-emerald-500/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300">
+                      Direct transfer
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[13px] text-gray-400">{payeeName}</p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    onClick={() => copyText(upiId, 'upi')}
+                    disabled={!upiReady}
+                    className="min-h-[56px] rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-[13px] font-semibold text-white transition-colors hover:border-white/20 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {copiedField === 'upi' ? 'UPI ID copied' : 'Copy UPI ID'}
+                  </button>
+                  <button
+                    onClick={() => copyText(paymentNote, 'note')}
+                    className="min-h-[56px] rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-[13px] font-semibold text-white transition-colors hover:border-white/20 hover:bg-white/[0.07]"
+                  >
+                    {copiedField === 'note' ? 'Note copied' : 'Copy payment note'}
+                  </button>
+                </div>
+
+                {upiReady && canLaunchUpiApp && (
+                  <a
+                    href={upiUri}
+                    className="inline-flex items-center gap-2 self-start text-[13px] font-semibold text-emerald-300 transition-colors hover:text-emerald-200"
+                  >
+                    Open in UPI app
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7h4m0 0v4m0-4L9 15" />
+                    </svg>
+                  </a>
+                )}
+
+                {upiReady && !canLaunchUpiApp && (
+                  <p className="max-w-[360px] text-[12px] leading-5 text-gray-400">
+                    Open-in-app works on a phone with a UPI app installed. On desktop, just scan the QR
+                    from your mobile.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 rounded-[26px] border border-emerald-500/15 bg-[linear-gradient(180deg,rgba(17,24,39,0.96),rgba(11,16,14,0.98))] p-5 md:p-6">
+            <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-500/[0.06] p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">Selected plan</p>
+              <div className="mt-3 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[26px] font-bold tracking-[-0.03em] text-white">{plan.name}</p>
+                  <p className="mt-1 text-[13px] text-gray-400">{billing === 'annual' ? 'Annual billing' : 'Monthly billing'}</p>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {isTestMode && (
+                    <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-200">
+                      Test mode
+                    </span>
+                  )}
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-gray-300">
+                    {billing}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-[20px] border border-emerald-400/25 bg-[#071110] px-5 py-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">Amount</p>
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-[42px] font-bold tracking-[-0.04em] text-white">{formatInr(amount)}</span>
+                  <span className="pb-1 text-[13px] font-medium text-gray-400">{billing === 'annual' ? 'per year' : 'per month'}</span>
+                </div>
+                {isTestMode && (
+                  <p className="mt-2 text-[12px] font-medium text-amber-200">
+                    Test override enabled for payment verification
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">Payment note</p>
+              <p className="mt-2 text-[16px] font-semibold text-white">{paymentNote}</p>
+              <p className="mt-3 text-[13px] leading-6 text-gray-400">
+                Direct UPI transfer is simple, but it does not auto-activate the plan by itself. For
+                instant verification and automatic upgrade, use the Razorpay checkout below.
+              </p>
+            </div>
+
+            <button
+              onClick={onContinueWithRazorpay}
+              disabled={processing}
+              className="mt-auto flex min-h-[58px] items-center justify-center gap-2 rounded-[22px] bg-white px-5 py-4 text-[16px] font-bold text-gray-900 transition-transform duration-200 hover:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {processing ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Opening Razorpay…
+                </>
+              ) : (
+                <>
+                  Use Razorpay for instant activation
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7h4m0 0v4m0-4L9 15" />
+                  </svg>
+                </>
+              )}
+            </button>
+
+            <a
+              href={supportHref}
+              className="text-center text-[13px] font-medium text-gray-400 transition-colors hover:text-white"
+            >
+              Paid by UPI already? Email UTR to activate manually
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Footer ────────────────────────────────────────────────────────────────────
 function Footer() {
   const cols = [
@@ -321,11 +638,17 @@ function PaymentBadges() {
 export default function PricingPage() {
   const [billing,       setBilling]       = useState<BillingCycle>('annual');
   const [showAuth,      setShowAuth]      = useState(false);
+  const [upiModalPlanId,setUpiModalPlanId]= useState<string | null>(null);
   const [payingPlanId,  setPayingPlanId]  = useState<string | null>(null);
   const [toast,         setToast]         = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   const { user } = useAuth();
   const router   = useRouter();
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID?.trim() ?? '';
+  const upiPayeeName = process.env.NEXT_PUBLIC_UPI_PAYEE_NAME?.trim() ?? 'EHR Copilot';
+  const upiSupportEmail = process.env.NEXT_PUBLIC_UPI_SUPPORT_EMAIL?.trim() ?? 'support@ehrcopilot.ai';
+  const testPaymentAmount = parseTestPaymentAmount(process.env.NEXT_PUBLIC_TEST_PAYMENT_AMOUNT_INR);
+  const isTestPaymentMode = testPaymentAmount !== null;
   const maxAnnualSavings = Math.max(
     ...plans
       .filter((plan) => plan.price.monthly > 0)
@@ -347,20 +670,29 @@ export default function PricingPage() {
     setTimeout(() => setToast(null), 5000);
   };
 
-  const handlePay = useCallback(async (planId: string) => {
-    // If not logged in, show auth modal first
+  const handleOpenUpiModal = useCallback((planId: string) => {
     if (!user) {
       setShowAuth(true);
       return;
     }
 
+    setUpiModalPlanId(planId);
+  }, [user]);
+
+  const handleRazorpayPay = useCallback(async (planId: string) => {
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+
+    const currentUser = user;
     setPayingPlanId(planId);
     try {
       // 1. Create Razorpay order on server
       const res  = await fetch('/api/payment/create-order', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ planId, billingCycle: billing, uid: user.uid }),
+        body:    JSON.stringify({ planId, billingCycle: billing, uid: currentUser.uid }),
       });
       const data = await res.json() as {
         orderId: string; amount: number; currency: string; key: string; error?: string;
@@ -378,8 +710,8 @@ export default function PricingPage() {
         description: `${plans.find((plan) => plan.id === planId)?.name ?? planId} Plan - ${billing}`,
         image:       '/ehr-icon.png',
         prefill: {
-          name:  user.displayName  ?? '',
-          email: user.email        ?? '',
+          name:  currentUser.displayName  ?? '',
+          email: currentUser.email        ?? '',
         },
         theme:   { color: '#16a34a' },
         modal:   { ondismiss: () => setPayingPlanId(null) },
@@ -395,7 +727,7 @@ export default function PricingPage() {
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({
               ...response,
-              uid:          user.uid,
+              uid:          currentUser.uid,
               planId,
               billingCycle: billing,
             }),
@@ -405,6 +737,7 @@ export default function PricingPage() {
           if (!vRes.ok || !vData.success) throw new Error(vData.error ?? 'Verification failed');
 
           showToast('success', `🎉 Welcome to ${planId.charAt(0).toUpperCase() + planId.slice(1)}! Redirecting to dashboard…`);
+          setUpiModalPlanId(null);
           setTimeout(() => router.push('/dashboard'), 2200);
         },
       });
@@ -415,6 +748,8 @@ export default function PricingPage() {
       setPayingPlanId(null);
     }
   }, [user, billing, router]);
+
+  const activeUpiPlan = plans.find((plan) => plan.id === upiModalPlanId) ?? null;
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
@@ -432,6 +767,26 @@ export default function PricingPage() {
           {toast.msg}
         </div>
       )}
+
+      <UpiPaymentModal
+        plan={activeUpiPlan}
+        billing={billing}
+        open={!!activeUpiPlan}
+        upiId={upiId}
+        payeeName={upiPayeeName}
+        supportEmail={upiSupportEmail}
+        testPaymentAmount={testPaymentAmount}
+        processing={payingPlanId === activeUpiPlan?.id}
+        onClose={() => {
+          if (!payingPlanId) setUpiModalPlanId(null);
+        }}
+        onContinueWithRazorpay={() => {
+          if (activeUpiPlan) {
+            void handleRazorpayPay(activeUpiPlan.id);
+          }
+        }}
+        showToast={showToast}
+      />
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-8 px-8 overflow-hidden bg-white">
@@ -469,8 +824,13 @@ export default function PricingPage() {
               </button>
             ))}
           </div>
-          {billing === 'annual' && (
+          {billing === 'annual' && !isTestPaymentMode && (
             <p className="text-[12px] text-green-600 font-semibold mb-0">Save up to {maxAnnualSavings}% with annual billing</p>
+          )}
+          {isTestPaymentMode && (
+            <p className="text-[12px] font-semibold text-amber-600 mb-0">
+              Test payment mode is enabled: paid plans currently charge ₹{testPaymentAmount}
+            </p>
           )}
         </div>
       </section>
@@ -481,6 +841,13 @@ export default function PricingPage() {
           <p className="mb-3 px-1 text-[12px] font-medium text-gray-400 md:hidden">Swipe to compare plans</p>
           <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
           {plans.map((plan) => (
+            (() => {
+              const displayMonthly = getEffectivePlanAmount(plan, 'monthly', testPaymentAmount);
+              const displayAnnual = getEffectivePlanAmount(plan, 'annual', testPaymentAmount);
+              const displayCurrent = billing === 'annual' ? displayAnnual : displayMonthly;
+              const isTestMode = plan.paid && testPaymentAmount !== null;
+
+              return (
             <div
               key={plan.id}
               className={`relative min-w-[86%] snap-center overflow-hidden rounded-3xl border transition-all duration-200 md:min-w-0 ${plan.highlight
@@ -506,15 +873,22 @@ export default function PricingPage() {
                       <span className={`text-[13px] ml-1.5 ${plan.highlight ? 'text-gray-500' : 'text-gray-400'}`}>/mo</span>
                     </div>
                   ) : (
-                    <div className="flex items-baseline gap-0.5">
+                    <div>
+                      <div className="flex items-baseline gap-0.5">
                       <span className={`text-[22px] font-semibold ${plan.highlight ? 'text-gray-300' : 'text-gray-500'}`}>₹</span>
                       <span className={`text-[48px] font-bold leading-none tracking-[-0.03em] ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
-                        {billing === 'annual' ? plan.price.annual.toLocaleString('en-IN') : plan.price.monthly.toLocaleString('en-IN')}
+                        {displayCurrent.toLocaleString('en-IN')}
                       </span>
                       <span className={`text-[13px] ml-0.5 ${plan.highlight ? 'text-gray-400' : 'text-gray-400'}`}>/mo</span>
+                      </div>
+                      {isTestMode && (
+                        <p className={`mt-1 text-[12px] font-semibold ${plan.highlight ? 'text-amber-300' : 'text-amber-600'}`}>
+                          Test payment amount
+                        </p>
+                      )}
                     </div>
                   )}
-                  {billing === 'annual' && plan.price.monthly > 0 && (
+                  {billing === 'annual' && plan.price.monthly > 0 && !isTestMode && (
                     <p className={`text-[12px] mt-1 ${plan.highlight ? 'text-gray-400' : 'text-gray-400'}`}>
                       Billed ₹{(plan.price.annual * 12).toLocaleString('en-IN')}/yr — save ₹{((plan.price.monthly - plan.price.annual) * 12).toLocaleString('en-IN')}
                     </p>
@@ -525,7 +899,7 @@ export default function PricingPage() {
                 {plan.paid ? (
                   <button
                     id={`pay-${plan.id}`}
-                    onClick={() => handlePay(plan.id)}
+                    onClick={() => handleOpenUpiModal(plan.id)}
                     disabled={payingPlanId === plan.id}
                     className={`block w-full text-center py-3 rounded-full text-[14px] font-semibold transition-all duration-200 cursor-pointer mb-7 disabled:opacity-60 disabled:cursor-not-allowed ${plan.highlight
                         ? 'bg-green-500 text-white hover:bg-green-400'
@@ -567,6 +941,8 @@ export default function PricingPage() {
                 </ul>
               </div>
             </div>
+              );
+            })()
           ))}
           </div>
         </div>
@@ -638,9 +1014,9 @@ export default function PricingPage() {
                 <div key={name} className={`p-5 text-center border-l border-gray-100 ${i === 1 ? 'bg-gray-900' : ''}`}>
                   <p className={`text-[14px] font-bold ${i === 1 ? 'text-white' : 'text-gray-900'}`}>{name}</p>
                   <p className={`text-[12px] mt-0.5 ${i === 1 ? 'text-gray-400' : 'text-gray-400'}`}>
-                    {i === 0 ? 'Free' : i === 1
-                      ? `₹${billing === 'annual' ? '1,800' : '2,999'}/mo`
-                      : `₹${billing === 'annual' ? '4,999' : '7,499'}/mo`}
+                    {i === 0
+                      ? 'Free'
+                      : `₹${getEffectivePlanAmount(plans[i], billing, testPaymentAmount).toLocaleString('en-IN')}/mo`}
                   </p>
                 </div>
               ))}

@@ -37,3 +37,41 @@ export type {
 } from './types/index';
 
 export { SessionInputSchema } from './types/index';
+
+// ─── RAG / Tools ──────────────────────────────────────────────────────────────
+export {
+  ALL_TOOLS,
+  LOCAL_TOOLS,
+  NETWORK_TOOLS,
+  TOOL_NAMES,
+  dsm5LookupTool,
+  icd10SearchTool,
+  riskProtocolTool,
+  transcriptCitationTool,
+  confidenceScorerTool,
+  pubmedSearchTool,
+  rxnormLookupTool,
+  drugInteractionTool,
+  guidelinesRAGTool,
+  priorNotesSearchTool,
+  indexPriorNotes,
+} from './tools/index';
+
+// ─── Embeddings / VectorStore ─────────────────────────────────────────────────
+export { getEmbeddings } from './embeddings';
+export { getVectorStore, getRetriever, COLLECTIONS } from './vectorstore';
+export type { CollectionName } from './vectorstore';
+
+// ─── LLM Factory ─────────────────────────────────────────────────────────────
+export { getLLM, getStreamingLLM } from './llm';
+
+// ─── Data Loaders ─────────────────────────────────────────────────────────────
+export {
+  loadDSM5Criteria,
+  loadICD10Index,
+  loadDrugLabels,
+  loadTherapyProtocols,
+  loadRiskScales,
+  getICD10Label,
+  getMedicationInfo,
+} from './data/index';

@@ -303,8 +303,8 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   if (activeSection === 'risk_flags') {
     const flags = reviewPackage.riskFlags ?? [];
     return (
-      <main className="grid flex-1 grid-rows-[1fr_auto] gap-3 overflow-hidden px-4 py-6 pb-4 sm:px-6 sm:py-8 lg:px-10">
-        <div className="overflow-y-auto">
+      <main className="grid flex-1 grid-rows-[1fr_auto] gap-4 overflow-hidden px-4 py-6 pb-6 sm:px-6 sm:py-8 lg:px-10">
+        <div className="min-h-0 overflow-y-auto pb-20 sm:pb-24 lg:pb-8">
           <RiskFlagsSection
             flags={flags}
             onFlagAction={(_flagId, _action) => { }}
@@ -338,8 +338,8 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="grid flex-1 grid-rows-[1fr_auto] gap-3 overflow-hidden px-4 py-6 pb-4 sm:px-6 sm:py-8 lg:px-10">
-      <div className="overflow-y-auto">
+    <main className="grid flex-1 grid-rows-[1fr_auto] gap-4 overflow-hidden px-4 py-6 pb-6 sm:px-6 sm:py-8 lg:px-10">
+      <div className="min-h-0 overflow-y-auto pb-20 sm:pb-24 lg:pb-8">
         <SOAPSection
           key={soapKey}
           section={soapKey}

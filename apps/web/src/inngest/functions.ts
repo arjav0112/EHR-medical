@@ -1,5 +1,6 @@
 import { inngest } from '@/lib/inngest';
 import { ehrGraph } from 'agents';
+import { indexPriorNotes } from 'agents';
 import type { SessionInput, GraphState, ReviewPackage } from 'agents';
 import { setSessionStatus, setReviewPackage, setSessionInput } from '@/lib/redis';
 import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
@@ -58,6 +59,14 @@ export const processSessionFunction = inngest.createFunction(
     const tracer = new LangChainTracer({
       projectName: process.env.LANGCHAIN_PROJECT || 'ehr-copilot',
     });
+
+    // Index prior notes into ChromaDB BEFORE graph runs so RAG tools can retrieve them.
+    // Non-blocking: if ChromaDB is unavailable, the graph still runs without RAG context.
+    if (input.priorNotes?.length && input.patient?.id) {
+      indexPriorNotes(input.patient.id, input.priorNotes).catch((e: unknown) => {
+        console.warn('[Inngest] indexPriorNotes failed (non-fatal):', e);
+      });
+    }
 
     const stream = await ehrGraph.stream(
       { input }, 

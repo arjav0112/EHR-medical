@@ -1,0 +1,92 @@
+[
+  {
+    "id": "dep-001",
+    "source": "WHO mhGAP Intervention Guide 2.0 — Depression",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Major Depressive Disorder",
+    "icd10": "F32-F33",
+    "content": "For moderate-to-severe depression, combine antidepressant pharmacotherapy with structured psychological treatment. First-line pharmacotherapy: SSRIs (fluoxetine 20–60 mg, sertraline 50–200 mg, escitalopram 10–20 mg). Ensure adequate trial: 4–6 weeks at therapeutic dose before switching. Psychological treatment: CBT, interpersonal therapy (IPT), or behavioural activation — minimum 12 sessions. Assess and document suicidal ideation at every visit using a validated scale (PHQ-9, C-SSRS). Safety planning is mandatory when PHQ-9 item 9 ≥ 1 or any ideation disclosed.",
+    "tags": ["depression", "SSRI", "CBT", "safety-planning", "first-line"]
+  },
+  {
+    "id": "dep-002",
+    "source": "APA Practice Guideline for MDD (3rd Edition)",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Major Depressive Disorder",
+    "icd10": "F32-F33",
+    "content": "Treatment-resistant depression (TRD) is defined as failure to achieve remission after two adequate antidepressant trials of different classes. Augmentation strategies: lithium (serum level 0.6–1.0 mEq/L), atypical antipsychotics (aripiprazole 2–15 mg, quetiapine 50–300 mg, brexpiprazole 1–3 mg), thyroid hormone (T3, 25–50 mcg). For TRD with acute suicidality or psychosis: esketamine (Spravato) 56–84 mg intranasal, supervised in certified healthcare setting. ECT indicated for severe, life-threatening TRD, or when rapid response is needed.",
+    "tags": ["TRD", "augmentation", "lithium", "esketamine", "ECT", "depression"]
+  },
+  {
+    "id": "dep-003",
+    "source": "APA Guidelines — Peripartum Depression",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Peripartum Depression",
+    "icd10": "F32.89",
+    "content": "Screen all perinatal patients at first prenatal visit, second or third trimester visit, and 4–6 weeks postpartum using Edinburgh Postnatal Depression Scale (EPDS). Score ≥10 warrants further assessment; ≥13 indicates probable depression. SSRI use in pregnancy: benefits generally outweigh risks for moderate-to-severe depression. Sertraline and escitalopram have most safety data in pregnancy. Brexanolone (Zulresso) IV is FDA-approved specifically for postpartum depression — 60-hour infusion in certified setting. Breastfeeding compatible SSRIs: sertraline, paroxetine (lowest milk levels).",
+    "tags": ["peripartum", "postpartum", "EPDS", "brexanolone", "pregnancy"]
+  },
+  {
+    "id": "anx-001",
+    "source": "APA Practice Guideline — Anxiety Disorders",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Generalized Anxiety Disorder",
+    "icd10": "F41.1",
+    "content": "GAD first-line treatment: SSRIs (sertraline, escitalopram, paroxetine) or SNRIs (venlafaxine XR 75–225 mg, duloxetine 60–120 mg). Buspirone 15–60 mg/day is an effective non-habit-forming option for chronic GAD, particularly in elderly patients. Benzodiazepines: reserve for acute anxiety exacerbations, short-term only (2–4 weeks). Avoid long-term benzodiazepine use — associated with dependence, cognitive impairment, and increased fall risk in elderly. Psychological treatment: CBT is gold standard (12–16 sessions). Relaxation training and mindfulness-based stress reduction (MBSR) are evidence-based adjuncts.",
+    "tags": ["GAD", "anxiety", "SSRI", "SNRI", "buspirone", "CBT", "benzodiazepine"]
+  },
+  {
+    "id": "anx-002",
+    "source": "APA Guidelines — Panic Disorder",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Panic Disorder",
+    "icd10": "F41.0",
+    "content": "Panic Disorder first-line: SSRIs (paroxetine, sertraline, fluoxetine) or venlafaxine XR. Start low and titrate slowly — patients with panic are sensitive to initial activating side effects. CBT with interoceptive exposure and panic control treatment (PCT): highly effective, 12 sessions. Avoid alprazolam for long-term management due to high dependence potential. Clonazepam 0.5–2 mg BID may bridge acute phase if CBT not immediately available. Agoraphobia: requires graduated exposure therapy — do not allow avoidance to consolidate.",
+    "tags": ["panic", "SSRI", "CBT", "interoceptive-exposure", "agoraphobia"]
+  },
+  {
+    "id": "ptsd-001",
+    "source": "VA/DoD Clinical Practice Guideline — PTSD 2023",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Post-Traumatic Stress Disorder",
+    "icd10": "F43.10",
+    "content": "First-line psychotherapy for PTSD: Prolonged Exposure (PE), Cognitive Processing Therapy (CPT), and EMDR — all strongly recommended. Individual trauma-focused CBT preferred over group therapy. First-line pharmacotherapy: sertraline 50–200 mg or paroxetine 20–60 mg (FDA-approved). Prazosin 1–15 mg at bedtime for trauma-related nightmares. Avoid benzodiazepines — associated with worse PTSD outcomes and impair extinction learning during trauma-focused therapy. Assess for comorbid MDD, substance use, and TBI. Dissociative subtype (present in ~15–30%): may need modified PE protocol with stabilization phase first.",
+    "tags": ["PTSD", "PE", "CPT", "EMDR", "sertraline", "prazosin", "trauma"]
+  },
+  {
+    "id": "bpd-001",
+    "source": "NICE Guideline NG62 — Borderline Personality Disorder",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Borderline Personality Disorder",
+    "icd10": "F60.3",
+    "content": "BPD first-line treatment: structured psychological therapy — DBT (Dialectical Behaviour Therapy) is the most evidence-based intervention. DBT consists of individual therapy + skills group (mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness). MBT (Mentalization-Based Treatment) and Schema Therapy are second-line evidence-based options. Pharmacotherapy: no medication is FDA-approved for BPD as primary treatment. Target symptom clusters: mood lability (mood stabilizers — lamotrigine, valproate), impulsivity/aggression (low-dose atypicals), transient psychosis (low-dose antipsychotics). Avoid polypharmacy. Crisis plan must be documented — includes self-harm safety protocols and hospital contact numbers.",
+    "tags": ["BPD", "DBT", "MBT", "lamotrigine", "personality-disorder", "crisis-plan"]
+  },
+  {
+    "id": "bip-001",
+    "source": "APA Practice Guideline — Bipolar Disorder",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Bipolar I Disorder",
+    "icd10": "F31.1",
+    "content": "Acute mania treatment: lithium (serum level 0.8–1.2 mEq/L), valproate (serum level 50–125 mcg/mL), or atypical antipsychotics (olanzapine, risperidone, aripiprazole, quetiapine). Antidepressant monotherapy is contraindicated in Bipolar I — risk of precipitating manic switch. Maintenance: lithium remains gold standard for relapse prevention (also reduces suicide risk). Lamotrigine 200–400 mg/day effective for bipolar depression prevention; slow titration mandatory (25 mg/week) to reduce Stevens-Johnson syndrome risk. Quetiapine and lurasidone are FDA-approved for bipolar depression. Monitor: lithium levels, renal function, TFTs every 6 months. Thyroid and renal toxicity risk with long-term use.",
+    "tags": ["bipolar", "mania", "lithium", "valproate", "lamotrigine", "lurasidone"]
+  },
+  {
+    "id": "schiz-001",
+    "source": "APA Practice Guideline — Schizophrenia 2021",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Schizophrenia",
+    "icd10": "F20.9",
+    "content": "First-episode psychosis (FEP): use the lowest effective dose of an SGA (second-generation antipsychotic). Recommended agents: aripiprazole, risperidone, olanzapine, quetiapine. FEP typically requires lower doses. Clozapine: reserved for treatment-resistant schizophrenia (failure of ≥2 antipsychotics). Requires ANC monitoring (neutrophil count): baseline, weekly × 6 months, biweekly × 6 months, then monthly. Long-acting injectables (LAI): consider for adherence issues — paliperidone palmitate, aripiprazole lauroxil, risperidone microspheres. Target: positive symptoms, negative symptoms, social functioning. Coordinated Specialty Care (CSC) for FEP: evidence-based multimodal team approach.",
+    "tags": ["schizophrenia", "psychosis", "clozapine", "LAI", "aripiprazole", "CSC"]
+  },
+  {
+    "id": "adhd-001",
+    "source": "AHRQ Evidence Report — ADHD Adults",
+    "domain": "clinical_guidelines",
+    "diagnosis": "Attention-Deficit/Hyperactivity Disorder",
+    "icd10": "F90.2",
+    "content": "Adult ADHD first-line pharmacotherapy: stimulants — methylphenidate (IR/ER, 5–60 mg/day) or amphetamine salts (10–60 mg/day). OROS methylphenidate (Concerta), mixed amphetamine salts XR (Adderall XR) have evidence for adults. Non-stimulant alternatives: atomoxetine 80–100 mg/day (FDA-approved, preferred when substance use disorder co-occurs), viloxazine 200–400 mg/day, bupropion (off-label). Monitor: BP, HR, weight, appetite, sleep, and potential for misuse. CBT for ADHD adults: improves organization, time management, emotional dysregulation. Assess for comorbid anxiety, depression, and substance use — extremely common in adult ADHD.",
+    "tags": ["ADHD", "methylphenidate", "amphetamine", "atomoxetine", "stimulant", "adult"]
+  }
+]

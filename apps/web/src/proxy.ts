@@ -162,7 +162,7 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
 
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.razorpay.com",
+      "img-src 'self' data: blob: https://*.googleusercontent.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.razorpay.com https://api.qrserver.com",
 
       "connect-src 'self' blob: data: https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com wss://*.firebaseio.com https://api.razorpay.com https://lumberjack.razorpay.com",
 
