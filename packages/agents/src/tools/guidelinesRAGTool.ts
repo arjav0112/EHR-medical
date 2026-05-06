@@ -1,26 +1,28 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { loadClinicalGuidelines, type GuidelineEntry } from '../data';
+import type { VectorStore } from '@langchain/core/vectorstores';
 
-// ─── ChromaDB imports (optional — lazy, never throws at module load time) ──────
-let chromaStore: import('@langchain/community/vectorstores/chroma').Chroma | null = null;
-let chromaInitAttempted = false;
+// ─── ChromaDB/Upstash store cache (optional — lazy) ──────────────────────────
+let vectorStore: VectorStore | null = null;
+let vectorStoreInitAttempted = false;
 
-async function tryGetChromaStore() {
-  if (chromaInitAttempted) return chromaStore;
-  chromaInitAttempted = true;
+async function tryGetVectorStore(): Promise<VectorStore | null> {
+  if (vectorStoreInitAttempted) return vectorStore;
+  vectorStoreInitAttempted = true;
 
-  // Skip ChromaDB entirely if no URL is configured (Vercel, etc.)
-  const chromaUrl = process.env.CHROMA_URL;
-  if (!chromaUrl) return null;
+  // Skip if no backend is configured
+  const hasUpstash = process.env.UPSTASH_VECTOR_REST_URL && process.env.UPSTASH_VECTOR_REST_TOKEN;
+  const hasChroma  = process.env.CHROMA_URL;
+  if (!hasUpstash && !hasChroma) return null;
 
   try {
     const { getVectorStore, COLLECTIONS } = await import('../vectorstore');
-    chromaStore = await getVectorStore(COLLECTIONS.CLINICAL_GUIDELINES);
+    vectorStore = await getVectorStore(COLLECTIONS.CLINICAL_GUIDELINES);
   } catch {
-    chromaStore = null;
+    vectorStore = null;
   }
-  return chromaStore;
+  return vectorStore;
 }
 
 // ─── Keyword fallback — runs entirely on bundled JSON, no network ─────────────
@@ -83,8 +85,8 @@ function keywordSearch(
  */
 export const guidelinesRAGTool = tool(
   async ({ query, top_k = 4 }) => {
-    // Tier 1 — ChromaDB semantic search
-    const store = await tryGetChromaStore();
+    // Tier 1 — Vector store semantic search (Upstash or ChromaDB)
+    const store = await tryGetVectorStore();
     if (store) {
       try {
         const results = await store.similaritySearchWithScore(query, top_k);

@@ -1,67 +1,105 @@
-import { Chroma } from '@langchain/community/vectorstores/chroma';
+/**
+ * vectorstore.ts — Smart vector store factory
+ *
+ * Priority order:
+ *   1. Upstash Vector  — when UPSTASH_VECTOR_REST_URL + UPSTASH_VECTOR_REST_TOKEN are set
+ *                        → Pure HTTP, works on Vercel, Netlify, Edge, anywhere
+ *   2. ChromaDB        — when CHROMA_URL is set (local dev / self-hosted)
+ *   3. Keyword search  — bundled JSON fallback (always works, no vector DB needed)
+ *
+ * The guidelinesRAGTool and other tools consume this module and handle tier-3 fallback.
+ */
+
 import { getEmbeddings } from './embeddings';
 
-// ─── Collection Names ─────────────────────────────────────────────────────────
-// Each collection holds a distinct clinical knowledge domain.
-// Names are stable — ingestion scripts write to these, agents read from them.
+// ─── Collection / Namespace names ─────────────────────────────────────────────
 
 export const COLLECTIONS = {
-  /** WHO / APA clinical practice guidelines (depression, anxiety, PTSD, etc.) */
   CLINICAL_GUIDELINES: 'clinical_guidelines',
-  /** DSM-5 diagnostic criteria, differential rules, specifiers */
   DSM5_CRITERIA: 'dsm5_criteria',
-  /** FDA-approved psychiatric drug labels (from OpenFDA) */
   DRUG_LABELS: 'drug_labels',
-  /** ICD-10-CM mental-health relevant codes + descriptions */
   ICD10_CODES: 'icd10_codes',
-  /** Psychotherapy protocol summaries (CBT, DBT, ACT, MI, etc.) */
   THERAPY_PROTOCOLS: 'therapy_protocols',
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
 
-// ─── ChromaDB client base URL ─────────────────────────────────────────────────
+// ─── Backend detection ────────────────────────────────────────────────────────
 
-function getChromaUrl(): string {
-  return process.env.CHROMA_URL ?? 'http://localhost:8000';
+type VectorBackend = 'upstash' | 'chroma' | 'none';
+
+function detectBackend(): VectorBackend {
+  if (
+    process.env.UPSTASH_VECTOR_REST_URL &&
+    process.env.UPSTASH_VECTOR_REST_TOKEN
+  ) {
+    return 'upstash';
+  }
+  if (process.env.CHROMA_URL) {
+    return 'chroma';
+  }
+  return 'none';
 }
 
-// ─── Per-collection store factory ─────────────────────────────────────────────
+export const VECTOR_BACKEND = detectBackend();
+
+// ─── Upstash VectorStore factory ──────────────────────────────────────────────
 
 /**
- * Returns a LangChain Chroma VectorStore for the given collection.
- * Uses the env-aware embeddings from getEmbeddings().
- *
- * @param collection  One of the COLLECTIONS constants
- * @param persist     Set false to use in-memory only (tests). Default: true
+ * Returns an Upstash-backed LangChain VectorStore.
+ * Upstash uses a single index with namespaces — each COLLECTION maps to a namespace.
  */
-export async function getVectorStore(
-  collection: CollectionName,
-  persist = true
-): Promise<Chroma> {
-  const embeddings = getEmbeddings();
-  const store = new Chroma(embeddings, {
-    collectionName: collection,
-    url: getChromaUrl(),
-    ...(persist
-      ? { collectionMetadata: { 'hnsw:space': 'cosine' } }
-      : {}),
+async function getUpstashStore(namespace: CollectionName) {
+  const { UpstashVectorStore } = await import(
+    '@langchain/community/vectorstores/upstash'
+  );
+  const { Index } = await import('@upstash/vector');
+
+  const index = new Index({
+    url: process.env.UPSTASH_VECTOR_REST_URL!,
+    token: process.env.UPSTASH_VECTOR_REST_TOKEN!,
   });
-  return store;
+
+  return new UpstashVectorStore(getEmbeddings(), {
+    index,
+    namespace,
+  });
 }
 
-// ─── Retriever factory ────────────────────────────────────────────────────────
+// ─── ChromaDB VectorStore factory (local dev) ─────────────────────────────────
+
+async function getChromaStore(collection: CollectionName) {
+  const { Chroma } = await import('@langchain/community/vectorstores/chroma');
+  return new Chroma(getEmbeddings(), {
+    collectionName: collection,
+    url: process.env.CHROMA_URL ?? 'http://localhost:8000',
+    collectionMetadata: { 'hnsw:space': 'cosine' },
+  });
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Returns the appropriate VectorStore for the given collection.
+ * Throws if no vector backend is configured (handle at call site).
+ */
+export async function getVectorStore(collection: CollectionName) {
+  switch (VECTOR_BACKEND) {
+    case 'upstash':
+      return getUpstashStore(collection);
+    case 'chroma':
+      return getChromaStore(collection);
+    default:
+      throw new Error(
+        'No vector backend configured. Set UPSTASH_VECTOR_REST_URL + UPSTASH_VECTOR_REST_TOKEN (production) or CHROMA_URL (local dev).'
+      );
+  }
+}
 
 /**
  * Returns a LangChain VectorStoreRetriever for the given collection.
- *
- * @param collection  One of the COLLECTIONS constants
- * @param k           Number of documents to retrieve (default: 4)
  */
-export async function getRetriever(
-  collection: CollectionName,
-  k = 4
-) {
+export async function getRetriever(collection: CollectionName, k = 4) {
   const store = await getVectorStore(collection);
   return store.asRetriever({ k });
 }
