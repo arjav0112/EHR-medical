@@ -1,34 +1,12 @@
-import fs from 'fs';
-import path from 'path';
+// Static JSON imports — bundled at build time, no fs access needed in production.
+// Works on Vercel serverless, Edge, and any environment where the filesystem is read-only.
+import dsm5Raw from '../../data/processed/dsm5_criteria.json';
+import icd10Raw from '../../data/processed/icd10_codes.json';
+import drugLabelsRaw from '../../data/processed/drug_labels.json';
+import therapyRaw from '../../data/processed/therapy_protocols.json';
+import riskScalesRaw from '../../data/processed/risk_scales.json';
+import guidelinesRaw from '../../data/processed/clinical_guidelines.json';
 
-// ─── Path resolution ──────────────────────────────────────────────────────────
-// __dirname = packages/agents/src/data/  →  go up 3 levels to packages/agents/
-// then into data/processed/
-
-function resolveData(filename: string): string {
-  // __dirname = packages/agents/src/data/
-  // 2 x '..' → packages/agents/
-  // then /data/processed/<filename>
-  return path.join(__dirname, '..', '..', 'data', 'processed', filename);
-}
-
-// ─── Generic lazy loader with in-process cache ────────────────────────────────
-
-const cache = new Map<string, unknown>();
-
-function loadJSON<T>(filename: string): T {
-  if (cache.has(filename)) return cache.get(filename) as T;
-  const fullPath = resolveData(filename);
-  try {
-    const raw = fs.readFileSync(fullPath, 'utf-8');
-    const data = JSON.parse(raw) as T;
-    cache.set(filename, data);
-    return data;
-  } catch (err) {
-    console.error(`[data] Failed to load ${fullPath}:`, err);
-    throw new Error(`[data] Could not load ${filename} — run 'pnpm ingest' if this is the first run.`);
-  }
-}
 
 // ─── Types (mirrors the processed JSON shapes) ────────────────────────────────
 
@@ -90,32 +68,48 @@ export interface RiskScale {
   [key: string]: unknown;
 }
 
+export interface GuidelineEntry {
+  id: string;
+  source: string;
+  domain: string;
+  diagnosis: string;
+  icd10?: string;
+  content: string;
+  tags: string[];
+}
+
 // ─── Public loaders ───────────────────────────────────────────────────────────
 
 /** All DSM-5 criteria entries */
 export function loadDSM5Criteria(): DSM5Entry[] {
-  return loadJSON<DSM5Entry[]>('dsm5_criteria.json');
+  return dsm5Raw as DSM5Entry[];
 }
 
 /** ICD-10-CM psychiatric codes index */
 export function loadICD10Index(): ICD10Entry[] {
-  return loadJSON<ICD10Entry[]>('icd10_codes.json');
+  return icd10Raw as ICD10Entry[];
 }
 
 /** Drug labels for psychiatric medications */
 export function loadDrugLabels(): DrugEntry[] {
-  return loadJSON<DrugEntry[]>('drug_labels.json');
+  return drugLabelsRaw as DrugEntry[];
 }
 
 /** Psychotherapy protocol summaries */
 export function loadTherapyProtocols(): TherapyEntry[] {
-  return loadJSON<TherapyEntry[]>('therapy_protocols.json');
+  return therapyRaw as TherapyEntry[];
 }
 
 /** Clinical assessment scales (C-SSRS, PHQ-9, GAD-7, PCL-5) */
 export function loadRiskScales(): RiskScales {
-  return loadJSON<RiskScales>('risk_scales.json');
+  return riskScalesRaw as unknown as RiskScales;
 }
+
+/** Clinical guidelines (APA, WHO mhGAP, VA/DoD) */
+export function loadClinicalGuidelines(): GuidelineEntry[] {
+  return guidelinesRaw as GuidelineEntry[];
+}
+
 
 // ─── Helper queries ───────────────────────────────────────────────────────────
 
