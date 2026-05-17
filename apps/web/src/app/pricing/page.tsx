@@ -5,7 +5,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import HomeNavbar from '@/components/HomeNavbar';
 import AuthModal from '@/components/AuthModal';
+import SiteFooter from '@/components/SiteFooter';
 import { useAuth } from '@/contexts/AuthContext';
+
 
 // ─── Razorpay global type ──────────────────────────────────────────────────────
 declare global {
@@ -503,58 +505,7 @@ function UpiPaymentModal({
   );
 }
 
-// ─── Footer ────────────────────────────────────────────────────────────────────
-function Footer() {
-  const cols = [
-    { title: 'Product', links: ['Features', 'How it Works', 'Pricing', 'Demo'] },
-    { title: 'Company', links: ['About', 'Blog', 'Careers', 'Press'] },
-    { title: 'Legal',   links: ['Privacy Policy', 'Terms of Service', 'HIPAA', 'Security'] },
-    { title: 'Support', links: ['Help Center', 'Documentation', 'Status', 'Contact'] },
-  ];
-  return (
-    <footer className="relative overflow-hidden bg-white border-t border-gray-100 mt-auto">
-      <div className="relative z-10 mx-auto max-w-[1200px] px-4 pt-10 pb-0 sm:px-6 lg:px-8">
-        <div className="grid gap-10 pb-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-14">
-          <div className="max-w-[300px]">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <span className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </span>
-              <span className="text-[17px] font-bold text-gray-900">EHR Copilot</span>
-            </Link>
-            <p className="text-[13px] leading-relaxed max-w-[260px] mb-7 text-gray-500">
-              AI-driven clinical documentation platform that helps clinicians document accurately and efficiently.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-10 lg:grid-cols-4">
-            {cols.map(({ title, links }) => (
-              <div key={title}>
-                <h4 className="text-[14px] font-semibold text-gray-900 mb-4">{title}</h4>
-                <ul className="space-y-2.5">
-                  {links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-[13px] text-gray-400 hover:text-gray-700 transition-colors duration-200 cursor-pointer">{link}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 border-t border-gray-100 py-5 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-[12px] text-gray-400 sm:justify-end sm:gap-5">
-            <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">Privacy</a>
-            <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">Terms</a>
-            <a href="#" className="hover:text-gray-700 transition-colors cursor-pointer">HIPAA</a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
+
 
 // ─── FAQ accordion ─────────────────────────────────────────────────────────────
 function FAQ() {
@@ -562,6 +513,7 @@ function FAQ() {
   const anyOpen = open !== null;
   return (
     <section
+      id="faq"
       className="mx-auto px-8 py-20"
       style={{
         maxWidth:   anyOpen ? '860px' : '720px',
@@ -1056,7 +1008,7 @@ export default function PricingPage() {
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
       <FAQ />
 
-      <Footer />
+      <SiteFooter />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </main>

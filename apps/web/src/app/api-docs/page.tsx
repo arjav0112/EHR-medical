@@ -160,7 +160,7 @@ export default function APIDocsPage() {
     <main className="min-h-screen bg-[#FAFAF8]">
       {/* Header */}
       <div className="bg-white border-b border-[#E0DDD6] px-8 py-6">
-        <div className="max-w-[860px] mx-auto flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold text-[#6c63ff] uppercase tracking-widest">API Reference</span>
@@ -178,7 +178,7 @@ export default function APIDocsPage() {
         </div>
       </div>
 
-      <div className="max-w-[860px] mx-auto px-8 py-12 space-y-16">
+      <div className="max-w-[1280px] mx-auto px-8 py-12 space-y-16">
         {ENDPOINTS.map((ep) => (
           <div key={ep.path}>
             {/* Endpoint header */}
@@ -191,28 +191,33 @@ export default function APIDocsPage() {
             <p className="text-[14px] font-semibold text-[#1A1A1A] mb-1">{ep.summary}</p>
             <p className="text-[14px] text-[#6B7280] leading-relaxed mb-6">{ep.description}</p>
 
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="space-y-6 mb-6">
               {/* Request */}
               <div>
                 <h3 className="text-[12px] font-bold text-[#6B7280] uppercase tracking-widest mb-3">Request Body</h3>
                 <div className="border border-[#E0DDD6] rounded-xl overflow-hidden">
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-[13px]" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '18%' }} />
+                      <col style={{ width: '52%' }} />
+                    </colgroup>
                     <thead>
                       <tr className="bg-[#F8F8F6] border-b border-[#E0DDD6]">
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Field</th>
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Type</th>
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Description</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Field</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Type</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Description</th>
                       </tr>
                     </thead>
                     <tbody>
                       {ep.requestFields.map((f, i) => (
                         <tr key={f.name} className={i < ep.requestFields.length - 1 ? 'border-b border-[#F0EDE8]' : ''}>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3 break-all">
                             <code className="text-[#6c63ff] font-mono">{f.name}</code>
                             {f.required && <span className="ml-1 text-[#EF4444] font-bold">*</span>}
                           </td>
-                          <td className="px-3 py-2 text-[#9CA3AF] font-mono">{f.type}</td>
-                          <td className="px-3 py-2 text-[#4A4A4A] leading-relaxed">{f.desc}</td>
+                          <td className="px-4 py-3 text-[#9CA3AF] font-mono">{f.type}</td>
+                          <td className="px-4 py-3 text-[#4A4A4A] leading-relaxed">{f.desc}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -224,20 +229,25 @@ export default function APIDocsPage() {
               <div>
                 <h3 className="text-[12px] font-bold text-[#6B7280] uppercase tracking-widest mb-3">Response Fields</h3>
                 <div className="border border-[#E0DDD6] rounded-xl overflow-hidden">
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-[13px]" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '48%' }} />
+                    </colgroup>
                     <thead>
                       <tr className="bg-[#F8F8F6] border-b border-[#E0DDD6]">
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Field</th>
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Type</th>
-                        <th className="text-left px-3 py-2 text-[#6B7280] font-semibold">Description</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Field</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Type</th>
+                        <th className="text-left px-4 py-3 text-[#6B7280] font-semibold">Description</th>
                       </tr>
                     </thead>
                     <tbody>
                       {ep.responseFields.map((f, i) => (
                         <tr key={f.name} className={i < ep.responseFields.length - 1 ? 'border-b border-[#F0EDE8]' : ''}>
-                          <td className="px-3 py-2"><code className="text-[#10B981] font-mono">{f.name}</code></td>
-                          <td className="px-3 py-2 text-[#9CA3AF] font-mono">{f.type}</td>
-                          <td className="px-3 py-2 text-[#4A4A4A]">{f.desc}</td>
+                          <td className="px-4 py-3 break-all"><code className="text-[#10B981] font-mono">{f.name}</code></td>
+                          <td className="px-4 py-3 text-[#9CA3AF] font-mono">{f.type}</td>
+                          <td className="px-4 py-3 text-[#4A4A4A] leading-relaxed">{f.desc}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -245,10 +255,10 @@ export default function APIDocsPage() {
                 </div>
 
                 {/* Response codes */}
-                <div className="mt-3 space-y-1">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {ep.responseCodes.map((r) => (
-                    <div key={r.code} className="flex items-center gap-2 text-[12px]">
-                      <span className={`w-9 text-center font-bold rounded px-1 py-0.5 ${Number(r.code) < 300 ? 'bg-[#D1FAE5] text-[#059669]' : Number(r.code) < 500 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                    <div key={r.code} className="flex items-center gap-2 text-[13px]">
+                      <span className={`font-bold rounded px-2 py-0.5 ${Number(r.code) < 300 ? 'bg-[#D1FAE5] text-[#059669]' : Number(r.code) < 500 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                         {r.code}
                       </span>
                       <span className="text-[#6B7280]">{r.desc}</span>
@@ -259,7 +269,7 @@ export default function APIDocsPage() {
             </div>
 
             {/* Code examples */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-2">cURL</p>
                 <CodeBlock code={ep.curlExample} />

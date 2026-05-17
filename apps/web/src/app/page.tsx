@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import SiteFooter from '@/components/SiteFooter';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import HomeNavbar from '@/components/HomeNavbar';
@@ -198,14 +199,14 @@ function Hero({ onGetStartedClick }: { onGetStartedClick: () => void }) {
 // ─── Trusted By ────────────────────────────────────────────────────────────────
 function TrustedBy() {
   const logos = [
-    { name: 'Hartford Health',   color: '#2563eb', initial: 'H', quote: '"Cut documentation time by 60%"' },
-    { name: 'MindPath Care',     color: '#16a34a', initial: 'M', quote: '"Notes ready before the patient leaves"' },
-    { name: 'Talkiatry',         color: '#7c3aed', initial: 'T', quote: '"3× faster SOAP generation"' },
-    { name: 'Brightside',        color: '#ea580c', initial: 'B', quote: '"Clinicians love the accuracy"' },
-    { name: 'Headspace Health',  color: '#0891b2', initial: 'H', quote: '"Screened 1,000+ sessions in a week"' },
-    { name: 'Spring Health',     color: '#15803d', initial: 'S', quote: '"From 80 min notes to under 10 min"' },
-    { name: 'Alma',              color: '#db2777', initial: 'A', quote: '"Our gold standard for documentation"' },
-    { name: 'Lyra Health',       color: '#0284c7', initial: 'L', quote: '"Zero compliance issues since launch"' },
+    { name: 'Hartford Health', color: '#2563eb', initial: 'H', quote: '"Cut documentation time by 60%"' },
+    { name: 'MindPath Care', color: '#16a34a', initial: 'M', quote: '"Notes ready before the patient leaves"' },
+    { name: 'Talkiatry', color: '#7c3aed', initial: 'T', quote: '"3× faster SOAP generation"' },
+    { name: 'Brightside', color: '#ea580c', initial: 'B', quote: '"Clinicians love the accuracy"' },
+    { name: 'Headspace Health', color: '#0891b2', initial: 'H', quote: '"Screened 1,000+ sessions in a week"' },
+    { name: 'Spring Health', color: '#15803d', initial: 'S', quote: '"From 80 min notes to under 10 min"' },
+    { name: 'Alma', color: '#db2777', initial: 'A', quote: '"Our gold standard for documentation"' },
+    { name: 'Lyra Health', color: '#0284c7', initial: 'L', quote: '"Zero compliance issues since launch"' },
   ];
 
   // Duplicate for seamless scroll
@@ -777,7 +778,7 @@ function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
             Start Documenting Smarter Today
           </h2>
           <p className="text-[16px] text-gray-500 mb-10 max-w-[360px] mx-auto leading-relaxed">
-            Join thousands of clinicians who have reclaimed their time. No credit card required.
+            Join thousands of clinicians who have reclaimed their time
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -791,7 +792,7 @@ function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
             </button>
           </div>
           <p className="text-[12px] text-gray-400 mt-6 tracking-wide">
-            No credit card required · HIPAA BAA included · 14-day free trial
+            HIPAA BAA included · 14-day free trial
           </p>
         </div>
       </div>
@@ -799,121 +800,7 @@ function FinalCTA({ onGetStartedClick }: { onGetStartedClick: () => void }) {
   );
 }
 
-// ─── Footer ────────────────────────────────────────────────────────────────────
-function Footer() {
-  const cols = [
-    {
-      title: 'Product',
-      links: ['Features', 'Pricing', 'Integrations', 'Changelog', 'Roadmap', 'API Docs'],
-    },
-    {
-      title: 'Company',
-      links: ['About Us', 'Careers', 'Blog', 'Partners', 'Contact Us'],
-    },
-    {
-      title: 'Resources',
-      links: ['Help Center', 'Documentation', 'Video Tutorials', 'Community Forum', 'FAQs'],
-    },
-    {
-      title: 'Legal',
-      links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'GDPR Compliance', 'Security', 'Accessibility'],
-    },
-  ];
 
-  const socials = [
-    { label: 'Facebook', icon: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z', green: false },
-    { label: 'X', icon: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z', green: true },
-    { label: 'LinkedIn', icon: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z M4 6a2 2 0 100-4 2 2 0 000 4z', green: false },
-    { label: 'Instagram', icon: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z', green: false },
-  ];
-
-  return (
-    <footer className="relative overflow-hidden bg-white">
-      {/* Mountain continues from CTA — thin strip at top, aggressively fades to white */}
-      <div
-        className="absolute top-0 left-0 right-0 h-[160px] pointer-events-none"
-        style={{
-          backgroundImage: "url('/mountain-cta-v2.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
-      <div
-        className="absolute top-0 left-0 right-0 h-[160px] pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.65) 35%, rgba(255,255,255,0.95) 60%, #ffffff 75%)',
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-[1200px] px-4 pt-12 pb-0 sm:px-6 lg:px-8">
-        <div className="grid gap-12 border-t border-gray-100 pt-10 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.45fr)] lg:gap-16">
-          {/* Brand — 2 cols */}
-          <div className="max-w-[320px]">
-            <Link href="/" className="mb-5 flex items-center gap-3">
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-600">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </span>
-              <span className="text-[17px] font-bold text-gray-900">EHR Copilot</span>
-            </Link>
-            <p className="mb-7 max-w-[280px] text-[13px] leading-[1.75] text-gray-500 sm:text-[14px]">
-              Discover an AI-driven clinical documentation platform that helps teams document accurately and efficiently. This innovative solution uses artificial intelligence to simplify clinical workflows.
-            </p>
-            {/* Social icons */}
-            <div className="flex flex-wrap gap-2.5">
-              {socials.map(({ label, icon, green }) => (
-                <a
-                  key={label}
-                  href="#"
-                  aria-label={label}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 ${green
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'border border-gray-200 text-gray-500 hover:border-green-600 hover:bg-green-600 hover:text-white'
-                    }`}
-                >
-                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d={icon} />
-                  </svg>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-10 lg:grid-cols-4">
-            {cols.map(({ title, links }) => (
-              <div key={title}>
-                <h4 className="mb-4 text-[15px] font-semibold text-gray-900">{title}</h4>
-                <ul className="space-y-3.5">
-                  {links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-[13px] text-gray-400 transition-colors duration-200 hover:text-gray-700 sm:text-[14px]">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-gray-100 py-5 sm:flex-row sm:items-center">
-          <p className="text-[12px] text-gray-400">© 2026 EHR Copilot Inc. All rights reserved.</p>
-          <div className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] text-gray-500 transition-colors hover:border-gray-300">
-            <span>🇺🇸</span>
-            <span>Prices in:</span>
-            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 // ─── Page Content ──────────────────────────────────────────────────────────────
 function HomeContent() {
@@ -949,7 +836,7 @@ function HomeContent() {
       <HowItWorks />
       <Specialities />
       <FinalCTA onGetStartedClick={handleGetStarted} />
-      <Footer />
+      <SiteFooter />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} redirectTo={redirectTo} />}
     </main>
