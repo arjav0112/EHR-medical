@@ -187,14 +187,14 @@ export function StreamingRevision({
 
   return (
     <div className="h-full flex flex-col gap-3 animate-in fade-in duration-700">
-      <div className="flex-1 min-h-0 bg-white border border-green-200 rounded-2xl overflow-hidden flex flex-col shadow-sm relative">
+      <div className="flex-1 min-h-0 bg-white border border-purple-200 rounded-2xl overflow-hidden flex flex-col shadow-sm relative">
         {/* Left accent bar */}
-        <div className="absolute top-0 left-0 w-1 h-full bg-green-400 rounded-l-2xl" />
+        <div className="absolute top-0 left-0 w-1 h-full bg-purple-400 rounded-l-2xl" />
         <div className="flex-1 overflow-y-auto px-8 py-7 scrollbar-hide">
-          <p className="text-[15px] text-gray-800 leading-relaxed whitespace-pre-wrap">
+          <p className="text-[13.5px] text-slate-700 leading-relaxed font-sans font-normal whitespace-pre-wrap">
             {tokens}
             {isActive && !done && (
-              <span className="inline-block w-[2px] h-[1.1em] bg-green-500 ml-1 animate-pulse align-middle rounded-full" />
+              <span className="inline-block w-[2px] h-[1.1em] bg-purple-500 ml-1 animate-pulse align-middle rounded-full" />
             )}
           </p>
         </div>

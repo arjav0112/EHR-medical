@@ -178,7 +178,7 @@ export function RiskFlagsSection({ flags, onFlagAction, onAllConfirmed }: RiskFl
             <div className="flex-1 overflow-y-auto min-h-[350px] bg-slate-50/40 p-8 space-y-6 prose max-w-none">
               
               <h2 className="text-[20px] font-extrabold text-slate-800 leading-tight tracking-tight border-none p-0 m-0 pb-2">
-                Chapter 0, Safety Diagnostics & Risk Evaluation
+                Chapter 1, Safety Diagnostics & Risk Evaluation
               </h2>
 
               {allDone ? (

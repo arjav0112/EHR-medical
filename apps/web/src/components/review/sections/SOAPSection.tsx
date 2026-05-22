@@ -525,7 +525,15 @@ Upon reaching the coordinates, X_AE_B-22 found itself standing before a dilapida
                 <div className="px-8 py-6 max-w-none">
                   {/* Decorative Title */}
                   <h2 className="text-[20px] font-extrabold text-slate-800 mb-5 leading-tight tracking-tight">
-                    {viewSource === 'sample' ? 'Chapter 3, Revelation From God' : `Chapter 1, Clinical Summary & ${SECTION_LABELS[section]} Details`}
+                    {viewSource === 'sample' ? 'Chapter 3, Revelation From God' : `Chapter ${
+                      section === 'subjective'
+                        ? 2
+                        : section === 'objective'
+                        ? 3
+                        : section === 'assessment'
+                        ? 4
+                        : 5
+                    }, Clinical Summary & ${SECTION_LABELS[section]} Details`}
                   </h2>
                   
                   {/* Dynamic Format Transformations based on Sidebar format selector */}
@@ -733,6 +741,20 @@ Upon reaching the coordinates, X_AE_B-22 found itself standing before a dilapida
                             isActive={isStreaming}
                           />
                         </div>
+                        {streamDone && (
+                          <div className="px-6 py-3 bg-purple-50/50 border-t border-purple-100 flex items-center justify-between flex-shrink-0 animate-in slide-in-from-bottom duration-250">
+                            <span className="text-[11.5px] text-slate-500 font-bold">Accept to replace original draft</span>
+                            <button
+                              onClick={handleApproveStreamedVersion}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-[12px] font-bold cursor-pointer transition-all shadow-sm flex items-center gap-1.5 hover:scale-[1.02] active:scale-95 duration-150"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Accept Refinement
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                     </div>
@@ -902,7 +924,7 @@ Upon reaching the coordinates, X_AE_B-22 found itself standing before a dilapida
                   disabled={!streamDone || isStreaming}
                   className="flex-1 flex items-center justify-center bg-[#0f172a] hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-[12.5px] font-bold cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm animate-in fade-in duration-200"
                 >
-                  Publish
+                  Accept Refinement
                 </button>
               ) : (
                 <button
