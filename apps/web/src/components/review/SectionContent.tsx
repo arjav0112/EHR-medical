@@ -47,21 +47,6 @@ function buildInputFromSessionRecord(record: SessionRecord): SessionInput {
   };
 }
 
-// function StickyPatientHeader({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
-//   // if (!input \&\& !reviewPackage) return null;
-//   const dx = reviewPackage?.diagnosisSuggestions?.[0];
-//   const meds = input?.patient?.currentMedications ?? [];
-//   return (
-//     <div className=" flex-shrink-0 bg-white/95 border-b border-gray-100 px-10 py-2.5 flex items-center gap-4 flex-wrap shadow-sm" />
-//  {input && (
-//  <span className=\text-[11px] text-gray-500 />
-//  <span className=\font-bold text-gray-800\\u003ePatient:</span> {input.patient.age}y · {input.patient.gender}
-//  </span>
-//  )}
-//  </div>
-//  );
-// }
-
 function PatientContextBar({ input, reviewPackage }: { input: SessionInput | null; reviewPackage: ReviewPackage | null }) {
   if (!input && !reviewPackage) return null;
   const dx = reviewPackage?.diagnosisSuggestions?.[0];
@@ -70,7 +55,7 @@ function PatientContextBar({ input, reviewPackage }: { input: SessionInput | nul
 
   return (
     <div className="mx-0 mt-3 flex-shrink-0">
-      <div className="flex flex-wrap items-start gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm sm:items-center sm:gap-6 sm:px-6">
+      <div className="flex flex-wrap items-start gap-4 rounded-2xl border border-gray-150 bg-white px-4 py-4 shadow-sm sm:items-center sm:gap-6 sm:px-6">
         {/* Patient */}
         {input && (
           <div className="flex items-center gap-3">
@@ -139,10 +124,10 @@ function LockedSection({ section }: { section: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-12 bg-white border border-gray-100 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
       <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-3xl flex items-center justify-center text-3xl mb-8">
-        ðŸ”’
+        🔒
       </div>
       <h3 className="text-2xl font-bold text-gray-800 mb-4 capitalize">
-        {section.replace('_', ' ')} â€” Locked
+        {section.replace('_', ' ')} — Locked
       </h3>
       <p className="text-[15px] text-gray-500 max-w-md leading-relaxed">
         Complete and approve the preceding sections to unlock this one.
@@ -224,7 +209,7 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
     [persistReviewPackage, setReviewPackage],
   );
 
-  // â”€â”€ Hydrate from Redis on page refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ————————————————————————————————————————————————————————————————————————
   useEffect(() => {
     if (reviewPackage || hydrating || hydrationFailed) return;
 
@@ -267,8 +252,10 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // Loading skeleton during hydration or active processing
   if (!reviewPackage && (processingStatus !== 'idle' || hydrating)) {
     return (
-      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
-        <SectionSkeleton />
+      <main className="relative z-10 flex-1 overflow-y-auto bg-[#f8fafc] px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
+        <div className="max-w-5xl mx-auto w-full">
+          <SectionSkeleton />
+        </div>
       </main>
     );
   }
@@ -276,54 +263,45 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   // No data even after hydration attempt
   if (!reviewPackage) {
     return (
-      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 font-mono text-xl">!</div>
-          <p className="text-[15px] font-medium text-navy-300 max-w-sm leading-relaxed">
-            {hydrationFailed
-              ? 'Neural session data expired or target nodes not found. Retention protocol: 24h.'
-              : 'Protocol Mismatch: No clinical session data available for load.'}
-          </p>
+      <main className="relative z-10 flex-1 overflow-y-auto bg-[#f8fafc] px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
+        <div className="max-w-5xl mx-auto w-full">
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white border border-gray-150 rounded-2xl p-12 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 font-mono text-xl">!</div>
+            <p className="text-[15px] font-semibold text-gray-800 max-w-sm leading-relaxed">
+              {hydrationFailed
+                ? 'Neural session data expired or target nodes not found. Retention protocol: 24h.'
+                : 'Protocol Mismatch: No clinical session data available for load.'}
+            </p>
+          </div>
         </div>
       </main>
     );
   }
-
 
   // Locked gate
   if (status === 'locked') {
     return (
-      <main className="relative z-10 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
-        <LockedSection section={activeSection} />
-      </main>
-    );
-  }
-
-  // Risk flags section
-  if (activeSection === 'risk_flags') {
-    const flags = reviewPackage.riskFlags ?? [];
-    return (
-      <main className="grid flex-1 grid-rows-[1fr_auto] gap-4 overflow-hidden px-4 py-6 pb-6 sm:px-6 sm:py-8 lg:px-10">
-        <div className="min-h-0 overflow-y-auto pb-20 sm:pb-24 lg:pb-8">
-          <RiskFlagsSection
-            flags={flags}
-            onFlagAction={(_flagId, _action) => { }}
-            onAllConfirmed={() => { approveSection('risk_flags'); }}
-          />
+      <main className="relative z-10 flex-1 overflow-y-auto bg-[#f8fafc] px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
+        <div className="max-w-5xl mx-auto w-full">
+          <LockedSection section={activeSection} />
         </div>
-        <PatientContextBar input={input} reviewPackage={reviewPackage} />
       </main>
     );
   }
 
-  // SOAP sections
+  // Risk flags section helper variables
+  const flags = reviewPackage.riskFlags ?? [];
+
+  // SOAP sections helper variables
   const soapKey = activeSection as 'subjective' | 'objective' | 'assessment' | 'plan';
   const soapSection = reviewPackage.soapNote?.[soapKey];
 
-  if (!soapSection) {
+  if (activeSection !== 'risk_flags' && !soapSection) {
     return (
-      <main className="relative z-10 flex-1 overflow-hidden bg-gray-50/60 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <SectionSkeleton />
+      <main className="relative z-10 flex-1 overflow-hidden bg-[#f8fafc] p-3 lg:p-4 lg:pb-0">
+        <div className="w-full h-full min-h-0 overflow-hidden">
+          <SectionSkeleton />
+        </div>
       </main>
     );
   }
@@ -338,43 +316,51 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="grid flex-1 grid-rows-[1fr_auto] gap-4 overflow-hidden px-4 py-6 pb-6 sm:px-6 sm:py-8 lg:px-10">
-      <div className="min-h-0 overflow-y-auto pb-20 sm:pb-24 lg:pb-8">
-        <SOAPSection
-          key={soapKey}
-          section={soapKey}
-          soapSection={soapSection}
-          transcript={input?.session?.transcript ?? ''}
-          approvedSections={approvedSections}
-          onApprove={() => {
-            patchSOAPSection(soapKey, { status: 'approved', provenanceTag: 'approved' });
-            approveSection(soapKey);
-          }}
-          onEdit={(content) => {
-            patchSOAPSection(soapKey, {
-              content,
-              status: 'edited',
-              provenanceTag: 'clinician_edited',
-            });
-            editSection(soapKey);
-            invalidateDownstreamSections(soapKey);
-          }}
-          onRevisionComplete={(result) => {
-            const currentPackage = useSessionStore.getState().reviewPackage;
-            const currentRounds = currentPackage?.soapNote?.[soapKey]?.revisionRounds ?? soapSection.revisionRounds ?? 0;
-            patchSOAPSection(soapKey, {
-              content: result.content,
-              confidence: result.confidence,
-              provenanceTag: 'ai_revised',
-              status: 'revised',
-              revisionRounds: currentRounds + 1,
-            });
-            markRevised(soapKey);
-          }}
-        />
+    <main className="flex-1 overflow-hidden bg-[#f8fafc] p-3 lg:p-4 lg:pb-0 flex flex-col gap-3 h-full">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activeSection === 'risk_flags' ? (
+          <RiskFlagsSection
+            flags={flags}
+            onFlagAction={(_flagId, _action) => { }}
+            onAllConfirmed={() => {
+              approveSection('risk_flags');
+            }}
+          />
+        ) : (
+          <SOAPSection
+            key={soapKey}
+            section={soapKey}
+            soapSection={soapSection!}
+            transcript={input?.session?.transcript ?? ''}
+            approvedSections={approvedSections}
+            onApprove={() => {
+              patchSOAPSection(soapKey, { status: 'approved', provenanceTag: 'approved' });
+              approveSection(soapKey);
+            }}
+            onEdit={(content) => {
+              patchSOAPSection(soapKey, {
+                content,
+                status: 'edited',
+                provenanceTag: 'clinician_edited',
+              });
+              editSection(soapKey);
+              invalidateDownstreamSections(soapKey);
+            }}
+            onRevisionComplete={(result) => {
+              const currentPackage = useSessionStore.getState().reviewPackage;
+              const currentRounds = currentPackage?.soapNote?.[soapKey]?.revisionRounds ?? soapSection!.revisionRounds ?? 0;
+              patchSOAPSection(soapKey, {
+                content: result.content,
+                confidence: result.confidence,
+                provenanceTag: 'ai_revised',
+                status: 'revised',
+                revisionRounds: currentRounds + 1,
+              });
+              markRevised(soapKey);
+            }}
+          />
+        )}
       </div>
-      <PatientContextBar input={input} reviewPackage={reviewPackage} />
     </main>
   );
 }
-
