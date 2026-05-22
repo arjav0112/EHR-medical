@@ -289,33 +289,17 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
     );
   }
 
-  // Risk flags section
-  if (activeSection === 'risk_flags') {
-    const flags = reviewPackage.riskFlags ?? [];
-    return (
-      <main className="flex-1 overflow-hidden bg-[#f8fafc] px-4 py-6 pb-6 sm:px-6 sm:py-8 lg:px-10">
-        <div className="max-w-5xl mx-auto w-full h-full grid grid-rows-[1fr_auto] gap-4 overflow-hidden">
-          <div className="min-h-0 overflow-y-auto pb-20 sm:pb-24 lg:pb-8">
-            <RiskFlagsSection
-              flags={flags}
-              onFlagAction={(_flagId, _action) => { }}
-              onAllConfirmed={() => { approveSection('risk_flags'); }}
-            />
-          </div>
-          <PatientContextBar input={input} reviewPackage={reviewPackage} />
-        </div>
-      </main>
-    );
-  }
+  // Risk flags section helper variables
+  const flags = reviewPackage.riskFlags ?? [];
 
-  // SOAP sections
+  // SOAP sections helper variables
   const soapKey = activeSection as 'subjective' | 'objective' | 'assessment' | 'plan';
   const soapSection = reviewPackage.soapNote?.[soapKey];
 
-  if (!soapSection) {
+  if (activeSection !== 'risk_flags' && !soapSection) {
     return (
-      <main className="relative z-10 flex-1 overflow-hidden bg-[#f8fafc] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <div className="max-w-5xl mx-auto w-full">
+      <main className="relative z-10 flex-1 overflow-hidden bg-[#f8fafc] p-3 lg:p-4 lg:pb-0">
+        <div className="w-full h-full min-h-0 overflow-hidden">
           <SectionSkeleton />
         </div>
       </main>
@@ -332,40 +316,50 @@ export default function SectionContent({ sessionId }: { sessionId: string }) {
   });
 
   return (
-    <main className="flex-1 overflow-hidden bg-[#f8fafc] p-3 lg:p-4 lg:pb-0">
-      <div className="w-full h-full min-h-0 overflow-hidden">
-        <SOAPSection
-          key={soapKey}
-          section={soapKey}
-          soapSection={soapSection}
-          transcript={input?.session?.transcript ?? ''}
-          approvedSections={approvedSections}
-          onApprove={() => {
-            patchSOAPSection(soapKey, { status: 'approved', provenanceTag: 'approved' });
-            approveSection(soapKey);
-          }}
-          onEdit={(content) => {
-            patchSOAPSection(soapKey, {
-              content,
-              status: 'edited',
-              provenanceTag: 'clinician_edited',
-            });
-            editSection(soapKey);
-            invalidateDownstreamSections(soapKey);
-          }}
-          onRevisionComplete={(result) => {
-            const currentPackage = useSessionStore.getState().reviewPackage;
-            const currentRounds = currentPackage?.soapNote?.[soapKey]?.revisionRounds ?? soapSection.revisionRounds ?? 0;
-            patchSOAPSection(soapKey, {
-              content: result.content,
-              confidence: result.confidence,
-              provenanceTag: 'ai_revised',
-              status: 'revised',
-              revisionRounds: currentRounds + 1,
-            });
-            markRevised(soapKey);
-          }}
-        />
+    <main className="flex-1 overflow-hidden bg-[#f8fafc] p-3 lg:p-4 lg:pb-0 flex flex-col gap-3 h-full">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activeSection === 'risk_flags' ? (
+          <RiskFlagsSection
+            flags={flags}
+            onFlagAction={(_flagId, _action) => { }}
+            onAllConfirmed={() => {
+              approveSection('risk_flags');
+            }}
+          />
+        ) : (
+          <SOAPSection
+            key={soapKey}
+            section={soapKey}
+            soapSection={soapSection!}
+            transcript={input?.session?.transcript ?? ''}
+            approvedSections={approvedSections}
+            onApprove={() => {
+              patchSOAPSection(soapKey, { status: 'approved', provenanceTag: 'approved' });
+              approveSection(soapKey);
+            }}
+            onEdit={(content) => {
+              patchSOAPSection(soapKey, {
+                content,
+                status: 'edited',
+                provenanceTag: 'clinician_edited',
+              });
+              editSection(soapKey);
+              invalidateDownstreamSections(soapKey);
+            }}
+            onRevisionComplete={(result) => {
+              const currentPackage = useSessionStore.getState().reviewPackage;
+              const currentRounds = currentPackage?.soapNote?.[soapKey]?.revisionRounds ?? soapSection!.revisionRounds ?? 0;
+              patchSOAPSection(soapKey, {
+                content: result.content,
+                confidence: result.confidence,
+                provenanceTag: 'ai_revised',
+                status: 'revised',
+                revisionRounds: currentRounds + 1,
+              });
+              markRevised(soapKey);
+            }}
+          />
+        )}
       </div>
     </main>
   );

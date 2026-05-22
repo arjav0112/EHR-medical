@@ -32,14 +32,14 @@ const SEVERITY_CONFIG: Record<
   },
   high: {
     border: 'border-l-red-400',
-    pill: 'bg-red-100 text-red-600',
+    pill: 'bg-red-100 text-red-650',
     confirm: 'bg-red-500 hover:bg-red-600 text-white',
     confirmHover: '',
   },
   moderate: {
-    border: 'border-l-amber-500',
-    pill: 'bg-amber-100 text-amber-700',
-    confirm: 'bg-amber-600 hover:bg-amber-700 text-white',
+    border: 'border-l-indigo-500',
+    pill: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    confirm: 'bg-[#1a9e8f] hover:bg-[#158a7c] text-white',
     confirmHover: '',
   },
   low: {
@@ -97,7 +97,7 @@ export function RiskFlagCard({ flag, onAction }: RiskFlagCardProps) {
           </p>
           <button
             onClick={() => setCitationsOpen((p) => !p)}
-            className="mt-2 flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-wide"
+            className="mt-2 flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-gray-650 transition-colors uppercase tracking-wide"
           >
             <svg className={`w-3 h-3 transition-transform ${citationsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

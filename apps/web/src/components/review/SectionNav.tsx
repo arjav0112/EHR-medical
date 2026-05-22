@@ -134,7 +134,7 @@ function NavItem({
       {/* Right side */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {badge !== undefined && badge > 0 && !isActive && (
-          <span className="text-[10px] font-bold bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+          <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
             {badge}
           </span>
         )}
@@ -213,7 +213,7 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
           {/* Group 1: Priority */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 px-1 mb-2">Priority</p>
-            <div className="space-y-2">
+            <div className="space-y-3.5">
               {MENU_SECTIONS.map(({ key, label, icon }) => {
                 const status = sectionStatuses[key];
                 return (
@@ -239,7 +239,7 @@ export default function SectionNav({ sessionId }: { sessionId: string }) {
           {/* Group 2: Clinical Sections */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 px-1 mb-2">Clinical Sections</p>
-            <div className="space-y-2">
+            <div className="space-y-3.5">
               {SOAP_SECTIONS.map(({ key, label, icon }) => {
                 const status = sectionStatuses[key];
                 return (
