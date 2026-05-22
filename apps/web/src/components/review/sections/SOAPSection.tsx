@@ -414,25 +414,6 @@ Upon reaching the coordinates, X_AE_B-22 found itself standing before a dilapida
                       </svg>
                       Edit
                     </button>
-                    {/* State Source Toggle (Real Clinical vs Sample Mock text) */}
-                    <button
-                      onClick={() => {
-                        if (viewSource === 'clinical') {
-                          setViewSource('sample');
-                          setNoteTitle(section === 'subjective' ? 'Subjective' : SECTION_LABELS[section]);
-                        } else {
-                          setViewSource('clinical');
-                          setNoteTitle(SECTION_LABELS[section]);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 border border-[#1a9e8f]/20 bg-[#1a9e8f]/5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-[#1a9e8f] hover:bg-[#1a9e8f]/10 transition-colors cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      {viewSource === 'clinical' ? 'View CMS Sample' : 'View Clinical Draft'}
-                    </button>
                   </div>
                 )}
               </div>
