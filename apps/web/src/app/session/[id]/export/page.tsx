@@ -621,7 +621,7 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const sections = Object.keys(SECTION_LABELS) as SectionKey[];
 
   return (
-    <main className="min-h-screen bg-[#f8faf8]">
+    <main className="absolute inset-0 bg-[#f8faf8] overflow-y-auto">
       <PillNav />
 
       {/* DEV BANNER
