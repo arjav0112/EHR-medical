@@ -224,6 +224,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
+  const [themeOverride, setThemeOverride] = useState<'auto' | 'castle' | 'ninja' | 'space'>('auto');
 
   // Sync mockStatuses when preview state changes
   useEffect(() => {
@@ -355,11 +356,15 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       isGrabbed: boolean;
       state: 'stable' | 'active' | 'broken';
       isSlider?: boolean;
+      isVerticalSlider?: boolean;
       trackWidth?: number;
+      trackHeight?: number;
       sliderSpeed?: number;
       sliderDirection?: number;
       minX?: number;
       maxX?: number;
+      minY?: number;
+      maxY?: number;
     }
 
     interface Obstacle {
@@ -431,7 +436,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
     // Alternating side memory to create a zig-zag climbing path
     let lastPegWasLeft = Math.random() < 0.5;
 
-    // Helper to spawn game assets
+    // Helper to spawn game assets with progressive difficulty scaling
     const generateLevelAssets = (startY: number, rangeHeight: number) => {
       // Spawn pegs in intervals of ~135px
       for (let y = startY; y > startY - rangeHeight; y -= 135) {
@@ -447,12 +452,29 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
 
         const type = Math.random() < 0.35 ? 'red' : 'blue';
 
-        // Randomly turn some pegs into wood-slotted moving sliders as the player climbs higher (randomly when y < 250)
-        const isSlider = y < 250 && Math.random() < 0.38;
+        // 1. Difficulty Scaling Factors based on height y (y gets more negative as we climb)
+        const climbHeight = Math.max(0, 540 - y); // 0 at start, grows positive
+
+        // Probability of spawning a moving slider grows from 0% at start to 38% at height 2000
+        const sliderProbability = Math.min(0.38, (climbHeight / 2000) * 0.38);
+        const isSlider = climbHeight > 200 && Math.random() < sliderProbability;
+        const sliderType = isSlider ? (Math.random() < 0.45 ? 'vertical' : 'horizontal') : 'none';
+
+        const isHorizontalSlider = sliderType === 'horizontal';
+        const isVerticalSlider = sliderType === 'vertical';
+
         const trackWidth = Math.random() * 80 + 120; // 120px to 200px track range
         const minX = Math.max(32 + 17 + 10, x - trackWidth / 2);
         const maxX = Math.min(canvas.width - 32 - 17 - 10, x + trackWidth / 2);
-        const sliderSpeed = Math.random() * 0.8 + 1.2; // 1.2 to 2.0 pixels per frame
+
+        // Vertical slider limits
+        const trackHeight = Math.random() * 80 + 100; // 100px to 180px vertical track range
+        const minY = y - trackHeight / 2;
+        const maxY = y + trackHeight / 2;
+
+        // Slider speed grows from 0.8 at start to 2.5 at height 3000
+        const maxSpeed = Math.min(2.5, 0.8 + (climbHeight / 3000) * 1.7);
+        const sliderSpeed = Math.random() * (maxSpeed - 0.6) + 0.6;
         const sliderDirection = Math.random() < 0.5 ? 1 : -1;
 
         pegs.push({
@@ -464,12 +486,16 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
           timer: 3.0,
           isGrabbed: false,
           state: 'stable',
-          isSlider,
+          isSlider: isHorizontalSlider,
+          isVerticalSlider,
           trackWidth,
+          trackHeight,
           sliderSpeed,
           sliderDirection,
           minX,
           maxX,
+          minY,
+          maxY,
         });
 
         // Spawn a coin above stable blue pegs
@@ -488,8 +514,11 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
           });
         }
 
-        // Spawn moving spiked obstacle between pegs, keeping a safe distance from pegs and coins
-        if (Math.random() < 0.45) {
+        // 2. Spiked obstacle spawn scaling:
+        // Spawn probability grows from 10% at start to 45% at height 2000
+        const obstacleProbability = Math.min(0.45, 0.10 + (climbHeight / 2000) * 0.35);
+
+        if (climbHeight > 150 && Math.random() < obstacleProbability) {
           let obsX = Math.random() * 340 + 80;
           let attempts = 0;
 
@@ -507,10 +536,14 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
             attempts++;
           }
 
+          // Obstacle horizontal speed grows from 0.8 at start to 2.5 at height 3000
+          const maxObsSpeed = Math.min(2.5, 0.8 + (climbHeight / 3000) * 1.7);
+          const obsSpeed = (Math.random() * (maxObsSpeed - 0.6) + 0.6) * (Math.random() < 0.5 ? 1 : -1);
+
           obstacles.push({
             x: obsX,
             y: y - 70,
-            vx: (Math.random() * 1.5 + 1.2) * (Math.random() < 0.5 ? 1 : -1),
+            vx: obsSpeed,
             radius: 14,
             angle: Math.random() * Math.PI * 2,
           });
@@ -669,13 +702,21 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       if (gameState === 'playing') {
         // ── Physics Updates ──
 
-        // A) Update moving slider pegs side-to-side
+        // A) Update moving slider pegs side-to-side and up-and-down
         for (const peg of pegs) {
-          if (peg.state !== 'broken' && peg.isSlider) {
-            peg.x += peg.sliderSpeed! * peg.sliderDirection!;
-            if (peg.x > peg.maxX! || peg.x < peg.minX!) {
-              peg.sliderDirection = -peg.sliderDirection!;
-              peg.x = Math.max(peg.minX!, Math.min(peg.maxX!, peg.x));
+          if (peg.state !== 'broken') {
+            if (peg.isSlider) {
+              peg.x += peg.sliderSpeed! * peg.sliderDirection!;
+              if (peg.x > peg.maxX! || peg.x < peg.minX!) {
+                peg.sliderDirection = -peg.sliderDirection!;
+                peg.x = Math.max(peg.minX!, Math.min(peg.maxX!, peg.x));
+              }
+            } else if (peg.isVerticalSlider) {
+              peg.y += peg.sliderSpeed! * peg.sliderDirection!;
+              if (peg.y > peg.maxY! || peg.y < peg.minY!) {
+                peg.sliderDirection = -peg.sliderDirection!;
+                peg.y = Math.max(peg.minY!, Math.min(peg.maxY!, peg.y));
+              }
             }
           }
         }
@@ -685,7 +726,11 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
           if (!coin.collected && coin.parentPegId !== undefined) {
             const parent = pegs.find((p) => p.id === coin.parentPegId);
             if (parent && parent.state !== 'broken') {
-              coin.x = parent.x + coin.offsetX!;
+              if (parent.isSlider) {
+                coin.x = parent.x + coin.offsetX!;
+              } else if (parent.isVerticalSlider) {
+                coin.y = parent.y - 55;
+              }
             }
           }
         }
@@ -878,15 +923,19 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       ctx.save();
       ctx.translate(0, -cameraY);
 
-      // 1. Determine active theme based on height climbed (-cameraY)
+      // 1. Determine active theme based on height climbed (-cameraY) or developer preview override
       let currentTheme: 'castle' | 'ninja' | 'space' = 'castle';
-      const heightClimbed = -cameraY;
-      if (heightClimbed < 800) {
-        currentTheme = 'castle';
-      } else if (heightClimbed < 1800) {
-        currentTheme = 'ninja';
+      if (themeOverride !== 'auto') {
+        currentTheme = themeOverride;
       } else {
-        currentTheme = 'space';
+        const heightClimbed = -cameraY;
+        if (heightClimbed < 800) {
+          currentTheme = 'castle';
+        } else if (heightClimbed < 1800) {
+          currentTheme = 'ninja';
+        } else {
+          currentTheme = 'space';
+        }
       }
 
       // 2. Draw background based on active theme
@@ -982,6 +1031,51 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
             ctx.fillStyle = '#d1d5db';
             ctx.fillRect(peg.minX! - 3, peg.y - 4, 2, 8);
             ctx.fillRect(peg.maxX! + 1, peg.y - 4, 2, 8);
+          } else if (peg.isVerticalSlider) {
+            // If the peg is a vertical slider, draw the vertical slot pole behind it first
+            // Shadow behind the pole
+            ctx.beginPath();
+            ctx.moveTo(peg.x + 1.5, peg.minY!);
+            ctx.lineTo(peg.x + 1.5, peg.maxY!);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Elegant wood vertical slot pole (bamboo-like or metal-like based on theme)
+            ctx.beginPath();
+            ctx.moveTo(peg.x, peg.minY!);
+            ctx.lineTo(peg.x, peg.maxY!);
+            if (currentTheme === 'castle') {
+              ctx.strokeStyle = '#8a6e54'; // warm wood track
+            } else if (currentTheme === 'ninja') {
+              ctx.strokeStyle = '#3f6212'; // dark bamboo green pole
+            } else {
+              ctx.strokeStyle = '#0891b2'; // cyber neon cyan rod
+            }
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Inner groove line
+            ctx.beginPath();
+            ctx.moveTo(peg.x, peg.minY!);
+            ctx.lineTo(peg.x, peg.maxY!);
+            if (currentTheme === 'castle') {
+              ctx.strokeStyle = '#5c4632'; // dark slot groove
+            } else if (currentTheme === 'ninja') {
+              ctx.strokeStyle = '#1e293b'; // dark slate
+            } else {
+              ctx.strokeStyle = '#0e7490'; // neon dark cyan groove
+            }
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // End stops
+            ctx.fillStyle = currentTheme === 'castle' ? '#5c3a21' : currentTheme === 'ninja' ? '#1e293b' : '#0e7490';
+            ctx.fillRect(peg.x - 7, peg.minY! - 4, 14, 4);
+            ctx.fillRect(peg.x - 7, peg.maxY!, 14, 4);
           }
 
           // Outer glowing ring
@@ -1732,7 +1826,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       window.removeEventListener('touchend', handleMouseUp);
       window.removeEventListener('touchcancel', handleMouseUp);
     };
-  }, [gameState, highScore]);
+  }, [gameState, highScore, themeOverride]);
 
   // Restart the game
   const handleStartGame = () => {
@@ -1893,6 +1987,26 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">
               Touch/Click anywhere to stretch &amp; launch Tom!
             </p>
+
+            {/* Theme Quick Selector (Toggle Button) */}
+            <div className="mt-4 bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl px-5 py-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)] flex flex-col items-center gap-2 animate-in fade-in duration-300">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Dev Preview: Toggle Theme</span>
+              <div className="flex gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200/30">
+                {(['auto', 'castle', 'ninja', 'space'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setThemeOverride(t)}
+                    className={`px-3.5 py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all duration-200 select-none cursor-pointer ${
+                      themeOverride === t
+                        ? 'bg-slate-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] scale-[1.03]'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
 
           </div>
 
