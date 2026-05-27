@@ -224,7 +224,6 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
-  const [themeOverride, setThemeOverride] = useState<'auto' | 'castle' | 'ninja' | 'space'>('auto');
 
   // Sync mockStatuses when preview state changes
   useEffect(() => {
@@ -646,21 +645,23 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       const mouse = getCanvasMousePos(event);
       dragCurrent = mouse;
 
-      // Calculate slingshot pull relative to dragStart
+      // Calculate slingshot pull relative to dragStart with progressive elastic spring resistance (interactive friction!)
       if (tom.attachedPegId !== null) {
         const anchor = pegs.find((p) => p.id === tom.attachedPegId);
         if (anchor) {
           const dx = mouse.x - dragStart.x;
           const dy = mouse.y - dragStart.y;
-          const dist = Math.hypot(dx, dy);
+          const rawDist = Math.hypot(dx, dy);
 
-          if (dist > DRAG_LAUNCH_LIMIT) {
+          if (rawDist > 2) {
+            // Logarithmic tension curve simulating elastic rubber friction (reduced resistance!)
+            const resistedDist = DRAG_LAUNCH_LIMIT * (1 - Math.exp(-rawDist / (DRAG_LAUNCH_LIMIT * 1.55)));
             const angle = Math.atan2(dy, dx);
-            tom.x = anchor.x + Math.cos(angle) * DRAG_LAUNCH_LIMIT;
-            tom.y = anchor.y + Math.sin(angle) * DRAG_LAUNCH_LIMIT;
+            tom.x = anchor.x + Math.cos(angle) * resistedDist;
+            tom.y = anchor.y + Math.sin(angle) * resistedDist;
           } else {
-            tom.x = anchor.x + dx;
-            tom.y = anchor.y + dy;
+            tom.x = anchor.x;
+            tom.y = anchor.y;
           }
         }
       }
@@ -767,17 +768,20 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
               tom.vx = 0;
               tom.vy = 0;
             } else {
-              // Slingshot drag position relative to the moving peg anchor, based on dragStart offset!
+              // Slingshot drag position relative to the moving peg anchor, with dynamic logarithmic elastic resistance!
               const dx = dragCurrent.x - dragStart.x;
               const dy = dragCurrent.y - dragStart.y;
-              const dist = Math.hypot(dx, dy);
-              if (dist > DRAG_LAUNCH_LIMIT) {
+              const rawDist = Math.hypot(dx, dy);
+
+              if (rawDist > 2) {
+                // Matching log elastic curve to prevent visual snap jumps on moving pegs (reduced resistance!)
+                const resistedDist = DRAG_LAUNCH_LIMIT * (1 - Math.exp(-rawDist / (DRAG_LAUNCH_LIMIT * 1.55)));
                 const angle = Math.atan2(dy, dx);
-                tom.x = anchor.x + Math.cos(angle) * DRAG_LAUNCH_LIMIT;
-                tom.y = anchor.y + Math.sin(angle) * DRAG_LAUNCH_LIMIT;
+                tom.x = anchor.x + Math.cos(angle) * resistedDist;
+                tom.y = anchor.y + Math.sin(angle) * resistedDist;
               } else {
-                tom.x = anchor.x + dx;
-                tom.y = anchor.y + dy;
+                tom.x = anchor.x;
+                tom.y = anchor.y;
               }
             }
 
@@ -868,13 +872,17 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
           }
         }
 
-        // C) Obstacle collision check (Checked ALWAYS, including while resting or stretching!)
-        for (const obs of obstacles) {
-          const dist = Math.hypot(tom.x - obs.x, tom.y - obs.y);
-          if (dist < obs.radius + tom.radius - 2) {
-            // Game Over! Tom dies
-            setGameState('gameover');
-            playAudioTone('fail');
+        // C) Obstacle collision check (Only checked when NOT stretching for fairer aiming!)
+        const isStretching = isDragging && tom.attachedPegId !== null;
+        if (!isStretching) {
+          for (const obs of obstacles) {
+            const dist = Math.hypot(tom.x - obs.x, tom.y - obs.y);
+            if (dist < obs.radius + tom.radius - 2) {
+              // Game Over! Tom dies
+              setGameState('gameover');
+              playAudioTone('fail');
+              break;
+            }
           }
         }
 
@@ -923,19 +931,15 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       ctx.save();
       ctx.translate(0, -cameraY);
 
-      // 1. Determine active theme based on height climbed (-cameraY) or developer preview override
+      // 1. Determine active theme based on height climbed (-cameraY)
       let currentTheme: 'castle' | 'ninja' | 'space' = 'castle';
-      if (themeOverride !== 'auto') {
-        currentTheme = themeOverride;
+      const heightClimbed = -cameraY;
+      if (heightClimbed < 800) {
+        currentTheme = 'castle';
+      } else if (heightClimbed < 1800) {
+        currentTheme = 'ninja';
       } else {
-        const heightClimbed = -cameraY;
-        if (heightClimbed < 800) {
-          currentTheme = 'castle';
-        } else if (heightClimbed < 1800) {
-          currentTheme = 'ninja';
-        } else {
-          currentTheme = 'space';
-        }
+        currentTheme = 'space';
       }
 
       // 2. Draw background based on active theme
@@ -1826,7 +1830,7 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
       window.removeEventListener('touchend', handleMouseUp);
       window.removeEventListener('touchcancel', handleMouseUp);
     };
-  }, [gameState, highScore, themeOverride]);
+  }, [gameState, highScore]);
 
   // Restart the game
   const handleStartGame = () => {
@@ -1987,26 +1991,6 @@ export function AgentProgress({ sessionId, live = true, mockStatuses, onComplete
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">
               Touch/Click anywhere to stretch &amp; launch Tom!
             </p>
-
-            {/* Theme Quick Selector (Toggle Button) */}
-            <div className="mt-4 bg-white/95 backdrop-blur border border-slate-200/60 rounded-2xl px-5 py-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)] flex flex-col items-center gap-2 animate-in fade-in duration-300">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Dev Preview: Toggle Theme</span>
-              <div className="flex gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200/30">
-                {(['auto', 'castle', 'ninja', 'space'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setThemeOverride(t)}
-                    className={`px-3.5 py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-wider transition-all duration-200 select-none cursor-pointer ${
-                      themeOverride === t
-                        ? 'bg-slate-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] scale-[1.03]'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
 
           </div>
 
